@@ -57,4 +57,20 @@ MariaDB es un fork de MySQL, creada por los desarrolladores originales de MySQL.
 - Algunas funcionalidades avanzadas están disponibles solo en versiones pagadas.
 - Al ser un fork de MySQL, puede tener problemas de compatibilidad con algunas aplicaciones que dependen de MySQL.
 
+### Conclusión
+Tras realizar una busqueda intensiva sobre características, ventajas y desventajas de ambas bases de datos, se ha decidido utilizar **MariaDB** para el proyecto. 
+
+Esta decisión se basa en su mejor **rendimiento** en situaciones de **alta carga**, su **compatibilidad** con **MySQL**, y su **mejor infraestructura** de **seguridad**, **almacenamiento** y **escalabilidad** en comparación con MySQL.
+
+Este gráfico muestra una comparación de rendimiento entre MySQL y MariaDB en situaciones de alta carga, donde se puede observar que MariaDB ofrece un mejor rendimiento que MySQL.
+
+![Gráfico de rendimiento entre MariaDB y MySQL](img/database-performance-graph.png)
+
+En este otro gráfico se muestra la comparación de lectura de datos entre MySQL, MariaDB y PostgreSQL, donde se puede observar que MariaDB tiene un mejor rendimiento que MySQL, pero peor que PostgreSQL.
+
+![Gráfico de rendimiento en lectura de datos](img/database-read-queries.png)
+
+> [!NOTE]
+> PostgreSQL no se ha considerado como opción, debido a que es más pesado y complejo de configurar, lo que no se ajusta a las necesidades del proyecto. Además de que en situaciones de alta carga, a pesar de ser extremadamente rápido y robusto, puede ser más difícil de escalar y mantener en comparación con MariaDB.
+
 ## Definición de tablas y relaciones
