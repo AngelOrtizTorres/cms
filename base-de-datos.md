@@ -1,20 +1,9 @@
 # Base de datos del proyecto
 
 ## Índice
-- [Base de datos del proyecto](#base-de-datos-del-proyecto)
-  - [Índice](#índice)
-  - [Introducción](#introducción)
-  - [Elección de la base de datos](#elección-de-la-base-de-datos)
-    - [MySQL](#mysql)
-      - [Características principales](#características-principales)
-      - [Ventajas](#ventajas)
-      - [Desventajas](#desventajas)
-    - [MariaDB](#mariadb)
-      - [Características principales](#características-principales-1)
-      - [Ventajas](#ventajas-1)
-      - [Desventajas](#desventajas-1)
-  - [Definición de tablas y relaciones](#definición-de-tablas-y-relaciones)
-
+- [Introducción](#introducción)
+- [Elección de la base de datos](#elección-de-la-base-de-datos)
+- [Definición de tablas y relaciones](#definición-de-tablas-y-relaciones)
 ## Introducción
 
 Este documento presenta la comparación y elección de la base de datos para el proyecto. Se evaluarán sus características principales, ventajas y desventajas para determinar cuál es la mejor opción para nuestro proyecto. 
