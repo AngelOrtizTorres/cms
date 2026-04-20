@@ -73,4 +73,11 @@ En este otro gráfico se muestra la comparación de lectura de datos entre MySQL
 > [!NOTE]
 > PostgreSQL no se ha considerado como opción, debido a que es más pesado y complejo de configurar, lo que no se ajusta a las necesidades del proyecto. Además de que en situaciones de alta carga, a pesar de ser extremadamente rápido y robusto, puede ser más difícil de escalar y mantener en comparación con MariaDB.
 
+> [!Important]
+> En un caso de que el **CMS** llegara a utilizar en algún momento un **contenido dinámico**, como por ejemplo **bloques configurables** o **layouts personalizados**, se tendría que **considerar** el **uso** de **MariaDB** como base de datos.
+>
+> En ese **escenario**, podría ser más **adecuado** **migrar** hacia una **arquitectura** enfocada en bases de datos **NoSQL**, como MongoDB, **o** bien se podría considerar el **uso** de **PostgreSQL**, debido a que es más **robusto** y **escalable** que MySQL y MariaDB, aunque también es más **complejo** de **configurar** y **mantener**. 
+> 
+> Sin embargo, esta decisión dependerá de las necesidades específicas del proyecto en ese momento y se deberá evaluar cuidadosamente antes de tomar una decisión final.
+
 ## Definición de tablas y relaciones
