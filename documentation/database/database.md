@@ -64,11 +64,11 @@ Esta decisión se basa en su mejor **rendimiento** en situaciones de **alta carg
 
 Este gráfico muestra una comparación de rendimiento entre MySQL y MariaDB en situaciones de alta carga, donde se puede observar que MariaDB ofrece un mejor rendimiento que MySQL.
 
-![Gráfico de rendimiento entre MariaDB y MySQL](img/database-performance-graph.png)
+![Gráfico de rendimiento entre MariaDB y MySQL](../img/database-performance-graph.png)
 
 En este otro gráfico se muestra la comparación de lectura de datos entre MySQL, MariaDB y PostgreSQL, donde se puede observar que MariaDB tiene un mejor rendimiento que MySQL, pero peor que PostgreSQL.
 
-![Gráfico de rendimiento en lectura de datos](img/database-read-queries.png)
+![Gráfico de rendimiento en lectura de datos](../img/database-read-queries.png)
 
 > [!NOTE]
 > PostgreSQL no se ha considerado como opción, debido a que es más pesado y complejo de configurar, lo que no se ajusta a las necesidades del proyecto. Además de que en situaciones de alta carga, a pesar de ser extremadamente rápido y robusto, puede ser más difícil de escalar y mantener en comparación con MariaDB.
