@@ -1,21 +1,30 @@
 # Base de datos del proyecto
 
 ## Índice
-1. [Introducción](#introducción)
-2. [Elección de la base de datos](#elección-de-la-base-de-datos)
-   - [MySQL](#mysql)
-   - [MariaDB](#mariadb)
-
+- [Base de datos del proyecto](#base-de-datos-del-proyecto)
+  - [Índice](#índice)
+  - [Introducción](#introducción)
+  - [Elección de la base de datos](#elección-de-la-base-de-datos)
+    - [MySQL](#mysql)
+      - [Características principales](#características-principales)
+      - [Ventajas](#ventajas)
+      - [Desventajas](#desventajas)
+    - [MariaDB](#mariadb)
+      - [Características principales](#características-principales-1)
+      - [Ventajas](#ventajas-1)
+      - [Desventajas](#desventajas-1)
+  - [Definición de tablas y relaciones](#definición-de-tablas-y-relaciones)
 
 ## Introducción
 
-Este documento presenta la comparación y elección de la base de datos para el proyecto, considerando las opciones de MySQL y MariaDB. Se evaluarán sus características principales, ventajas y desventajas para determinar cuál es la mejor opción para nuestro proyecto. 
+Este documento presenta la comparación y elección de la base de datos para el proyecto. Se evaluarán sus características principales, ventajas y desventajas para determinar cuál es la mejor opción para nuestro proyecto. 
 
 Además, se discutirá la importancia de la base de datos en el contexto del proyecto y cómo su elección puede afectar el rendimiento, la escalabilidad y la seguridad de la aplicación. 
 
 Se definirán las tablas necesarias para almacenar la información, además de las relaciones entre ellas, para garantizar una estructura de datos eficiente y escalable. También se considerarán aspectos como la facilidad de uso, la compatibilidad con otras tecnologías utilizadas en el proyecto y el soporte disponible para cada base de datos.
 
 ## Elección de la base de datos
+De las posibles opciones de bases de datos, se han seleccionado MySQL y MariaDB para su evaluación. Ambas son bases de datos relacionales ampliamente utilizadas, con características similares, pero con algunas diferencias clave que pueden influir en el rendimiento y la escalabilidad del proyecto.
 
 ### MySQL
 
@@ -58,3 +67,5 @@ MariaDB es un fork de MySQL, creada por los desarrolladores originales de MySQL.
 - Puede tener problemas de compatibilidad con algunas versiones de MySQL.
 - Algunas funcionalidades avanzadas están disponibles solo en versiones pagadas.
 - Al ser un fork de MySQL, puede tener problemas de compatibilidad con algunas aplicaciones que dependen de MySQL.
+
+## Definición de tablas y relaciones
