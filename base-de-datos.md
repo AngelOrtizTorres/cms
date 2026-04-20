@@ -3,7 +3,7 @@
 ## Índice
 - [Introducción](#introducción)
 - [Elección de la base de datos](#elección-de-la-base-de-datos)
-- [Definición de tablas y relaciones](#definición-de-tablas-y-relaciones)
+
 ## Introducción
 
 Este documento presenta la comparación y elección de la base de datos para el proyecto. Se evaluarán sus características principales, ventajas y desventajas para determinar cuál es la mejor opción para nuestro proyecto. 
@@ -50,7 +50,7 @@ MariaDB es un fork de MySQL, creada por los desarrolladores originales de MySQL.
 - Tiene una buena capacidad de escalabilidad y rendimiento.
 - En situaciones de carga alta, ofrece un mejor rendimiento que MySQL.
 - Puede manejar mayor número de conexiones simultáneas que MySQL.
-- Posee una mejor infraestructura de seguridad, almacenamiento y escaalabilidad en comparación con MySQL.
+- Posee una mejor infraestructura de seguridad, almacenamiento y escalabilidad en comparación con MySQL.
 
 #### Desventajas
 - Puede tener problemas de compatibilidad con algunas versiones de MySQL.
@@ -79,5 +79,3 @@ En este otro gráfico se muestra la comparación de lectura de datos entre MySQL
 > En ese **escenario**, podría ser más **adecuado** **migrar** hacia una **arquitectura** enfocada en bases de datos **NoSQL**, como MongoDB, **o** bien se podría considerar el **uso** de **PostgreSQL**, debido a que es más **robusto** y **escalable** que MySQL y MariaDB, aunque también es más **complejo** de **configurar** y **mantener**. 
 > 
 > Sin embargo, esta decisión dependerá de las necesidades específicas del proyecto en ese momento y se deberá evaluar cuidadosamente antes de tomar una decisión final.
-
-## Definición de tablas y relaciones
