@@ -683,3 +683,442 @@ curl -X PUT http://localhost/api/articles/1 \
 curl -X DELETE http://localhost/api/articles/1 \
   -H "Authorization: Bearer {token}"
 ```
+
+---
+
+## EJEMPLOS CON NEXT.JS
+
+### 1. LOGIN - Next.js -> Laravel
+
+**Next.js Component (login.tsx):**
+```typescript
+'use client';
+import { useState } from 'react';
+
+export default function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en login');
+      }
+
+      // Guardar token en localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      alert('Login exitoso');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+      <input
+        type="password"
+        placeholder="Contraseña"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <button type="submit" disabled={loading}>
+        {loading ? 'Entrando...' : 'Entrar'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Laravel Controller (AuthController.php):**
+```php
+public function login(Request $request)
+{
+    $validated = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|string|min:6'
+    ]);
+
+    if (!Auth::attempt($validated)) {
+        return response()->json([
+            'message' => 'Credenciales inválidas'
+        ], 401);
+    }
+
+    $user = Auth::user();
+    $token = $user->createToken('api-token')->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role
+        ]
+    ]);
+}
+```
+
+---
+
+### 2. CREAR ARTÍCULO - Next.js -> Laravel
+
+**Next.js Component (create-article.tsx):**
+```typescript
+'use client';
+import { useState } from 'react';
+
+export default function CreateArticle() {
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    section_id: 1,
+    featured: false,
+    status: 'draft'
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost/api/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al crear artículo');
+      }
+
+      alert('Artículo creado exitosamente');
+      setFormData({
+        title: '',
+        slug: '',
+        excerpt: '',
+        content: '',
+        section_id: 1,
+        featured: false,
+        status: 'draft'
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="title"
+        placeholder="Título"
+        value={formData.title}
+        onChange={handleChange}
+        required
+      />
+      <input
+        type="text"
+        name="slug"
+        placeholder="Slug (url-amigable)"
+        value={formData.slug}
+        onChange={handleChange}
+        required
+      />
+      <textarea
+        name="excerpt"
+        placeholder="Resumen"
+        value={formData.excerpt}
+        onChange={handleChange}
+      />
+      <textarea
+        name="content"
+        placeholder="Contenido"
+        value={formData.content}
+        onChange={handleChange}
+        required
+      />
+      <select name="status" value={formData.status} onChange={handleChange}>
+        <option value="draft">Borrador</option>
+        <option value="published">Publicado</option>
+      </select>
+      <label>
+        <input
+          type="checkbox"
+          name="featured"
+          checked={formData.featured}
+          onChange={handleChange}
+        />
+        Destacado
+      </label>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Guardando...' : 'Crear Artículo'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Laravel Controller (ArticleController.php):**
+```php
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'slug' => 'required|string|unique:articles|max:255',
+        'excerpt' => 'nullable|string',
+        'content' => 'required|string',
+        'section_id' => 'required|exists:sections,id',
+        'featured' => 'boolean',
+        'status' => 'in:draft,published'
+    ]);
+
+    $article = Article::create($validated);
+
+    return response()->json([
+        'id' => $article->id,
+        'title' => $article->title,
+        'slug' => $article->slug,
+        'message' => 'Artículo creado exitosamente'
+    ], 201);
+}
+```
+
+---
+
+### 3. FORMULARIO DE CONTACTO - Next.js -> Laravel
+
+**Next.js Component (contact-form.tsx):**
+```typescript
+'use client';
+import { useState } from 'react';
+
+export default function ContactForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+    phone: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al enviar mensaje');
+      }
+
+      alert(data.message);
+      setFormData({ name: '', email: '', subject: '', message: '', phone: '' });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="name"
+        placeholder="Tu nombre"
+        value={formData.name}
+        onChange={handleChange}
+        required
+      />
+      <input
+        type="email"
+        name="email"
+        placeholder="Tu email"
+        value={formData.email}
+        onChange={handleChange}
+        required
+      />
+      <input
+        type="text"
+        name="subject"
+        placeholder="Asunto"
+        value={formData.subject}
+        onChange={handleChange}
+        required
+      />
+      <textarea
+        name="message"
+        placeholder="Mensaje"
+        value={formData.message}
+        onChange={handleChange}
+        required
+      />
+      <input
+        type="tel"
+        name="phone"
+        placeholder="Teléfono (opcional)"
+        value={formData.phone}
+        onChange={handleChange}
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Enviando...' : 'Enviar Mensaje'}
+      </button>
+    </form>
+  );
+}
+```
+
+**Laravel Controller (ContactController.php):**
+```php
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string',
+        'phone' => 'nullable|string|max:20'
+    ]);
+
+    Contact::create($validated);
+
+    Mail::to(config('mail.from.address'))
+        ->send(new ContactFormMail($validated));
+
+    return response()->json([
+        'message' => 'Mensaje recibido correctamente. Nos pondremos en contacto pronto.'
+    ], 201);
+}
+```
+
+---
+
+### 4. OBTENER ARTÍCULOS - Next.js (GET sin autenticación)
+
+**Next.js Page (articles-page.tsx):**
+```typescript
+'use client';
+import { useEffect, useState } from 'react';
+
+interface Article {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  featured: boolean;
+}
+
+export default function ArticlesPage() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch('http://localhost/api/articles?page=1&per_page=10');
+      const data = await response.json();
+      setArticles(data.data);
+    } catch (err) {
+      console.error('Error fetching articles:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <p>Cargando...</p>;
+
+  return (
+    <div>
+      <h1>Artículos</h1>
+      {articles.map((article) => (
+        <div key={article.id}>
+          <h2>{article.title}</h2>
+          <p>{article.excerpt}</p>
+          {article.featured && <span>Destacado</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## FLUJO COMPLETO
+
+1. **Next.js envía datos** → `POST /api/articles` con token en headers
+2. **Laravel recibe** → Valida los datos con Request validation
+3. **Laravel guarda** → Crea registro en base de datos
+4. **Laravel responde** → Devuelve JSON con ID y mensaje
+5. **Next.js recibe** → Muestra mensaje de éxito/error al usuario
