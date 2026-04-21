@@ -261,24 +261,43 @@ CREATE TABLE IF NOT EXISTS media (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS comments (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  
+  -- Jerarquía Optimizada
   parent_id BIGINT UNSIGNED NULL,
+  path VARCHAR(255) NOT NULL,       -- Ruta jerárquica (ej: "00001/00004/00009")
+  depth TINYINT UNSIGNED DEFAULT 0, -- Nivel de anidación (útil para indentación en CSS)
+  
+  -- Relación Polimórfica
   commentable_id BIGINT UNSIGNED NOT NULL,
   commentable_type VARCHAR(255) NOT NULL,
+  
+  -- Autoría
   user_id BIGINT UNSIGNED NULL,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
+  
+  -- Moderación
   status ENUM('pending', 'approved', 'rejected', 'spam') DEFAULT 'pending',
+  
+  -- Analítica de Engagement 
+  reply_count INT UNSIGNED DEFAULT 0,
+  upvotes INT DEFAULT 0,  
+  downvotes INT DEFAULT 0,
+  score INT AS (upvotes - downvotes) VIRTUAL, -- Ahora MariaDB lo acepta sin problemas
+  
+  -- Auditoría
   ip_address VARCHAR(45) NULL,
   user_agent TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at TIMESTAMP NULL,
-  CONSTRAINT fk_comments_parent FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE,
+  
   CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-  KEY idx_commentable_status (commentable_type, commentable_id, status),
-  KEY idx_parent_id (parent_id),
-  KEY idx_user_id (user_id)
+  
+  -- ÍNDICES
+  KEY idx_tree_load (commentable_type, commentable_id, status, path),
+  KEY idx_analytics_score (commentable_type, commentable_id, score DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------
@@ -305,21 +324,27 @@ CREATE TABLE IF NOT EXISTS pages (
 -- 15. Table: audit_logs
 -- ---------------------
 CREATE TABLE IF NOT EXISTS audit_logs (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Movido arriba para la PK
+  
+  batch_uuid CHAR(36) NULL, -- CORRELATION ID: Agrupa múltiples acciones de un mismo request
+  
   user_id BIGINT UNSIGNED NULL,
   auditable_type VARCHAR(255) NOT NULL,
   auditable_id BIGINT UNSIGNED NOT NULL,
   action ENUM('create', 'update', 'delete', 'restore') NOT NULL,
+  
   old_values JSON NULL,
   new_values JSON NULL,
+  
   ip_address VARCHAR(45) NULL,
   user_agent TEXT NULL,
   url TEXT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  
+  PRIMARY KEY (id, created_at),
   KEY idx_auditable_model (auditable_type, auditable_id),
-  KEY idx_user_action (user_id, created_at),  
-  KEY idx_created_at (created_at)
+  KEY idx_batch (batch_uuid),
+  KEY idx_user_action (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Reactivar chequeo de claves foráneas
