@@ -1,4 +1,4 @@
-# Base de Datos - CMS Laravel (MariaDB)
+# Base de Datos
 
 ## Descripción General
 

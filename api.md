@@ -1,55 +1,130 @@
-# API REST - CMS Laravel
+# API REST - CMS
 
 ## Descripción General
 
-API REST desarrollada en **Laravel** que gestiona el contenido del CMS. Proporciona endpoints para administrar artículos, secciones, etiquetas, banners y configuración general del sitio. Recibe peticiones HTTP, consulta la base de datos y devuelve respuestas en formato **JSON**.
+API REST desarrollada en **Laravel** que gestiona el contenido del CMS. Proporciona endpoints para administrar artículos, secciones, etiquetas, banners, usuarios y más.
 
-### Flujo de Datos
-
-```
-Frontend (React/Next.js) 
-    ↓
-  [HTTP Request]
-    ↓
-Laravel API
-    ↓
-  [Consulta BD]
-    ↓
-  [Respuesta JSON]
-    ↓
-Frontend (Renderiza datos)
-```
-
-**Ejemplo:** React solicita últimas noticias → API consulta BD → Devuelve JSON con artículos → Frontend renderiza contenido
+**Base URL:** `http://localhost/api`
 
 ---
 
-## Características Técnicas
+## Inicio Rápido
 
-- **Base URL:** `http://localhost/api`
-- **Protocolo:** HTTP/HTTPS
-- **Formato de datos:** JSON
-- **Autenticación:** Token Bearer (API token)
-- **CORS:** Habilitado para solicitudes desde frontend
+### Configuración Base
+- **Protocolo:** HTTP/HTTPS  
+- **Formato:** JSON  
+- **Autenticación:** Token Bearer (para POST, PUT, DELETE)
+
+### Primer Login
+```bash
+curl -X POST http://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"usuario@example.com","password":"contraseña"}'
+```
+
+Guarda el token recibido y úsalo en todas las peticiones autenticadas:
+```bash
+curl -H "Authorization: Bearer {token}"
+```
 
 ---
 
-## Endpoints por Recurso
+## Tabla de Endpoints
 
-### ARTÍCULOS (Articles)
+| Recurso | Operación | Endpoint | Autenticación |
+|---------|-----------|----------|---------------|
+| **Artículos** | Listar | `GET /articles` | No |
+| | Obtener uno | `GET /articles/{slug}` | No |
+| | Destacados | `GET /articles/featured` | No |
+| | Crear | `POST /articles` | Sí |
+| | Editar | `PUT /articles/{id}` | Sí |
+| | Eliminar | `DELETE /articles/{id}` | Sí |
+| **Secciones** | Listar | `GET /sections` | No |
+| | Por sección | `GET /sections/{slug}` | No |
+| | Crear | `POST /sections` | Sí |
+| | Editar | `PUT /sections/{id}` | Sí |
+| | Eliminar | `DELETE /sections/{id}` | Sí |
+| **Etiquetas** | Listar | `GET /tags` | No |
+| | Por etiqueta | `GET /tags/{slug}` | No |
+| | Crear | `POST /tags` | Sí |
+| | Editar | `PUT /tags/{id}` | Sí |
+| | Eliminar | `DELETE /tags/{id}` | Sí |
+| **Banners** | Listar | `GET /banners` | No |
+| | Por posición | `GET /banners/{position}` | No |
+| | Crear | `POST /banners` | Sí |
+| | Editar | `PUT /banners/{id}` | Sí |
+| | Eliminar | `DELETE /banners/{id}` | Sí |
+| **Búsqueda** | Buscar | `GET /search?q={term}` | No |
+| **Usuario** | Datos actuales | `GET /auth/me` | Sí |
+| **Usuarios** | Listar | `GET /users` | Sí (Admin) |
+| | Crear | `POST /users` | Sí (Admin) |
+| | Editar | `PUT /users/{id}` | Sí |
+| | Eliminar | `DELETE /users/{id}` | Sí (Admin) |
+| **Contacto** | Enviar | `POST /contact` | No |
+| | Mensajes | `GET /contact/messages` | Sí (Admin) |
+| | Eliminar | `DELETE /contact/messages/{id}` | Sí (Admin) |
 
-#### Listar artículos
+
+
+---
+
+## Documentación Detallada
+
+### AUTENTICACIÓN
+
+#### Login
+```
+POST /api/auth/login
+```
+
+**Request:**
+```json
+{
+  "email": "usuario@example.com",
+  "password": "contraseña"
+}
+```
+
+**Response (200):**
+```json
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "user": {
+    "id": 1,
+    "name": "Juan",
+    "email": "usuario@example.com",
+    "role": "admin"
+  }
+}
+```
+
+#### Logout
+```
+POST /api/auth/logout
+```
+Requiere: `Authorization: Bearer {token}`
+
+#### Mi Perfil
+```
+GET /api/auth/me
+```
+Requiere: `Authorization: Bearer {token}`
+
+---
+
+### ARTÍCULOS
+
+#### Listar Artículos
 ```
 GET /api/articles
 ```
-**Descripción:** Devuelve lista paginada de artículos publicados
 
-**Parámetros query (opcionales):**
+**Parámetros:**
 - `page=1` - Número de página
-- `per_page=15` - Artículos por página
-- `sort=-created_at` - Ordenar por
+- `per_page=15` - Artículos por página  
+- `sort=-created_at` - Ordenar (ej: -created_at, title)
 
-**Respuesta exitosa (200):**
+**Response (200):**
 ```json
 {
   "data": [
@@ -57,12 +132,10 @@ GET /api/articles
       "id": 1,
       "title": "Título del artículo",
       "slug": "titulo-del-articulo",
-      "excerpt": "Resumen breve del artículo",
-      "content": "Contenido completo del artículo",
+      "excerpt": "Resumen breve",
       "featured": true,
       "status": "published",
-      "created_at": "2026-04-20T10:30:00Z",
-      "updated_at": "2026-04-20T10:30:00Z"
+      "created_at": "2026-04-20T10:30:00Z"
     }
   ],
   "meta": {
@@ -73,22 +146,19 @@ GET /api/articles
 }
 ```
 
----
-
-#### Obtener artículo por slug
+#### Obtener Artículo
 ```
 GET /api/articles/{slug}
 ```
-**Descripción:** Devuelve un artículo concreto por su slug
 
-**Respuesta exitosa (200):**
+**Response (200):**
 ```json
 {
   "id": 1,
   "title": "Título del artículo",
   "slug": "titulo-del-articulo",
   "excerpt": "Resumen breve",
-  "content": "Contenido completo...",
+  "content": "Contenido completo en HTML...",
   "featured": true,
   "status": "published",
   "section": {
@@ -104,48 +174,28 @@ GET /api/articles/{slug}
 }
 ```
 
----
-
-#### Artículos destacados
+#### Artículos Destacados
 ```
 GET /api/articles/featured
 ```
-**Descripción:** Devuelve artículos marcados como destacados para portada
 
-**Parámetros query (opcionales):**
+**Parámetros:**
 - `limit=6` - Cantidad de artículos
 
-**Respuesta exitosa (200):**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "title": "Noticia destacada",
-      "slug": "noticia-destacada",
-      "featured_image": "https://cdn.example.com/image.jpg"
-    }
-  ]
-}
-```
-
----
-
-#### Crear artículo
+#### Crear Artículo
 ```
 POST /api/articles
 ```
-**Headers requeridos:**
-- `Authorization: Bearer {token}`
-- `Content-Type: application/json`
 
-**Body:**
+**Requiere:** `Authorization: Bearer {token}`
+
+**Request:**
 ```json
 {
   "title": "Nuevo artículo",
   "slug": "nuevo-articulo",
   "excerpt": "Resumen del artículo",
-  "content": "Contenido del artículo en HTML",
+  "content": "Contenido en HTML",
   "section_id": 1,
   "tags": [1, 2, 3],
   "featured": false,
@@ -153,7 +203,7 @@ POST /api/articles
 }
 ```
 
-**Respuesta exitosa (201):**
+**Response (201):**
 ```json
 {
   "id": 45,
@@ -163,53 +213,40 @@ POST /api/articles
 }
 ```
 
----
-
-#### Actualizar artículo
+#### Editar Artículo
 ```
 PUT /api/articles/{id}
 ```
-**Headers requeridos:**
-- `Authorization: Bearer {token}`
-- `Content-Type: application/json`
 
-**Body:** Mismo formato que POST (enviar solo campos a actualizar)
+**Requiere:** `Authorization: Bearer {token}`
 
-**Respuesta exitosa (200):**
+**Response (200):**
 ```json
 {
   "message": "Artículo actualizado exitosamente",
-  "data": { /* artículo actualizado */ }
+  "data": { ... }
 }
 ```
 
----
-
-#### Eliminar artículo
+#### Eliminar Artículo
 ```
 DELETE /api/articles/{id}
 ```
-**Headers requeridos:**
-- `Authorization: Bearer {token}`
 
-**Respuesta exitosa (204):** Sin contenido
+**Requiere:** `Authorization: Bearer {token}`
 
-**Respuesta (200):**
-```json
-{
-  "message": "Artículo eliminado exitosamente"
-}
-```
+**Response (204):** Sin contenido
 
 ---
 
-### SECCIONES (Sections)
+### SECCIONES
 
-#### Listar todas las secciones
+#### Listar Secciones
 ```
 GET /api/sections
 ```
-**Respuesta exitosa (200):**
+
+**Response (200):**
 ```json
 {
   "data": [
@@ -231,13 +268,12 @@ GET /api/sections
 }
 ```
 
----
-
-#### Obtener artículos de una sección
+#### Artículos de una Sección
 ```
 GET /api/sections/{slug}
 ```
-**Respuesta exitosa (200):**
+
+**Response (200):**
 ```json
 {
   "section": {
@@ -245,22 +281,18 @@ GET /api/sections/{slug}
     "name": "Tecnología",
     "slug": "tecnologia"
   },
-  "articles": [
-    { /* listado de artículos */ }
-  ]
+  "articles": [ ... ]
 }
 ```
 
----
-
-#### Crear sección
+#### Crear Sección
 ```
 POST /api/sections
 ```
-**Headers requeridos:**
-- `Authorization: Bearer {token}`
 
-**Body:**
+**Requiere:** `Authorization: Bearer {token}`
+
+**Request:**
 ```json
 {
   "name": "Nueva Sección",
@@ -269,69 +301,79 @@ POST /api/sections
 }
 ```
 
----
-
-#### Actualizar sección
+#### Editar Sección
 ```
 PUT /api/sections/{id}
 ```
 
----
+**Requiere:** `Authorization: Bearer {token}`
 
-#### Eliminar sección
+#### Eliminar Sección
 ```
 DELETE /api/sections/{id}
 ```
 
+**Requiere:** `Authorization: Bearer {token}`
+
 ---
 
-### ETIQUETAS (Tags)
+### ETIQUETAS
 
-#### Listar todas las etiquetas
+#### Listar Etiquetas
 ```
 GET /api/tags
 ```
 
-#### Obtener artículos por etiqueta
+#### Artículos por Etiqueta
 ```
 GET /api/tags/{slug}
 ```
 
-#### Crear etiqueta
+#### Crear Etiqueta
 ```
 POST /api/tags
 ```
 
-#### Actualizar etiqueta
+**Requiere:** `Authorization: Bearer {token}`
+
+#### Editar Etiqueta
 ```
 PUT /api/tags/{id}
 ```
 
-#### Eliminar etiqueta
+**Requiere:** `Authorization: Bearer {token}`
+
+#### Eliminar Etiqueta
 ```
 DELETE /api/tags/{id}
 ```
+
+**Requiere:** `Authorization: Bearer {token}`
 
 ---
 
 ### BANNERS
 
-#### Listar todos los banners activos
+#### Listar Banners
 ```
 GET /api/banners
 ```
 
-#### Obtener banners por posición
+#### Banners por Posición
 ```
 GET /api/banners/{position}
 ```
+
 **Posiciones válidas:** `header`, `sidebar`, `between_articles`, `footer`
 
-#### Crear banner
+#### Crear Banner
 ```
 POST /api/banners
 ```
-**Body:**
+
+**Requiere:** `Authorization: Bearer {token}`
+
+**Request:**
 ```json
 {
   "title": "Título del banner",
@@ -342,58 +384,181 @@ POST /api/banners
 }
 ```
 
-#### Actualizar banner
+#### Editar Banner
 ```
 PUT /api/banners/{id}
 ```
 
-#### Eliminar banner
+**Requiere:** `Authorization: Bearer {token}`
+
+#### Eliminar Banner
 ```
 DELETE /api/banners/{id}
 ```
 
----
-
-### PORTADA (Homepage)
-
-#### Obtener configuración de portada
-```
-GET /api/homepage
-```
-**Respuesta exitosa (200):**
-```json
-{
-  "featured_articles": 6,
-  "latest_articles": 10,
-  "sections_displayed": [1, 2, 3],
-  "banners_enabled": true
-}
-```
+**Requiere:** `Authorization: Bearer {token}`
 
 ---
 
-#### Actualizar configuración de portada
+### MULTIMEDIA
+
+#### Subir Archivo
 ```
-PUT /api/homepage
+POST /api/media
 ```
+
+**Requiere:** `Authorization: Bearer {token}`
+
+**Headers:**
+- `Content-Type: multipart/form-data`
+
 **Body:**
+- `file` - Archivo (imagen, PDF, etc.)
+
+**Response (201):**
 ```json
 {
-  "featured_articles": 8,
-  "latest_articles": 12,
-  "sections_displayed": [1, 2, 3, 4]
+  "id": 1,
+  "filename": "imagen.jpg",
+  "url": "https://example.com/uploads/imagen.jpg",
+  "size": 102400,
+  "type": "image/jpeg"
+}
+```
+
+#### Listar Archivos
+```
+GET /api/media
+```
+
+#### Eliminar Archivo
+```
+DELETE /api/media/{id}
+```
+
+**Requiere:** `Authorization: Bearer {token}`
+
+---
+
+### USUARIOS
+
+#### Listar Usuarios
+```
+GET /api/users
+```
+
+**Requiere:** `Authorization: Bearer {token}` (Admin)
+
+#### Crear Usuario
+```
+POST /api/users
+```
+
+**Requiere:** `Authorization: Bearer {token}` (Admin)
+
+**Request:**
+```json
+{
+  "name": "Nuevo Usuario",
+  "email": "nuevo@example.com",
+  "password": "contraseña_segura",
+  "role": "editor"
+}
+```
+
+#### Editar Usuario
+```
+PUT /api/users/{id}
+```
+
+**Requiere:** `Authorization: Bearer {token}`
+
+#### Eliminar Usuario
+```
+DELETE /api/users/{id}
+```
+
+**Requiere:** `Authorization: Bearer {token}` (Admin)
+
+---
+
+### CONTACTO
+
+#### Enviar Mensaje
+```
+POST /api/contact
+```
+
+**Request:**
+```json
+{
+  "name": "Juan Pérez",
+  "email": "juan@example.com",
+  "subject": "Consulta",
+  "message": "Mensaje de contacto",
+  "phone": "+34 612 345 678"
+}
+```
+
+**Response (201):**
+```json
+{
+  "message": "Mensaje recibido correctamente. Nos pondremos en contacto pronto."
+}
+```
+
+#### Listar Mensajes
+```
+GET /api/contact/messages
+```
+
+**Requiere:** `Authorization: Bearer {token}` (Admin)
+
+#### Eliminar Mensaje
+```
+DELETE /api/contact/messages/{id}
+```
+
+**Requiere:** `Authorization: Bearer {token}` (Admin)
+
+---
+
+### BÚSQUEDA
+
+#### Buscar Artículos
+```
+GET /api/search?q={termino}
+```
+
+**Parámetros:**
+- `q` - Término de búsqueda (requerido)
+- `limit=10` - Cantidad de resultados
+
+**Response (200):**
+```json
+{
+  "results": [
+    {
+      "id": 1,
+      "title": "Título del artículo",
+      "slug": "titulo-del-articulo",
+      "excerpt": "Resumen del artículo"
+    }
+  ],
+  "total": 5
 }
 ```
 
 ---
 
-### CONFIGURACIÓN (Settings)
+## CONFIGURACIÓN
 
-#### Obtener configuración general del sitio
+#### Obtener Configuración
 ```
 GET /api/settings
 ```
-**Respuesta exitosa (200):**
+
+**Response (200):**
 ```json
 {
   "site_name": "Mi CMS",
@@ -408,117 +573,52 @@ GET /api/settings
 }
 ```
 
----
-
-#### Actualizar configuración general
+#### Actualizar Configuración
 ```
 PUT /api/settings
 ```
-**Headers requeridos:**
-- `Authorization: Bearer {token}`
 
----
+**Requiere:** `Authorization: Bearer {token}`
 
-### AVISOS (Notices)
-
-#### Listar avisos activos
+#### Configuración de Portada
 ```
-GET /api/notices
+GET /api/homepage
 ```
 
-#### Crear aviso
-```
-POST /api/notices
-```
-**Body:**
+**Response:**
 ```json
 {
-  "title": "Aviso importante",
-  "message": "Contenido del aviso",
-  "type": "info|warning|error|success",
-  "active": true
+  "featured_articles": 6,
+  "latest_articles": 10,
+  "sections_displayed": [1, 2, 3],
+  "banners_enabled": true
 }
 ```
 
-#### Actualizar aviso
+#### Editar Portada
 ```
-PUT /api/notices/{id}
+PUT /api/homepage
 ```
 
-#### Eliminar aviso
-```
-DELETE /api/notices/{id}
-```
+**Requiere:** `Authorization: Bearer {token}`
 
 ---
 
-### CONTACTO (Contact)
+## CÓDIGOS DE ERROR
 
-#### Enviar formulario de contacto
-```
-POST /api/contact
-```
-**Body:**
-```json
-{
-  "name": "Juan Pérez",
-  "email": "juan@example.com",
-  "subject": "Consulta sobre un artículo",
-  "message": "Hola, quisiera consultar sobre...",
-  "phone": "+34 612 345 678" // Opcional
-}
-```
+| Código | Significado | Solución |
+|--------|------------|----------|
+| **200** | OK | Solicitud exitosa |
+| **201** | Created | Recurso creado correctamente |
+| **204** | No Content | Eliminado correctamente (sin respuesta) |
+| **400** | Bad Request | Datos inválidos o incompletos |
+| **401** | Unauthorized | Token no proporcionado o inválido |
+| **403** | Forbidden | No tienes permisos para esta acción |
+| **404** | Not Found | Recurso no existe |
+| **422** | Unprocessable Entity | Validación fallida en los datos |
+| **500** | Server Error | Error del servidor |
 
-**Respuesta exitosa (201):**
-```json
-{
-  "message": "Mensaje recibido correctamente. Nos pondremos en contacto pronto."
-}
-```
-
----
-
-#### Obtener mensajes de contacto recibidos
-```
-GET /api/contact/messages
-```
-**Headers requeridos:**
-- `Authorization: Bearer {token}` (Solo admin)
-
-**Respuesta exitosa (200):**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "Juan Pérez",
-      "email": "juan@example.com",
-      "subject": "Consulta",
-      "message": "Contenido del mensaje",
-      "read": false,
-      "created_at": "2026-04-20T10:30:00Z"
-    }
-  ]
-}
-```
-
----
-
-## Códigos de Error
-
-| Código | Descripción |
-|--------|------------|
-| `200` | OK - Solicitud exitosa |
-| `201` | Created - Recurso creado |
-| `204` | No Content - Solicitud exitosa sin contenido |
-| `400` | Bad Request - Solicitud inválida |
-| `401` | Unauthorized - Autenticación requerida |
-| `403` | Forbidden - No tiene permisos |
-| `404` | Not Found - Recurso no encontrado |
-| `422` | Unprocessable Entity - Validación fallida |
-| `500` | Server Error - Error del servidor |
-
-**Respuesta de error (422):**
+**Ejemplo de error (422):**
 ```json
 {
   "message": "The given data was invalid.",
@@ -531,62 +631,55 @@ GET /api/contact/messages
 
 ---
 
-## Autenticación
+## NOTAS IMPORTANTES
 
-Todos los endpoints que modifiquen datos (`POST`, `PUT`, `DELETE`) requieren un token de autenticación:
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-```
-
-Para obtener un token, use el endpoint de login:
-```
-POST /api/login
-```
+- **IDs:** Todos son numéricos
+- **Slugs:** Deben ser únicos y en minúsculas (ej: `articulo-importante`)
+- **Fechas:** Formato ISO 8601 UTC (ej: `2026-04-20T10:30:00Z`)
+- **Paginación:** Por defecto 15 elementos por página
+- **Token:** Válido por 24 horas, luego requiere nuevo login
+- **CORS:** Habilitado para solicitudes desde frontend
+- **Rate Limit:** 60 solicitudes por minuto por IP
 
 ---
 
-## Notas de Uso
+## EJEMPLOS DE USO
 
-- Todos los IDs son numéricos
-- Los slugs deben ser únicos y en minúsculas
-- Las fechas están en formato ISO 8601 (UTC)
-- La paginación por defecto es de 15 elementos
-- Los campos con asterisco (*) son obligatorios
- 
-DELETE /api/contact/messages/{id}
-> borra un mensaje de contacto
- 
-POST   /api/media
-> sube una imagen o archivo al servidor
- 
-GET    /api/media
-> devuelve la lista de archivos subidos
- 
-DELETE /api/media/{id}
-> borra un archivo del servidor
- 
-POST   /api/auth/login
-> recibe email y contraseña, devuelve token de acceso
- 
-POST   /api/auth/logout
-> invalida el token actual, cierra sesión
- 
-GET    /api/auth/me
-> devuelve los datos del usuario autenticado
- 
-GET    /api/users
-> devuelve la lista de usuarios registrados
- 
-POST   /api/users
-> crea un usuario nuevo
- 
-PUT    /api/users/{id}
-> edita un usuario existente
- 
-DELETE /api/users/{id}
-> borra un usuario
- 
-GET    /api/search?q={termino}
-> busca artículos por título, contenido y etiquetas
- 
+### Obtener artículos de una sección
+```bash
+curl http://localhost/api/sections/tecnologia
+```
+
+### Buscar artículos
+```bash
+curl "http://localhost/api/search?q=laravel&limit=5"
+```
+
+### Crear artículo (requiere autenticación)
+```bash
+curl -X POST http://localhost/api/articles \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Mi Artículo",
+    "slug": "mi-articulo",
+    "excerpt": "Resumen",
+    "content": "<p>Contenido</p>",
+    "section_id": 1,
+    "status": "draft"
+  }'
+```
+
+### Actualizar artículo
+```bash
+curl -X PUT http://localhost/api/articles/1 \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "published"}'
+```
+
+### Eliminar artículo
+```bash
+curl -X DELETE http://localhost/api/articles/1 \
+  -H "Authorization: Bearer {token}"
+```
