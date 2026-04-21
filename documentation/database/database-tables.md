@@ -604,114 +604,141 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 erDiagram
   direction TB
 
-  %% --- RELACIONES (guían el layout) ---
+  %% ==========================================
+  %% RELACIONES (Estructuran el layout visual)
+  %% ==========================================
 
-  %% Núcleo editorial
-  SECTIONS        ||--o{ SECTIONS    : jerarquia
-  SECTIONS        ||--o{ ARTICLES    : organiza
-  USERS           ||--o{ ARTICLES    : crea
-  ARTICLES        ||--o{ ARTICLE_TAG : relaciona
-  TAGS            ||--o{ ARTICLE_TAG : clasifica
+  %% Núcleo Editorial
+  USERS           ||--o{ ARTICLES        : "escribe (autor)"
+  SECTIONS        |o--o{ SECTIONS        : "jerarquía (parent)"
+  SECTIONS        ||--o{ ARTICLES        : "sección principal (1:N)"
+  
+  %% Taxonomías Secundarias (N:M)
+  ARTICLES        ||--o{ ARTICLE_SECTION : "tiene"
+  SECTIONS        ||--o{ ARTICLE_SECTION : "clasifica secundaria"
+  ARTICLES        ||--o{ ARTICLE_TAG     : "tiene"
+  TAGS            ||--o{ ARTICLE_TAG     : "agrupa"
 
-  %% Interacción y comentarios
-  ARTICLES        ||--o{ COMMENTS    : recibe
-  PAGES           ||--o{ COMMENTS    : recibe
-  USERS           ||--o{ COMMENTS    : autor
-  COMMENTS        ||--o{ COMMENTS    : responde
+  %% Interacción Social (Polimorfismo)
+  USERS           |o--o{ COMMENTS        : "publica"
+  COMMENTS        |o--o{ COMMENTS        : "responde (hilos)"
+  ARTICLES        |o--o{ COMMENTS        : "recibe (polimórfico)"
+  PAGES           |o--o{ COMMENTS        : "recibe (polimórfico)"
 
-  %% Trazabilidad
-  USERS           ||--o{ MEDIA       : sube
-  USERS           ||--o{ AUDIT_LOGS  : registra
+  %% Archivos y Trazabilidad
+  USERS           |o--o{ MEDIA           : "sube"
+  USERS           |o--o{ AUDIT_LOGS      : "ejecuta acción"
 
-  %% --- ATRIBUTOS ---
+  %% ==========================================
+  %% ENTIDADES Y ATRIBUTOS
+  %% ==========================================
 
   USERS {
-    bigint  id    PK
-    varchar email
-    enum    role  "admin | editor | viewer"
+    bigint  id           PK
+    varchar name
+    varchar email        "UNIQUE"
+    enum    role         "admin | editor | viewer"
+    boolean active
+    timestamp deleted_at "Soft Delete"
   }
 
   SECTIONS {
-    bigint  id        PK
-    bigint  parent_id FK
+    bigint  id         PK
+    bigint  parent_id  FK
     varchar name
-    varchar slug
+    varchar slug       "UNIQUE"
+    varchar meta_title "SEO"
   }
 
   ARTICLES {
     bigint  id         PK
-    bigint  user_id    FK
     bigint  section_id FK
+    bigint  user_id    FK
     varchar title
+    varchar slug       "UNIQUE"
     enum    status     "draft | scheduled | published | archived"
+    timestamp published_at
   }
 
   TAGS {
     bigint  id   PK
     varchar name
-    varchar slug
+    varchar slug "UNIQUE"
+  }
+
+  ARTICLE_SECTION {
+    bigint article_id PK, FK
+    bigint section_id PK, FK
   }
 
   ARTICLE_TAG {
-    bigint article_id FK
-    bigint tag_id     FK
+    bigint article_id PK, FK
+    bigint tag_id     PK, FK
   }
 
   PAGES {
-    bigint  id     PK
+    bigint  id         PK
     varchar title
-    varchar slug
-    enum    status "draft | published | archived"
+    varchar slug       "UNIQUE"
+    varchar layout     "Next.js Template"
+    enum    status     "draft | published | archived"
   }
 
   COMMENTS {
     bigint  id               PK
-    bigint  user_id          FK
     bigint  parent_id        FK
-    bigint  commentable_id
-    varchar commentable_type
+    varchar path             "Materialized Path"
+    bigint  commentable_id   "Polymorphic FK"
+    varchar commentable_type "Polymorphic Model"
+    bigint  user_id          FK
     enum    status           "pending | approved | rejected | spam"
+    int     score            "Virtual (upvotes-downvotes)"
   }
 
   MEDIA {
     bigint  id        PK
     bigint  user_id   FK
     varchar file_name
+    varchar disk      "public | s3"
     varchar mime_type
+    int     width     "Anti-CLS para Next.js"
   }
 
   AUDIT_LOGS {
     bigint  id             PK
+    char    batch_uuid     "Correlation ID"
     bigint  user_id        FK
-    varchar auditable_type
-    bigint  auditable_id
+    varchar auditable_type "Polymorphic"
+    bigint  auditable_id   "Polymorphic"
     enum    action         "create | update | delete | restore"
   }
 
   BANNERS {
     bigint  id       PK
+    varchar title
     enum    type     "image | code"
-    enum    position "header | sidebar | between_articles | footer"
+    enum    position "header | sidebar | footer"
     boolean active
   }
 
   HOMEPAGE_CONFIG {
-    tinyint id                     PK
+    tinyint id                      PK "Singleton = 1"
     tinyint featured_articles_count
     tinyint latest_articles_count
-    boolean banners_enabled
+    json    layout_schema
   }
 
   SETTINGS {
-    tinyint id               PK
+    tinyint id               PK "Singleton = 1"
     varchar site_name
-    varchar contact_email
+    json    social_links
     boolean maintenance_mode
   }
 
   NOTICES {
-    bigint  id       PK
-    enum    type     "info | warning | error | success"
+    bigint  id           PK
+    enum    type         "info | warning | error | success"
+    json    target_pages "Segmentación"
     int     priority
     boolean active
   }
@@ -719,6 +746,7 @@ erDiagram
   CONTACT_MESSAGES {
     bigint    id         PK
     varchar   email
+    varchar   subject
     enum      status     "new | read | replied | archived | spam"
     timestamp created_at
   }
