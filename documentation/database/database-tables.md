@@ -1,5 +1,3 @@
-# Base de Datos - CMS Laravel (MariaDB)
-
 ## Descripción General
 
 Estructura completa de la base de datos para el CMS Laravel con **MariaDB**. Incluye todas las tablas necesarias para gestionar artículos, secciones, etiquetas, banners, configuración y contactos.
@@ -602,120 +600,135 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 ## Diagramas de Relaciones
 
+```mermaid
+erDiagram
+  direction TB
+
+  %% --- RELACIONES (guían el layout) ---
+
+  %% Núcleo editorial
+  SECTIONS        ||--o{ SECTIONS    : jerarquia
+  SECTIONS        ||--o{ ARTICLES    : organiza
+  USERS           ||--o{ ARTICLES    : crea
+  ARTICLES        ||--o{ ARTICLE_TAG : relaciona
+  TAGS            ||--o{ ARTICLE_TAG : clasifica
+
+  %% Interacción y comentarios
+  ARTICLES        ||--o{ COMMENTS    : recibe
+  PAGES           ||--o{ COMMENTS    : recibe
+  USERS           ||--o{ COMMENTS    : autor
+  COMMENTS        ||--o{ COMMENTS    : responde
+
+  %% Trazabilidad
+  USERS           ||--o{ MEDIA       : sube
+  USERS           ||--o{ AUDIT_LOGS  : registra
+
+  %% --- ATRIBUTOS ---
+
+  USERS {
+    bigint  id    PK
+    varchar email
+    enum    role  "admin | editor | viewer"
+  }
+
+  SECTIONS {
+    bigint  id        PK
+    bigint  parent_id FK
+    varchar name
+    varchar slug
+  }
+
+  ARTICLES {
+    bigint  id         PK
+    bigint  user_id    FK
+    bigint  section_id FK
+    varchar title
+    enum    status     "draft | scheduled | published | archived"
+  }
+
+  TAGS {
+    bigint  id   PK
+    varchar name
+    varchar slug
+  }
+
+  ARTICLE_TAG {
+    bigint article_id FK
+    bigint tag_id     FK
+  }
+
+  PAGES {
+    bigint  id     PK
+    varchar title
+    varchar slug
+    enum    status "draft | published | archived"
+  }
+
+  COMMENTS {
+    bigint  id               PK
+    bigint  user_id          FK
+    bigint  parent_id        FK
+    bigint  commentable_id
+    varchar commentable_type
+    enum    status           "pending | approved | rejected | spam"
+  }
+
+  MEDIA {
+    bigint  id        PK
+    bigint  user_id   FK
+    varchar file_name
+    varchar mime_type
+  }
+
+  AUDIT_LOGS {
+    bigint  id             PK
+    bigint  user_id        FK
+    varchar auditable_type
+    bigint  auditable_id
+    enum    action         "create | update | delete | restore"
+  }
+
+  BANNERS {
+    bigint  id       PK
+    enum    type     "image | code"
+    enum    position "header | sidebar | between_articles | footer"
+    boolean active
+  }
+
+  HOMEPAGE_CONFIG {
+    tinyint id                     PK
+    tinyint featured_articles_count
+    tinyint latest_articles_count
+    boolean banners_enabled
+  }
+
+  SETTINGS {
+    tinyint id               PK
+    varchar site_name
+    varchar contact_email
+    boolean maintenance_mode
+  }
+
+  NOTICES {
+    bigint  id       PK
+    enum    type     "info | warning | error | success"
+    int     priority
+    boolean active
+  }
+
+  CONTACT_MESSAGES {
+    bigint    id         PK
+    varchar   email
+    enum      status     "new | read | replied | archived | spam"
+    timestamp created_at
+  }
 ```
-┌─────────────┐
-│   users     │
-├─────────────┤
-│ id (PK)     │
-│ name        │
-│ email       │
-│ password    │
-│ role        │
-└─────────────┘
-       │
-       ├─────────────────────────┐
-       ▼                         ▼
-┌─────────────────┐      ┌──────────────┐
-│   articles      │      │  sections    │
-├─────────────────┤      ├──────────────┤
-│ id (PK)         │      │ id (PK)      │
-│ user_id (FK)    │      │ name         │
-│ section_id (FK) │      │ slug         │
-│ title           │      │ description  │
-│ slug            │      │ position     │
-│ content         │      │ active       │
-│ featured        │      └──────────────┘
-│ status          │
-│ published_at    │
-└─────────────────┘
-       │
-       └──────────────────────────┐
-                                  ▼
-                         ┌──────────────────┐
-                         │  article_tag     │
-                         ├──────────────────┤
-                         │ id (PK)          │
-                         │ article_id (FK)  │
-                         │ tag_id (FK)      │
-                         └──────────────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │     tags         │
-                         ├──────────────────┤
-                         │ id (PK)          │
-                         │ name             │
-                         │ slug             │
-                         │ description      │
-                         │ active           │
-                         └──────────────────┘
 
-┌──────────────┐      ┌──────────────────┐      ┌────────────────┐
-│   banners    │      │ homepage_config  │      │   settings     │
-├──────────────┤      ├──────────────────┤      ├────────────────┤
-│ id (PK)      │      │ id (PK)          │      │ id (PK)        │
-│ title        │      │ featured_count   │      │ site_name      │
-│ image_url    │      │ latest_count     │      │ logo_url       │
-│ link_url     │      │ sections_display │      │ contact_email  │
-│ position     │      │ banners_enabled  │      │ social_media   │
-│ active       │      └──────────────────┘      └────────────────┘
-│ starts_at    │
-│ ends_at      │
-└──────────────┘
-
-┌─────────────────┐      ┌──────────────────┐
-│    notices      │      │ contact_messages │
-├─────────────────┤      ├──────────────────┤
-│ id (PK)         │      │ id (PK)          │
-│ title           │      │ name             │
-│ message         │      │ email            │
-│ type            │      │ subject          │
-│ active          │      │ message          │
-│ starts_at       │      │ read             │
-│ ends_at         │      │ replied          │
-└─────────────────┘      │ reply_message    │
-                         │ created_at       │
-                         └──────────────────┘
-
-┌────────────────┐      ┌──────────────────┐
-│     media      │      │   comments       │
-├────────────────┤      ├──────────────────┤
-│ id (PK)        │      │ id (PK)          │
-│ user_id (FK)   │      │ article_id (FK)  │
-│ name           │      │ user_id (FK)     │
-│ file_path      │      │ name             │
-│ mime_type      │      │ email            │
-│ size           │      │ content          │
-│ created_at     │      │ status           │
-└────────────────┘      │ created_at       │
-                        └──────────────────┘
-       ▲
-       │                ┌──────────────────┐
-       └────────────────│     pages        │
-      (user_id)        ├──────────────────┤
-                        │ id (PK)          │
-                        │ title            │
-                        │ slug             │
-                        │ content          │
-                        │ featured_image   │
-                        │ published        │
-                        │ position         │
-                        └──────────────────┘
-
-┌──────────────────────┐
-│   audit_logs         │
-├──────────────────────┤
-│ id (PK)              │
-│ user_id (FK)         │
-│ auditable_type       │
-│ auditable_id         │
-│ action               │
-│ old_values (JSON)    │
-│ new_values (JSON)    │
-│ ip_address           │
-│ created_at           │
-└──────────────────────┘
-```
+**Lectura rápida del diagrama:**
+- El bloque editorial principal conecta users, sections, articles, tags y article_tag.
+- comments es polimórfica y puede colgar de articles o pages, además de soportar respuestas anidadas.
+- homepage_config y settings siguen visibles como tablas singleton de configuración.
+- banners, notices y contact_messages quedan como tablas operativas independientes dentro del ecosistema del CMS.
 
 ---
 
