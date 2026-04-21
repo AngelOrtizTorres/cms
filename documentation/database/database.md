@@ -1,8 +1,8 @@
 # Base de datos del proyecto
 
 ## Índice
-- [Introducción](#introducción)
-- [Elección de la base de datos](#elección-de-la-base-de-datos)
+1. [Introducción](#introducción)
+2. [Elección de la base de datos](#elección-de-la-base-de-datos)
 
 ## Introducción
 

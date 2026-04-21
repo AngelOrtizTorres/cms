@@ -1,4 +1,4 @@
 # cms
 
 ## Índice
-- [Base de datos](documentation/database/database.md)
+1. [Base de datos](documentation/database/database.md)
