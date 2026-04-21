@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS articles (
   excerpt TEXT NULL,
   content LONGTEXT NOT NULL,
   featured_image VARCHAR(255) NULL,
+  gallery_images JSON NULL,
   featured BOOLEAN DEFAULT false,
   status ENUM('draft', 'scheduled', 'published', 'archived') DEFAULT 'draft',
   published_at TIMESTAMP NULL,
@@ -137,6 +138,7 @@ CREATE TABLE IF NOT EXISTS articles (
 - `excerpt`: Resumen breve (para listados)
 - `content`: Contenido completo (HTML permitido)
 - `featured_image`: URL de la imagen destacada
+- `gallery_images`: Array JSON de URLs de imágenes en galería (ej: ["img1.jpg", "img2.jpg"])
 - `featured`: Marcado como destacado para portada
 - `status`: Estado (draft, scheduled, published, archived)
 - `published_at`: Fecha/hora de publicación
@@ -187,7 +189,9 @@ CREATE TABLE IF NOT EXISTS article_tag (
   
   PRIMARY KEY (article_id, tag_id),
   CONSTRAINT fk_article_tag_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-  CONSTRAINT fk_article_tag_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+  CONSTRAINT fk_article_tag_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+  KEY idx_article_id (article_id),
+  KEY idx_tag_id (tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -405,6 +409,149 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 
 ---
 
+### 11. media
+
+Tabla para gestionar archivos y medios subidos.
+
+```sql
+CREATE TABLE IF NOT EXISTS media (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(255) NOT NULL UNIQUE,
+  mime_type VARCHAR(255),
+  size BIGINT UNSIGNED,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  CONSTRAINT fk_media_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  KEY idx_user_id (user_id),
+  KEY idx_created_at (created_at),
+  KEY idx_mime_type (mime_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campos:**
+- `id`: Identificador único
+- `user_id`: Usuario que subió el archivo (FK)
+- `name`: Nombre original del archivo
+- `file_path`: Ruta del archivo en el servidor
+- `mime_type`: Tipo MIME (image/jpeg, application/pdf, etc.)
+- `size`: Tamaño en bytes
+- `created_at`: Fecha de carga
+
+---
+
+### 12. comments
+
+Tabla para almacenar comentarios en artículos.
+
+```sql
+CREATE TABLE IF NOT EXISTS comments (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  article_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NULL,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  CONSTRAINT fk_comments_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+  CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  KEY idx_article_id (article_id),
+  KEY idx_user_id (user_id),
+  KEY idx_status (status),
+  KEY idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campos:**
+- `id`: Identificador único
+- `article_id`: Artículo comentado (FK)
+- `user_id`: Usuario autenticado que comentó (NULL si es anónimo)
+- `name`: Nombre del comentarista
+- `email`: Email del comentarista
+- `content`: Contenido del comentario
+- `status`: Estado (pending, approved, rejected)
+- `created_at`: Fecha del comentario
+- `updated_at`: Fecha de última modificación
+
+---
+
+### 13. pages
+
+Tabla para almacenar páginas estáticas (About, Privacy, Terms, etc.).
+
+```sql
+CREATE TABLE IF NOT EXISTS pages (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  content LONGTEXT NOT NULL,
+  featured_image VARCHAR(255) NULL,
+  published BOOLEAN DEFAULT false,
+  position INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  KEY idx_slug (slug),
+  KEY idx_published (published),
+  KEY idx_position (position)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campos:**
+- `id`: Identificador único
+- `title`: Título de la página
+- `slug`: URL amigable (ej: "about", "privacy")
+- `content`: Contenido de la página (HTML permitido)
+- `featured_image`: Imagen de portada (opcional)
+- `published`: Página visible en el frontend
+- `position`: Orden de visualización en menús
+- `created_at`: Fecha de creación
+- `updated_at`: Fecha de última actualización
+
+---
+
+### 14. audit_logs
+
+Tabla para registrar cambios y acciones realizadas en el CMS.
+
+```sql
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NULL,
+  model VARCHAR(255) NOT NULL,
+  model_id BIGINT UNSIGNED NOT NULL,
+  action ENUM('create', 'update', 'delete') NOT NULL,
+  old_values JSON NULL,
+  new_values JSON NULL,
+  ip_address VARCHAR(45) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  KEY idx_user_id (user_id),
+  KEY idx_model (model),
+  KEY idx_model_id (model_id),
+  KEY idx_action (action),
+  KEY idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campos:**
+- `id`: Identificador único
+- `user_id`: Usuario que realizó la acción (NULL si sistema)
+- `model`: Nombre del modelo afectado (Article, User, etc.)
+- `model_id`: ID del registro modificado
+- `action`: Tipo de acción (create, update, delete)
+- `old_values`: Valores anteriores en JSON
+- `new_values`: Valores nuevos en JSON
+- `ip_address`: Dirección IP del usuario
+- `created_at`: Fecha/hora de la acción
+
+---
+
 ## Diagramas de Relaciones
 
 ```
@@ -481,13 +628,52 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 └─────────────────┘      │ reply_message    │
                          │ created_at       │
                          └──────────────────┘
+
+┌────────────────┐      ┌──────────────────┐
+│     media      │      │   comments       │
+├────────────────┤      ├──────────────────┤
+│ id (PK)        │      │ id (PK)          │
+│ user_id (FK)   │      │ article_id (FK)  │
+│ name           │      │ user_id (FK)     │
+│ file_path      │      │ name             │
+│ mime_type      │      │ email            │
+│ size           │      │ content          │
+│ created_at     │      │ status           │
+└────────────────┘      │ created_at       │
+                        └──────────────────┘
+       ▲
+       │                ┌──────────────────┐
+       └────────────────│     pages        │
+      (user_id)        ├──────────────────┤
+                        │ id (PK)          │
+                        │ title            │
+                        │ slug             │
+                        │ content          │
+                        │ featured_image   │
+                        │ published        │
+                        │ position         │
+                        └──────────────────┘
+
+┌──────────────────────┐
+│   audit_logs         │
+├──────────────────────┤
+│ id (PK)              │
+│ user_id (FK)         │
+│ model                │
+│ model_id             │
+│ action               │
+│ old_values (JSON)    │
+│ new_values (JSON)    │
+│ ip_address           │
+│ created_at           │
+└──────────────────────┘
 ```
 
 ---
 
-## Índices Optimizados
+## Índices Pivote
 
-Se han creado índices para optimizar consultas frecuentes:
+Se han diseñado y creado algunas tablas pivote para ayudar a la lectura de consultas y aumentar el rendimiento de la base de datos.
 
 | Tabla | Índice | Propósito |
 |-------|--------|----------|
@@ -505,6 +691,8 @@ Se han creado índices para optimizar consultas frecuentes:
 | articles | idx_featured | Artículos destacados |
 | tags | idx_slug | Búsqueda por URL amigable |
 | tags | idx_active | Filtrado de etiquetas activas |
+| article_tag | idx_article_id | Búsquedas de artículos por tag |
+| article_tag | idx_tag_id | Búsquedas de tags por artículo |
 | banners | idx_position | Banners por posición |
 | banners | idx_active | Filtrado de banners activos |
 | banners | idx_display_order | Ordenamiento de visualización |
@@ -515,6 +703,21 @@ Se han creado índices para optimizar consultas frecuentes:
 | contact_messages | idx_read | Filtrado de no leídos |
 | contact_messages | idx_created_at | Ordenamiento cronológico |
 | contact_messages | idx_replied | Filtrado de sin responder |
+| media | idx_user_id | Archivos por usuario |
+| media | idx_created_at | Ordenamiento por fecha de carga |
+| media | idx_mime_type | Filtrado por tipo de archivo |
+| comments | idx_article_id | Comentarios por artículo |
+| comments | idx_user_id | Comentarios por usuario |
+| comments | idx_status | Filtrado por estado de comentario |
+| comments | idx_created_at | Ordenamiento cronológico |
+| pages | idx_slug | Búsqueda por URL amigable |
+| pages | idx_published | Filtrado de páginas publicadas |
+| pages | idx_position | Ordenamiento en menús |
+| audit_logs | idx_user_id | Acciones por usuario |
+| audit_logs | idx_model | Cambios por modelo |
+| audit_logs | idx_model_id | Cambios en un registro específico |
+| audit_logs | idx_action | Filtrado por tipo de acción |
+| audit_logs | idx_created_at | Ordenamiento cronológico de auditoría |
 
 ---
 
@@ -532,6 +735,10 @@ php artisan make:model Notice -m
 php artisan make:model ContactMessage -m
 php artisan make:model HomepageConfig -m
 php artisan make:model Setting -m
+php artisan make:model Media -m
+php artisan make:model Comment -m
+php artisan make:model Page -m
+php artisan make:model AuditLog -m
 ```
 
 ---
@@ -573,6 +780,57 @@ public function articles() {
 ```php
 public function articles() {
     return $this->belongsToMany(Article::class, 'article_tag');
+}
+```
+
+**User.php (relaciones adicionales)**
+```php
+public function articles() {
+    return $this->hasMany(Article::class);
+}
+
+public function media() {
+    return $this->hasMany(Media::class);
+}
+
+public function comments() {
+    return $this->hasMany(Comment::class);
+}
+
+public function auditLogs() {
+    return $this->hasMany(AuditLog::class);
+}
+```
+
+**Media.php**
+```php
+public function user() {
+    return $this->belongsTo(User::class);
+}
+```
+
+**Comment.php**
+```php
+public function article() {
+    return $this->belongsTo(Article::class);
+}
+
+public function user() {
+    return $this->belongsTo(User::class)->nullable();
+}
+```
+
+**Article.php (relaciones adicionales)**
+```php
+public function comments() {
+    return $this->hasMany(Comment::class);
+}
+```
+
+**AuditLog.php**
+```php
+public function user() {
+    return $this->belongsTo(User::class)->nullable();
 }
 ```
 
@@ -624,6 +882,7 @@ public function articles() {
 
 ### JSON Fields
 - `sections_displayed` en homepage_config: Array de IDs de secciones (ej: `[1,2,3,4]`)
+- `old_values` y `new_values` en audit_logs: Capturan cambios en formato JSON para trazabilidad completa
 - Permite flexibilidad futura para configuraciones complejas
 
 ---
