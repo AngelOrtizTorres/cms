@@ -1,3 +1,4 @@
+````bash
 ── vertex-cms
     ├── backend-api/            <-- Lógica de Servidor (Laravel)
     │   ├── app/
@@ -33,3 +34,5 @@
         │   └── lib/             <-- Librerías auxiliares y utilidades técnicas
         ├── public/              <-- Recursos estáticos del servidor
         └── next.config.js       <-- Configuración del entorno de ejecución
+
+````
