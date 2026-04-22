@@ -4,13 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateContactMessagesTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('contact_messages', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('name');
             $table->string('email');
             $table->string('phone_number', 20)->nullable();
@@ -25,14 +24,14 @@ class CreateContactMessagesTable extends Migration
             $table->string('source_url')->nullable();
             $table->boolean('privacy_accepted')->default(false);
             $table->timestamps();
-
-            $table->index('email', 'idx_email');
-            $table->index(['status', 'created_at'], 'idx_status_created');
+            
+            $table->index('email');
+            $table->index(['status', 'created_at']);
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('contact_messages');
     }
-}
+};

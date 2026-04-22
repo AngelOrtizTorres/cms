@@ -4,13 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateNoticesTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('notices', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('title');
             $table->text('message');
             $table->enum('type', ['info', 'warning', 'error', 'success'])->default('info');
@@ -24,13 +23,13 @@ class CreateNoticesTable extends Migration
             $table->timestamp('ends_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
-
-            $table->index(['active', 'priority', 'starts_at', 'ends_at', 'deleted_at'], 'idx_active_priority_dates');
+            
+            $table->index(['active', 'priority', 'starts_at', 'ends_at', 'deleted_at']);
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('notices');
     }
-}
+};

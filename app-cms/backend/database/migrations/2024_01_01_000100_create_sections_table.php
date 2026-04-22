@@ -4,13 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateSectionsTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('sections', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->bigIncrements('id');
+            $table->id();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('name')->unique();
             $table->string('slug')->unique();
@@ -21,14 +20,14 @@ class CreateSectionsTable extends Migration
             $table->boolean('active')->default(true);
             $table->softDeletes();
             $table->timestamps();
-
-            $table->foreign('parent_id', 'fk_sections_parent')->references('id')->on('sections')->onDelete('set null');
-            $table->index(['active', 'position', 'deleted_at'], 'idx_active_position');
+            
+            $table->foreign('parent_id')->references('id')->on('sections')->onDelete('set null');
+            $table->index(['active', 'position', 'deleted_at']);
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('sections');
     }
-}
+};

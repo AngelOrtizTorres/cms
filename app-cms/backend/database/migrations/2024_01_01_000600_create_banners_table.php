@@ -4,13 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBannersTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('banners', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->bigIncrements('id');
+            $table->id();
             $table->string('title');
             $table->enum('type', ['image', 'code'])->default('image');
             $table->string('image_url')->nullable();
@@ -25,13 +24,13 @@ class CreateBannersTable extends Migration
             $table->unsignedInteger('clicks')->default(0);
             $table->unsignedInteger('impressions')->default(0);
             $table->timestamps();
-
-            $table->index(['position', 'active', 'display_order', 'deleted_at'], 'idx_position_active_order');
+            
+            $table->index(['position', 'active', 'display_order', 'deleted_at']);
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('banners');
     }
-}
+};

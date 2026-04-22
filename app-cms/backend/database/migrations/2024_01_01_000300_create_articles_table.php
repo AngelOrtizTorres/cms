@@ -4,13 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateArticlesTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('articles', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->bigIncrements('id');
+            $table->id();
             $table->unsignedBigInteger('section_id');
             $table->unsignedBigInteger('user_id');
             $table->string('title');
@@ -26,19 +25,19 @@ class CreateArticlesTable extends Migration
             $table->timestamp('published_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
-
-            $table->foreign('section_id', 'fk_articles_section')->references('id')->on('sections')->onDelete('restrict');
-            $table->foreign('user_id', 'fk_articles_user')->references('id')->on('users')->onDelete('restrict');
-
-            $table->index(['status', 'published_at', 'deleted_at'], 'idx_status_published');
-            $table->index(['section_id', 'status', 'published_at'], 'idx_section_status_date');
-            $table->index(['featured', 'status'], 'idx_featured_status');
-            $table->index('user_id', 'idx_user_id');
+            
+            $table->foreign('section_id')->references('id')->on('sections')->onDelete('restrict');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
+            
+            $table->index(['status', 'published_at', 'deleted_at']);
+            $table->index(['section_id', 'status', 'published_at']);
+            $table->index(['featured', 'status']);
+            $table->index('user_id');
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('articles');
     }
-}
+};
