@@ -49,11 +49,15 @@ export async function getArticles(params: {
   page?: number;
   per_page?: number;
   sort?: string;
+  section_id?: number;
+  search?: string;
 } = {}) {
   const query = new URLSearchParams();
   if (params.page) query.append('page', params.page.toString());
   if (params.per_page) query.append('per_page', params.per_page.toString());
   if (params.sort) query.append('sort', params.sort);
+  if (params.section_id) query.append('section_id', params.section_id.toString());
+  if (params.search) query.append('search', params.search);
 
   const response = await apiGet<PaginatedResponse<Article>>(
     `/articles?${query.toString()}`
