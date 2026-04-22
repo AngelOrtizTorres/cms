@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamp('ends_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
-            
+
             $table->index(['active', 'priority', 'starts_at', 'ends_at', 'deleted_at']);
         });
     }

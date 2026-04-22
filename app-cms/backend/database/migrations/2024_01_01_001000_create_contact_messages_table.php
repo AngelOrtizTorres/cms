@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('source_url')->nullable();
             $table->boolean('privacy_accepted')->default(false);
             $table->timestamps();
-            
+
             $table->index('email');
             $table->index(['status', 'created_at']);
         });

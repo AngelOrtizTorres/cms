@@ -24,7 +24,7 @@ return new class extends Migration
             $table->unsignedInteger('clicks')->default(0);
             $table->unsignedInteger('impressions')->default(0);
             $table->timestamps();
-            
+
             $table->index(['position', 'active', 'display_order', 'deleted_at']);
         });
     }

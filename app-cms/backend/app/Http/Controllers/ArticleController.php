@@ -68,7 +68,7 @@ class ArticleController extends Controller
             // Transformar respuesta al formato esperado por el frontend
             $articles = $pagination->items();
             $transformedData = [];
-            
+
             foreach ($articles as $article) {
                 $transformedData[] = [
                     'id' => $article->id,

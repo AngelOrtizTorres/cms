@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->string('folder', 100)->default('/');
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->index('user_id');
             $table->index(['mime_type', 'folder']);

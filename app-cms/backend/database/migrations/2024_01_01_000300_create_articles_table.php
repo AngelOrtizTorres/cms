@@ -25,10 +25,10 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
-            
+
             $table->foreign('section_id')->references('id')->on('sections')->onDelete('restrict');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
-            
+
             $table->index(['status', 'published_at', 'deleted_at']);
             $table->index(['section_id', 'status', 'published_at']);
             $table->index(['featured', 'status']);
