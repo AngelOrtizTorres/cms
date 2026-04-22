@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getArticles, Article, PaginatedResponse } from '@/lib/services/articles';
+import Link from 'next/link';
+import { getArticles, Article } from '@/lib/services/articles';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ArticlesExample() {
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,53 +95,75 @@ export default function ArticlesExample() {
       {!loading && articles.length > 0 && (
         <div className="space-y-4">
           {articles.map((article) => (
-            <div
+            <Link
               key={article.id}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow"
+              href={`/articles/${article.slug}`}
+              className="block group"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {article.title}
-                    </h2>
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
-                        article.status === 'published'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                      }`}
-                    >
-                      {article.status}
-                    </span>
-                    {article.featured && (
-                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
-                        Destacado
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all cursor-pointer">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {article.title}
+                      </h2>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${
+                          article.status === 'published'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                        }`}
+                      >
+                        {article.status}
                       </span>
+                      {article.featured && (
+                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                          ⭐ Destacado
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                      {article.excerpt}
+                    </p>
+
+                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                      {article.section && (
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                          📁 {article.section.name}
+                        </span>
+                      )}
+                      {article.user && (
+                        <span>✍️ {article.user.name}</span>
+                      )}
+                      <span>📅 {new Date(article.created_at).toLocaleDateString('es-ES')}</span>
+                    </div>
+
+                    {article.tags && article.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {article.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded"
+                          >
+                            #{tag.name}
+                          </span>
+                        ))}
+                        {article.tags.length > 3 && (
+                          <span className="text-xs text-gray-500 px-2 py-1">
+                            +{article.tags.length - 3}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  <p className="text-gray-600 dark:text-gray-400 mb-3">{article.excerpt}</p>
-
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                    <span>ID: {article.id}</span>
-                    <span>Slug: {article.slug}</span>
-                    <span>{new Date(article.created_at).toLocaleDateString('es-ES')}</span>
+                  <div className="ml-4 text-blue-600 group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300">
+                    →
                   </div>
                 </div>
-
-                {isAuthenticated && (
-                  <div className="ml-4 flex gap-2">
-                    <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
-                      Editar
-                    </button>
-                    <button className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
-                      Eliminar
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
