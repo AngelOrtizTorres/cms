@@ -186,6 +186,29 @@ CREATE TABLE IF NOT EXISTS tags (
 
 ---
 
+### 5. article_section
+
+Tabla pivote para relación many-to-many entre artículos y secciones.
+
+```sql
+CREATE TABLE IF NOT EXISTS article_section (
+  article_id BIGINT UNSIGNED NOT NULL,
+  section_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (article_id, section_id),
+  CONSTRAINT fk_article_section_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+  CONSTRAINT fk_article_section_section FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE,
+  KEY idx_section_id (section_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campos:**
+- **article_id**: FK al artículo.
+- **section_id**: FK a la sección.
+- **created_at**: Fecha de asignación.
+
+---
+
 ### 5. article_tag
 
 Tabla pivote para relación many-to-many entre artículos y etiquetas.
@@ -206,80 +229,6 @@ CREATE TABLE IF NOT EXISTS article_tag (
 - **article_id**: FK al artículo.
 - **tag_id**: FK a la etiqueta.
 - **created_at**: Fecha de asignación.
-
----
-
-### 6. banners
-
-Tabla para almacenar banners publicitarios.
-
-```sql
-CREATE TABLE IF NOT EXISTS banners (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  title VARCHAR(255) NOT NULL,  
-  type ENUM('image', 'code') NOT NULL DEFAULT 'image',  
-  image_url VARCHAR(255) NULL,   -- Ahora permite NULL para banners de tipo 'code'
-  link_url VARCHAR(255) NULL,    -- Opcional para imágenes, irrelevante para código
-  code_content TEXT NULL,        -- Nuevo: Aquí se guarda el script o HTML puro  
-  position ENUM('header', 'sidebar', 'between_articles', 'footer') NOT NULL,
-  display_order INT DEFAULT 0,  
-  active BOOLEAN DEFAULT true,
-  deleted_at TIMESTAMP NULL,     -- Consistencia: Soft Deletes
-  starts_at TIMESTAMP NULL,      -- Programación de inicio
-  ends_at TIMESTAMP NULL,        -- Programación de fin (expiración)
-  clicks INT UNSIGNED DEFAULT 0,
-  impressions INT UNSIGNED DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_position_active_order (position, active, display_order, deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-**Campos:**
-- **id**: Identificador único.
-- **title**: Nombre de la campaña.
-- **type**: (image, code).
-- **image_url**: Ruta de imagen.
-- **link_url**: URL destino.
-- **code_content**: HTML/script externo.
-- **position**: Ubicación (header, sidebar).
-- **display_order**: Prioridad.
-- **active**: Estado.
-- **deleted_at**: Borrado lógico.
-- **starts_at / ends_at**: Rango de fechas.
-- **clicks / impressions**: Métricas.
-
----
-
-### 7. homepage_config
-
-Tabla para almacenar la configuración de la portada (singleton - un único registro).
-
-```sql
-CREATE TABLE IF NOT EXISTS homepage_config (
-  id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
-  meta_title VARCHAR(255) NULL,
-  meta_description VARCHAR(160) NULL,  
-  featured_articles_count TINYINT UNSIGNED DEFAULT 6,
-  latest_articles_count TINYINT UNSIGNED DEFAULT 10,  
-  layout_schema JSON NULL, 
-  banners_enabled BOOLEAN DEFAULT true,
-  show_notices BOOLEAN DEFAULT true,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT uc_homepage_config_single CHECK (id = 1)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-INSERT IGNORE INTO homepage_config (id, meta_title, featured_articles_count, latest_articles_count) 
-VALUES (1, 'Portada Principal', 6, 10);
-```
-
-**Campos:**
-- **id**: Siempre 1.
-- **meta_title / meta_description**: SEO home.
-- **featured_articles_count**: Nº destacados.
-- **latest_articles_count**: Nº recientes.
-- **layout_schema**: JSON de diseño.
-- **banners_enabled**: Toggle publicidad.
-- **show_notices**: Toggle avisos.
 
 ---
 
@@ -516,45 +465,6 @@ CREATE TABLE IF NOT EXISTS comments (
 - **content**: Texto.
 - **status**: (pending, approved, rejected, spam).
 - **ip_address / user_agent**: Auditoría.
-- **deleted_at**: Soft delete.
-
----
-
-### 13. pages
-
-Tabla para almacenar páginas estáticas (About, Privacy, Terms, etc.).
-
-```sql
-CREATE TABLE IF NOT EXISTS pages (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  -- Identidad y Contenido
-  title VARCHAR(255) NOT NULL,
-  slug VARCHAR(255) NOT NULL UNIQUE, -- Ya genera un índice único
-  content LONGTEXT NOT NULL,
-  featured_image VARCHAR(255) NULL,
-  layout VARCHAR(50) DEFAULT 'default',
-  meta_title VARCHAR(255) NULL,
-  meta_description VARCHAR(160) NULL,
-  -- Control de Estado y Orden
-  status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
-  position INT DEFAULT 0, -- Útil para ordenar páginas en el footer o menús
-  deleted_at TIMESTAMP NULL, -- Soft Deletes para seguridad
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_status_position (status, position, deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-**Campos:**
-- **id**: Identificador único.
-- **title**: Título.
-- **slug**: URL amigable.
-- **content**: HTML.
-- **featured_image**: Imagen.
-- **layout**: Plantilla (landing, default).
-- **meta_title / meta_description**: SEO.
-- **status**: (draft, published, archived).
-- **position**: Orden.
 - **deleted_at**: Soft delete.
 
 ---
