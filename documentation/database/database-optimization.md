@@ -49,7 +49,7 @@ Se diseñaron índices específicos para los patrones de lectura más frecuentes
 
 ### Vistas materializadas simuladas
 
-Debido a que de forma nativa MariaDB no soporta vistas materializadas, se pueden implementar tablas de resumen actualizadas periódicamente mediante eventos programados o tareas cron para consultas de alta carga:
+Debido a que de forma nativa MariaDB no soporta vistas materializadas, se pueden implementar tablas de resumen actualizadas periódicamente mediante eventos programados o tareas cron para consultas de alta carga.
 
 ### Caching
 

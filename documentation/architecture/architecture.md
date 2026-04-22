@@ -109,16 +109,16 @@ MariaDB
 ### Stack tecnológico para la implementación de la Arquitectura Hexagonal:
 
 | Capa / Componente                 | Tecnología     | Descripción                                   |
-|----------------------------------|----------------|-----------------------------------------------|
-| Backend principal                | Laravel        | API REST que gestiona la lógica de negocio   |
-| Base de datos                    | MariaDB        | Almacenamiento de datos relacional            |
-| Frontend público y CMS UI       | React          | Interfaz de usuario para clientes y CMS       |
-| Backend de composición / SSR    | Next.js        | BFF (Backend For Frontend) para SSR y orquestación |
+|-----------------------------------|----------------|-----------------------------------------------|
+| Backend principal                 | Laravel        | API REST que gestiona la lógica de negocio    |
+| Base de datos                     | MariaDB        | Almacenamiento de datos relacional            |
+| Frontend público y CMS UI         | React          | Interfaz de usuario para clientes y CMS       |
+| Backend de composición / SSR     |  Next.js        | BFF (Backend For Frontend) para SSR y orquestación |
 
 ### Partes de la arquitectura elegida con el Stack:
 ### **1. Núcleo del dominio (Laravel)**
 
-El núcleo del sistema contiene la lógica de negocio del CMS y es independiente de cualquier framework o base de datos.
+El núcleo del sistema contiene la lógica de negocio del CMS y es independiente de cualquier framework o base de datos. 
 
 Incluye:
 
