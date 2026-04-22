@@ -10,7 +10,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('settings', function (Blueprint $table) {
-            $table->unsignedTinyInteger('id')->primary()->default(1);
+            $table->engine = 'InnoDB';
+            $table->tinyInteger('id')->unsigned()->default(1);
             $table->string('site_name')->default('Mi CMS');
             $table->string('site_description', 160)->nullable();
             $table->string('logo_url')->nullable();
@@ -26,13 +27,17 @@ return new class extends Migration
             $table->text('footer_scripts')->nullable();
             $table->boolean('maintenance_mode')->default(false);
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->primary('id');
         });
 
-        // Insert default settings
+        try {
+            DB::statement('ALTER TABLE settings ADD CONSTRAINT uc_settings_single CHECK (id = 1)');
+        } catch (\Exception $e) {}
+
         DB::table('settings')->insertOrIgnore([
-            'id' => 1,
-            'site_name' => 'Mi CMS',
-            'social_links' => '{}',
+            'id'           => 1,
+            'site_name'    => 'Mi CMS',
+            'social_links' => json_encode(new \stdClass()),
         ]);
     }
 

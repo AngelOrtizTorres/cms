@@ -8,23 +8,29 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tags', function (Blueprint $table) {
-            $table->id();
+        Schema::create('sections', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('name')->unique();
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->string('meta_title')->nullable();
             $table->string('meta_description', 160)->nullable();
+            $table->integer('position')->default(0);
             $table->boolean('active')->default(true);
             $table->softDeletes();
             $table->timestamps();
 
-            $table->index(['active', 'deleted_at']);
+            $table->foreign('parent_id', 'fk_sections_parent')->references('id')->on('sections')->onDelete('set null');
+            $table->index(['active', 'position', 'deleted_at'], 'idx_active_position');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tags');
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('sections');
+        Schema::enableForeignKeyConstraints();
     }
 };
