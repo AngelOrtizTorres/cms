@@ -1,51 +1,35 @@
 ── vertex-cms
-    ├── backend-api/
+    ├── backend-api/            <-- Lógica de Servidor (Laravel)
     │   ├── app/
-    │   │   ├── Http/                   <-- ADAPTADORES DE ENTRADA (Adaptadores)
-    │   │   │   ├── Controllers/        <-- Solo reciben el Request y llaman al Use Case
-    │   │   │   ├── Middleware/         <-- CORS, Auth Sanctum
-    │   │   │   └── Resources/          <-- Transformers (JSON format para Next.js)
-    │   │   └── Providers/              <-- Dependency Injection (Vincula Port -> Adapter)
-    │   ├── src/                        <-- EL NÚCLEO (Independiente del Framework)
-    │   │   ├── CMS/                    <-- Contexto delimitado del CMS
-    │   │   │   ├── Domain/             <-- CAPA DE DOMINIO (Núcleo)
-    │   │   │   │   ├── Entities/       <-- Article.php, Banner.php (Clases puras)
-    │   │   │   │   ├── Exceptions/     <-- ArticleNotFoundException.php
-    │   │   │   │   └── Ports/          <-- PUERTOS DE SALIDA (Interfaces)
-    │   │   │   │       ├── ArticleRepositoryInterface.php
-    │   │   │   │       └── StorageInterface.php
-    │   │   │   ├── Application/        <-- CAPA DE APLICACIÓN (Casos de Uso)
-    │   │   │   │   ├── UseCases/       <-- PublishArticle.php, CreateBanner.php
-    │   │   │   │   └── DTOs/           <-- Data Transfer Objects
-    │   │   │   └── Infrastructure/     <-- CAPA DE INFRAESTRUCTURA (Adaptadores de Salida)
-    │   │   │       ├── Persistence/    <-- EloquentArticleRepository.php (MariaDB)
-    │   │   │       ├── Services/       <-- S3StorageAdapter.php, MailgridAdapter.php
-    │   │   │       └── Models/         <-- Modelos de Eloquent (Solo para persistencia)
-    │   ├── database/                   <-- Migraciones y Seeders (Detalle técnico)
+    │   │   ├── Http/           <-- ADAPTADORES DE ENTRADA (Driving Adapters)
+    │   │   │   ├── Controllers/ <-- Transforman peticiones HTTP en llamadas al Núcleo
+    │   │   │   └── Resources/   <-- Adaptadores de salida de datos (Transformación de respuesta)
+    │   │   └── Providers/       <-- INYECCIÓN DE DEPENDENCIAS (Vinculación Puerto-Adaptador)
+    │   ├── src/                 <-- NÚCLEO DE LA APLICACIÓN (Agnóstico al Framework)
+    │   │   ├── CMS/             
+    │   │   │   ├── Domain/      <-- CAPA DE DOMINIO (Lógica de Negocio Pura)
+    │   │   │   │   ├── Entities/   <-- Entidades de Dominio (Modelos de negocio)
+    │   │   │   │   └── Ports/      <-- PUERTOS DE SALIDA (Interfaces / Contratos de Infraestructura)
+    │   │   │   ├── Application/ <-- CAPA DE APLICACIÓN (Casos de Uso)
+    │   │   │   │   └── UseCases/   <-- PUERTOS DE ENTRADA (Orquestación de acciones del sistema)
+    │   │   │   └── Infrastructure/ <-- CAPA DE INFRAESTRUCTURA (Detalles de Implementación)
+    │   │   │       ├── Persistence/ <-- ADAPTADORES DE SALIDA (Implementación MariaDB/Eloquent)
+    │   │   │       ├── Services/    <-- ADAPTADORES DE SALIDA (Servicios Externos: S3, Mail)
+    │   │   │       └── Models/      <-- Modelos de Persistencia (Específicos del ORM)
+    │   ├── database/            <-- Persistencia: Esquema y datos iniciales
     │   └── routes/
-    │       └── api.php                 <-- Definición de puntos de entrada
+    │       └── api.php          <-- Puntos de entrada de la API REST
     │
-    └── frontend-web/
+    └── frontend-web/           <-- Capa de Presentación (Next.js + React)
         ├── src/
-        │   ├── app/                    <-- Next.js App Router
-        │   │   ├── (public)/           <-- Rutas para la web de noticias (SEO)
-        │   │   │   ├── [section]/
-        │   │   │   └── article/[slug]/
-        │   │   ├── (admin)/            <-- Rutas para el Panel React (Protegidas)
-        │   │   │   ├── dashboard/
-        │   │   │   └── banners/
-        │   │   └── api/                <-- BFF (Backend For Frontend)
-        │   │       ├── proxy-laravel/  <-- Rutas que enmascaran la API de Laravel
-        │   │       └── revalidate/     <-- Endpoint para Webhooks de purga de caché
-        │   ├── components/             <-- Componentes React (Atómicos o por feature)
-        │   │   ├── ui/                 <-- Botones, Inputs (Shadcn/UI)
-        │   │   ├── banners/            <-- Lógica de inyección de Banners (Img vs Code)
-        │   │   └── shared/
-        │   ├── services/               <-- Adaptadores de Entrada al Frontend
-        │   │   ├── laravel-api.ts      <-- Cliente Axios/Fetch configurado
-        │   │   └── article-service.ts  <-- Llamadas específicas a la API
-        │   ├── hooks/                  <-- Custom hooks para el estado del CMS
-        │   ├── store/                  <-- Gestión de estado (Zustand o Context)
-        │   └── lib/                    <-- Utilidades (validaciones, formateo de fechas)
-        ├── public/                     <-- Assets estáticos
-        └── next.config.js              <-- Configuración de ISR y dominios de imágenes
+        │   ├── app/             <-- Enrutado y Renderizado de la aplicación
+        │   │   ├── (public)/    <-- Vistas públicas (SEO-driven / ISR)
+        │   │   ├── (admin)/     <-- Vistas administrativas (SPA-like)
+        │   │   └── api/         <-- BFF (Backend For Frontend): Orquestación de servicios
+        │   ├── components/      <-- Unidades de interfaz de usuario (UI)
+        │   ├── services/        <-- ADAPTADORES DE ENTRADA AL FRONTEND (API Client)
+        │   ├── hooks/           <-- Lógica de estado y efectos de React
+        │   ├── store/           <-- Gestión de estado global de la aplicación
+        │   └── lib/             <-- Librerías auxiliares y utilidades técnicas
+        ├── public/              <-- Recursos estáticos del servidor
+        └── next.config.js       <-- Configuración del entorno de ejecución
