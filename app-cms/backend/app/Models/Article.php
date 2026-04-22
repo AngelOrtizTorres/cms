@@ -56,6 +56,17 @@ class Article extends Model
         return $this->belongsToMany(Section::class, 'article_section');
     }
 
+    // Relación de artículos padre e hijos
+    public function parent()
+    {
+        return $this->belongsTo(Article::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Article::class, 'parent_id');
+    }
+
     // Scopes
     public function scopePublished($query)
     {
