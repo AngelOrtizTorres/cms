@@ -13,7 +13,9 @@ export interface Article {
   featured: boolean;
   status: 'draft' | 'published';
   section_id: number;
+  parent_id?: number | null;
   section?: Section;
+  parent?: Article;
   tags?: Tag[];
   created_at: string;
   updated_at: string;

@@ -17,7 +17,7 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Article::with(['section', 'user', 'tags']);
+            $query = Article::with(['section', 'user', 'tags', 'parent']);
 
             // Filtro por estado
             if ($request->has('status')) {
@@ -130,7 +130,7 @@ class ArticleController extends Controller
     {
         $article = Article::where('slug', $slug)
             ->where('status', 'published')
-            ->with(['section', 'user', 'tags'])
+            ->with(['section', 'user', 'tags', 'parent'])
             ->firstOrFail();
 
         return response()->json($article);

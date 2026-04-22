@@ -8,6 +8,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
   const resolvedParams = use(params);
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const [childArticles, setChildArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +33,25 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
         }
 
         setArticle(articleData);
+
+        // Obtener artículos hijos
+        try {
+          const allArticles = await getArticles({ per_page: 100 });
+          let articlesList: Article[] = [];
+
+          if (Array.isArray(allArticles)) {
+            articlesList = allArticles;
+          } else if (allArticles?.data && Array.isArray(allArticles.data)) {
+            articlesList = allArticles.data;
+          }
+
+          const children = articlesList.filter(
+            (a) => a.parent_id === articleData.id && a.id !== articleData.id
+          );
+          setChildArticles(children);
+        } catch {
+          setChildArticles([]);
+        }
 
         // Obtener artículos relacionados de la misma sección
         if (articleData.section_id) {
@@ -104,6 +124,19 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
         <span>/</span>
         <span className="text-gray-900 dark:text-white">{article.title}</span>
       </nav>
+
+      {/* Artículo Padre */}
+      {article.parent_id && article.parent && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Artículo Padre:</p>
+          <Link
+            href={`/articles/${article.parent.slug}`}
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
+          >
+            ← {article.parent.title}
+          </Link>
+        </div>
+      )}
 
       {/* Header */}
       <header className="mb-8">
@@ -206,6 +239,31 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
                     {new Date(relatedArticle.created_at).toLocaleDateString('es-ES')}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Artículos Hijos */}
+      {childArticles.length > 0 && (
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Artículos Hijos</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {childArticles.map((childArticle) => (
+              <Link
+                key={childArticle.id}
+                href={`/articles/${childArticle.slug}`}
+                className="group"
+              >
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                  <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2">
+                    {childArticle.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {childArticle.excerpt}
                   </p>
                 </div>
               </Link>
