@@ -1,55 +1,38 @@
-````mermaid
-graph TD
-    A["vertex-cms"]
+````bash
+── vertex-cms
+    ├── backend-api/            <-- Lógica de Servidor (Laravel)
+    │   ├── app/
+    │   │   ├── Http/           <-- ADAPTADORES DE ENTRADA (Driving Adapters)
+    │   │   │   ├── Controllers/ <-- Transforman peticiones HTTP en llamadas al Núcleo
+    │   │   │   └── Resources/   <-- Adaptadores de salida de datos (Transformación de respuesta)
+    │   │   └── Providers/       <-- INYECCIÓN DE DEPENDENCIAS (Vinculación Puerto-Adaptador)
+    │   ├── src/                 <-- NÚCLEO DE LA APLICACIÓN (Agnóstico al Framework)
+    │   │   ├── CMS/             
+    │   │   │   ├── Domain/      <-- CAPA DE DOMINIO (Lógica de Negocio Pura)
+    │   │   │   │   ├── Entities/   <-- Entidades de Dominio (Modelos de negocio)
+    │   │   │   │   └── Ports/      <-- PUERTOS DE SALIDA (Interfaces / Contratos de Infraestructura)
+    │   │   │   ├── Application/ <-- CAPA DE APLICACIÓN (Casos de Uso)
+    │   │   │   │   └── UseCases/   <-- PUERTOS DE ENTRADA (Orquestación de acciones del sistema)
+    │   │   │   └── Infrastructure/ <-- CAPA DE INFRAESTRUCTURA (Detalles de Implementación)
+    │   │   │       ├── Persistence/ <-- ADAPTADORES DE SALIDA (Implementación MariaDB/Eloquent)
+    │   │   │       ├── Services/    <-- ADAPTADORES DE SALIDA (Servicios Externos: S3, Mail)
+    │   │   │       └── Models/      <-- Modelos de Persistencia (Específicos del ORM)
+    │   ├── database/            <-- Persistencia: Esquema y datos iniciales
+    │   └── routes/
+    │       └── api.php          <-- Puntos de entrada de la API REST
+    │
+    └── frontend-web/           <-- Capa de Presentación (Next.js + React)
+        ├── src/
+        │   ├── app/             <-- Enrutado y Renderizado de la aplicación
+        │   │   ├── (public)/    <-- Vistas públicas (SEO-driven / ISR)
+        │   │   ├── (admin)/     <-- Vistas administrativas (SPA-like)
+        │   │   └── api/         <-- BFF (Backend For Frontend): Orquestación de servicios
+        │   ├── components/      <-- Unidades de interfaz de usuario (UI)
+        │   ├── services/        <-- ADAPTADORES DE ENTRADA AL FRONTEND (API Client)
+        │   ├── hooks/           <-- Lógica de estado y efectos de React
+        │   ├── store/           <-- Gestión de estado global de la aplicación
+        │   └── lib/             <-- Librerías auxiliares y utilidades técnicas
+        ├── public/              <-- Recursos estáticos del servidor
+        └── next.config.js       <-- Configuración del entorno de ejecución
 
-    A --> B["backend-api - Laravel"]
-    A --> C["frontend-web - Next.js + React"]
-
-    %% BACKEND
-    B --> B1["app"]
-    B --> B2["src (Core)"]
-    B --> B3["database"]
-    B --> B4["routes/api.php"]
-
-    %% APP
-    B1 --> B1a["Http - Driving Adapters"]
-    B1a --> B1a1["Controllers"]
-    B1a --> B1a2["Resources"]
-    B1 --> B1b["Providers - DI"]
-
-    %% CORE
-    B2 --> B2a["CMS"]
-
-    %% DOMAIN
-    B2a --> B2a1["Domain"]
-    B2a1 --> B2a1a["Entities"]
-    B2a1 --> B2a1b["Ports (Output)"]
-
-    %% APPLICATION
-    B2a --> B2a2["Application"]
-    B2a2 --> B2a2a["UseCases (Input)"]
-
-    %% INFRASTRUCTURE
-    B2a --> B2a3["Infrastructure"]
-    B2a3 --> B2a3a["Persistence"]
-    B2a3 --> B2a3b["Services"]
-    B2a3 --> B2a3c["Models"]
-
-    %% FRONTEND
-    C --> C1["src"]
-    C --> C2["public"]
-    C --> C3["next.config.js"]
-
-    %% FRONTEND SRC
-    C1 --> C1a["app"]
-    C1 --> C1b["components"]
-    C1 --> C1c["services (API Client)"]
-    C1 --> C1d["hooks"]
-    C1 --> C1e["store"]
-    C1 --> C1f["lib"]
-
-    %% APP ROUTES
-    C1a --> C1a1["public - SEO / ISR"]
-    C1a --> C1a2["admin - SPA"]
-    C1a --> C1a3["api - BFF"]
 ````
