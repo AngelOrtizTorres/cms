@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
 
         // Ejecutar seeders
         $this->call([
+            RoleSeeder::class,
             SectionSeeder::class,
             ArticleSeeder::class,
         ]);
