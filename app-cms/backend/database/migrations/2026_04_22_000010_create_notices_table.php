@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('notices', function (Blueprint $table) {
-            $table->id();
+            $table->engine = 'InnoDB';
+            $table->bigIncrements('id');
             $table->string('title');
             $table->text('message');
             $table->enum('type', ['info', 'warning', 'error', 'success'])->default('info');
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->index(['active', 'priority', 'starts_at', 'ends_at', 'deleted_at']);
+            $table->index(['active', 'priority', 'starts_at', 'ends_at', 'deleted_at'], 'idx_active_priority_dates');
         });
     }
 

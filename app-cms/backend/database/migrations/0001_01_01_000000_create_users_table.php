@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('remember_token', 100)->nullable();
-            $table->enum('role', ['admin', 'editor', 'viewer'])->default('editor');
+            $table->enum('role', ['admin', 'editor', 'author', 'viewer'])->default('editor');
             $table->boolean('active')->default(true);
             $table->string('avatar_url')->nullable();
             $table->timestamp('last_login_at')->nullable();
@@ -51,8 +51,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::enableForeignKeyConstraints();
     }
 };

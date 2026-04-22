@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('banners', function (Blueprint $table) {
-            $table->id();
+            $table->engine = 'InnoDB';
+            $table->bigIncrements('id');
             $table->string('title');
             $table->enum('type', ['image', 'code'])->default('image');
             $table->string('image_url')->nullable();
@@ -25,7 +26,7 @@ return new class extends Migration
             $table->unsignedInteger('impressions')->default(0);
             $table->timestamps();
 
-            $table->index(['position', 'active', 'display_order', 'deleted_at']);
+            $table->index(['position', 'active', 'display_order', 'deleted_at'], 'idx_position_active_order');
         });
     }
 

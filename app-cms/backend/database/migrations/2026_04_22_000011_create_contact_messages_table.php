@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contact_messages', function (Blueprint $table) {
-            $table->id();
+            $table->engine = 'InnoDB';
+            $table->bigIncrements('id');
             $table->string('name');
             $table->string('email');
             $table->string('phone_number', 20)->nullable();
@@ -25,8 +26,8 @@ return new class extends Migration
             $table->boolean('privacy_accepted')->default(false);
             $table->timestamps();
 
-            $table->index('email');
-            $table->index(['status', 'created_at']);
+            $table->index('email', 'idx_email');
+            $table->index(['status', 'created_at'], 'idx_status_created');
         });
     }
 
