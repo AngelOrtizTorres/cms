@@ -1,15 +1,11 @@
-CREATE DATABASE IF NOT EXISTS cms_vertex 
-CHARACTER SET utf8mb4 
+CREATE DATABASE IF NOT EXISTS cms_vertex
+CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 USE cms_vertex;
 
--- Desactivar chequeo de claves foráneas para facilitar la creación
 SET FOREIGN_KEY_CHECKS = 0;
 
--- -----------------------------------------------------
--- 1. Table: users (Administración y Autenticación)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255) NOT NULL,
@@ -28,9 +24,6 @@ CREATE TABLE IF NOT EXISTS users (
   KEY idx_status (active, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 2. Table: sections (Taxonomía con Jerarquía)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS sections (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   parent_id BIGINT UNSIGNED NULL,
@@ -45,15 +38,12 @@ CREATE TABLE IF NOT EXISTS sections (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_sections_parent FOREIGN KEY (parent_id) REFERENCES sections(id) ON DELETE SET NULL,
-  KEY idx_active_position (active, position, deleted_at) 
+  KEY idx_active_position (active, position, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 3. Table: articles (Contenido Principal)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS articles (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  section_id BIGINT UNSIGNED NOT NULL, -- Sección Principal
+  section_id BIGINT UNSIGNED NOT NULL,
   user_id BIGINT UNSIGNED NOT NULL,
   title VARCHAR(255) NOT NULL,
   slug VARCHAR(255) NOT NULL UNIQUE,
@@ -70,16 +60,13 @@ CREATE TABLE IF NOT EXISTS articles (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_articles_section FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE RESTRICT,
-  CONSTRAINT fk_articles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,  
+  CONSTRAINT fk_articles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
   KEY idx_status_published (status, published_at, deleted_at),
   KEY idx_section_status_date (section_id, status, published_at),
   KEY idx_featured_status (featured, status),
   KEY idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 4. Table: tags (Etiquetas)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS tags (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255) NOT NULL UNIQUE,
@@ -94,77 +81,26 @@ CREATE TABLE IF NOT EXISTS tags (
   KEY idx_active_status (active, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 5. Table: article_tag (Pivote Etiquetas)
--- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS article_section (
+  article_id BIGINT UNSIGNED NOT NULL,
+  section_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (article_id, section_id),
+  CONSTRAINT fk_article_section_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+  CONSTRAINT fk_article_section_section FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE,
+  KEY idx_section_id (section_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS article_tag (
   article_id BIGINT UNSIGNED NOT NULL,
   tag_id BIGINT UNSIGNED NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (article_id, tag_id),
   CONSTRAINT fk_article_tag_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-  CONSTRAINT fk_article_tag_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,  
+  CONSTRAINT fk_article_tag_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
   KEY idx_tag_id (tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 6. Table: article_section (Pivote Secciones Secundarias)
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS article_section (
-  article_id BIGINT UNSIGNED NOT NULL,
-  section_id BIGINT UNSIGNED NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (article_id, section_id),
-  CONSTRAINT fk_artsec_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-  CONSTRAINT fk_artsec_section FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE,
-  KEY idx_section_id (section_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- -----------------------------------------------------
--- 7. Table: banners (Publicidad Imagen/Código)
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS banners (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  title VARCHAR(255) NOT NULL,  
-  type ENUM('image', 'code') NOT NULL DEFAULT 'image',  
-  image_url VARCHAR(255) NULL,
-  link_url VARCHAR(255) NULL,
-  code_content TEXT NULL,
-  position ENUM('header', 'sidebar', 'between_articles', 'footer') NOT NULL,
-  display_order INT DEFAULT 0,  
-  active BOOLEAN DEFAULT true,
-  deleted_at TIMESTAMP NULL,
-  starts_at TIMESTAMP NULL,
-  ends_at TIMESTAMP NULL,
-  clicks INT UNSIGNED DEFAULT 0,
-  impressions INT UNSIGNED DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_position_active_order (position, active, display_order, deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- -----------------------------------------------------
--- 8. Table: homepage_config (Singleton Portada)
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS homepage_config (
-  id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
-  meta_title VARCHAR(255) NULL,
-  meta_description VARCHAR(160) NULL,  
-  featured_articles_count TINYINT UNSIGNED DEFAULT 6,
-  latest_articles_count TINYINT UNSIGNED DEFAULT 10,  
-  layout_schema JSON NULL, 
-  banners_enabled BOOLEAN DEFAULT true,
-  show_notices BOOLEAN DEFAULT true,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT uc_homepage_config_single CHECK (id = 1)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-INSERT IGNORE INTO homepage_config (id, meta_title, featured_articles_count, latest_articles_count) 
-VALUES (1, 'Portada Principal', 6, 10);
-
--- -----------------------------------------------------
--- 9. Table: settings (Singleton Global)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS settings (
   id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
   site_name VARCHAR(255) NOT NULL DEFAULT 'Mi CMS',
@@ -178,18 +114,16 @@ CREATE TABLE IF NOT EXISTS settings (
   social_links JSON NULL,
   google_analytics_id VARCHAR(50) NULL,
   facebook_pixel_id VARCHAR(50) NULL,
-  header_scripts TEXT NULL, 
+  header_scripts TEXT NULL,
   footer_scripts TEXT NULL,
   maintenance_mode BOOLEAN DEFAULT false,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT uc_settings_single CHECK (id = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT IGNORE INTO settings (id, site_name, social_links) VALUES (1, 'Mi CMS', '{}');
+INSERT IGNORE INTO settings (id, site_name, social_links)
+VALUES (1, 'Mi CMS', '{}');
 
--- -----------------------------------------------------
--- 10. Table: notices (Avisos y Alertas)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS notices (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
@@ -205,13 +139,10 @@ CREATE TABLE IF NOT EXISTS notices (
   ends_at TIMESTAMP NULL,
   deleted_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_active_priority_dates (active, priority, starts_at, ends_at, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 11. Table: contact_messages (Leads y Mensajes)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS contact_messages (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255) NOT NULL,
@@ -233,9 +164,6 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   KEY idx_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 12. Table: media (Biblioteca Multimedia)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS media (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NULL,
@@ -256,96 +184,48 @@ CREATE TABLE IF NOT EXISTS media (
   KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 13. Table: comments (Hilos Polimórficos)
--- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS comments (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  
-  -- Jerarquía Optimizada
   parent_id BIGINT UNSIGNED NULL,
-  path VARCHAR(255) NOT NULL,       -- Ruta jerárquica (ej: "00001/00004/00009")
-  depth TINYINT UNSIGNED DEFAULT 0, -- Nivel de anidación (útil para indentación en CSS)
-  
-  -- Relación Polimórfica
+  path VARCHAR(255) NOT NULL,
+  depth TINYINT UNSIGNED DEFAULT 0,
   commentable_id BIGINT UNSIGNED NOT NULL,
   commentable_type VARCHAR(255) NOT NULL,
-  
-  -- Autoría
   user_id BIGINT UNSIGNED NULL,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
-  
-  -- Moderación
   status ENUM('pending', 'approved', 'rejected', 'spam') DEFAULT 'pending',
-  
-  -- Analítica de Engagement 
   reply_count INT UNSIGNED DEFAULT 0,
-  upvotes INT DEFAULT 0,  
+  upvotes INT DEFAULT 0,
   downvotes INT DEFAULT 0,
-  score INT AS (upvotes - downvotes) VIRTUAL, -- Ahora MariaDB lo acepta sin problemas
-  
-  -- Auditoría
+  score INT AS (upvotes - downvotes) VIRTUAL,
   ip_address VARCHAR(45) NULL,
   user_agent TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at TIMESTAMP NULL,
-  
   CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-  
-  -- ÍNDICES
   KEY idx_tree_load (commentable_type, commentable_id, status, path),
   KEY idx_analytics_score (commentable_type, commentable_id, score DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------
--- 14. Table: pages (Páginas Estáticas)
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS pages (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  title VARCHAR(255) NOT NULL,
-  slug VARCHAR(255) NOT NULL UNIQUE,
-  content LONGTEXT NOT NULL,
-  featured_image VARCHAR(255) NULL,
-  layout VARCHAR(50) DEFAULT 'default',
-  meta_title VARCHAR(255) NULL,
-  meta_description VARCHAR(160) NULL,
-  status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
-  position INT DEFAULT 0,
-  deleted_at TIMESTAMP NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_status_position (status, position, deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ---------------------
--- 15. Table: audit_logs
--- ---------------------
 CREATE TABLE IF NOT EXISTS audit_logs (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Movido arriba para la PK
-  
-  batch_uuid CHAR(36) NULL, -- CORRELATION ID: Agrupa múltiples acciones de un mismo request
-  
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NULL,
   auditable_type VARCHAR(255) NOT NULL,
   auditable_id BIGINT UNSIGNED NOT NULL,
   action ENUM('create', 'update', 'delete', 'restore') NOT NULL,
-  
   old_values JSON NULL,
   new_values JSON NULL,
-  
   ip_address VARCHAR(45) NULL,
   user_agent TEXT NULL,
   url TEXT NULL,
-  
-  PRIMARY KEY (id, created_at),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   KEY idx_auditable_model (auditable_type, auditable_id),
-  KEY idx_batch (batch_uuid),
-  KEY idx_user_action (user_id, created_at)
+  KEY idx_user_action (user_id, created_at),
+  KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Reactivar chequeo de claves foráneas
 SET FOREIGN_KEY_CHECKS = 1;
