@@ -17,17 +17,23 @@ type ApiResponse = {
 
 // ✅ Fetch corregido
 async function getArticles(): Promise<Article[]> {
-  const res = await fetch("http://localhost:8000/api/articles", {
-    cache: "no-store",
-  });
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001/api").replace(/\/$/, "");
+  const url = `${apiBase}/articles?per_page=20&sort=-created_at`;
 
-  if (!res.ok) {
-    throw new Error("Error al cargar artículos");
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      return [];
+    }
+
+    const json: ApiResponse = await res.json();
+    return Array.isArray(json?.data) ? json.data : [];
+  } catch {
+    return [];
   }
-
-  const json: ApiResponse = await res.json();
-
-  return json.data; // 👈 AQUÍ ESTÁ LA CLAVE
 }
 
 // ✅ Página

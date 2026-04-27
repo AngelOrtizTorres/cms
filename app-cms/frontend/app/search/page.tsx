@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Article, searchArticles } from '@/lib/services/articles';
 
-export default function SearchPage() {
+function SearchPageContent() {
   const params = useSearchParams();
   const term = useMemo(() => params.get('q') || '', [params]);
   const [items, setItems] = useState<Article[]>([]);
@@ -20,7 +20,7 @@ export default function SearchPage() {
 
       setLoading(true);
       const result = await searchArticles(term, 20);
-      setItems(Array.isArray(result) ? result : result.data || []);
+      setItems(result);
       setLoading(false);
     }
 
@@ -44,5 +44,13 @@ export default function SearchPage() {
         ))}
       </div>
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-5xl px-4 py-10"><p>Cargando...</p></main>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

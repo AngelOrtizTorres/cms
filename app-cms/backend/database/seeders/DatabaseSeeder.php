@@ -16,12 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Crear usuario de prueba
-        User::factory()->create([
+        $user = User::factory()->create([
             'name' => 'Usuario Prueba',
             'email' => 'usuario@example.com',
             'password' => 'contraseña',
             'role' => 'admin',
         ]);
+
+        $user->syncRoles(['admin']);
 
         // Ejecutar seeders
         $this->call([

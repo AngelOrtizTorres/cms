@@ -81,21 +81,21 @@ Route::post('/contact', [ContactController::class, 'send']);
 Route::middleware('auth')->group(function () {
 	Route::get('/auth/me', [AuthController::class, 'me']);
 
-	Route::post('/articles', [ArticleController::class, 'store']);
-	Route::put('/articles/{id}', [ArticleController::class, 'update']);
-	Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
+	Route::post('/articles', [ArticleController::class, 'store'])->middleware('role:author,admin');
+	Route::put('/articles/{id}', [ArticleController::class, 'update'])->middleware('article.update.permission');
+	Route::delete('/articles/{id}', [ArticleController::class, 'destroy'])->middleware('admin');
 
-	Route::post('/sections', [SectionController::class, 'store']);
-	Route::put('/sections/{id}', [SectionController::class, 'update']);
-	Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
+	Route::post('/sections', [SectionController::class, 'store'])->middleware('role:editor,admin');
+	Route::put('/sections/{id}', [SectionController::class, 'update'])->middleware('role:editor,admin');
+	Route::delete('/sections/{id}', [SectionController::class, 'destroy'])->middleware('admin');
 
-	Route::post('/tags', [TagController::class, 'store']);
-	Route::put('/tags/{id}', [TagController::class, 'update']);
-	Route::delete('/tags/{id}', [TagController::class, 'destroy']);
+	Route::post('/tags', [TagController::class, 'store'])->middleware('role:editor,author,admin');
+	Route::put('/tags/{id}', [TagController::class, 'update'])->middleware('role:editor,admin');
+	Route::delete('/tags/{id}', [TagController::class, 'destroy'])->middleware('admin');
 
-	Route::post('/banners', [BannerController::class, 'store']);
-	Route::put('/banners/{id}', [BannerController::class, 'update']);
-	Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
+	Route::post('/banners', [BannerController::class, 'store'])->middleware('admin');
+	Route::put('/banners/{id}', [BannerController::class, 'update'])->middleware('admin');
+	Route::delete('/banners/{id}', [BannerController::class, 'destroy'])->middleware('admin');
 
 	Route::put('/users/{id}', [UserController::class, 'update']);
 
