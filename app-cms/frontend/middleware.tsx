@@ -11,10 +11,13 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value;
 
   const isDashboard = req.nextUrl.pathname.startsWith('/dashboard');
+  // Si la ruta es /dashboard/* y no hay token, redirigir a /login (server-side)
+  if (isDashboard) {
+    if (!token) {
+      const loginUrl = new URL('/login', req.nextUrl.origin);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
-  // En entorno de desarrollo evitar redirecciones server-side para no bloquear
-  // el trabajo en local cuando las cookies entre dominios no están sincronizadas.
-  // Devolver siempre NextResponse.next() para permitir que el cliente
-  // gestione la protección de rutas.
   return NextResponse.next();
 }
