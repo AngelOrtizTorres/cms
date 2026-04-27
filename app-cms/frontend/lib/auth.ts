@@ -9,7 +9,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'editor' | 'author' | 'user';
+  roles?: Array<{ id: number; name: string }>;
+  role?: 'admin' | 'editor' | 'author' | 'user';
   created_at?: string;
   updated_at?: string;
 }
@@ -61,7 +62,13 @@ export async function logout(): Promise<void> {
 export async function getCurrentUser(token?: string): Promise<User> {
   const response = await apiGet<User>('/auth/me', token);
   // El API devuelve directamente el objeto User, o envuelto en { data: User }
-  return (response.data || response) as User;
+  const user = (response.data || response) as User;
+
+  if (!user.role && user.roles && user.roles.length > 0) {
+    user.role = user.roles[0].name as User['role'];
+  }
+
+  return user;
 }
 
 /**
@@ -101,7 +108,7 @@ export function getStoredToken(): string | null {
  */
 export function hasRole(role: string | string[]): boolean {
   const user = getStoredUser();
-  if (!user) return false;
+  if (!user || !user.role) return false;
 
   if (Array.isArray(role)) {
     return role.includes(user.role);

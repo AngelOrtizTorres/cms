@@ -20,7 +20,7 @@ export interface ContactMessage {
   email: string;
   subject: string;
   message: string;
-  phone?: string;
+  phone_number?: string;
   created_at: string;
 }
 
@@ -87,7 +87,9 @@ export async function sendContactMessage(message: {
   email: string;
   subject: string;
   message: string;
-  phone?: string;
+  phone_number?: string;
+  source_url?: string;
+  privacy_accepted: boolean;
 }) {
   const response = await apiPost('/contact', message);
   return response;

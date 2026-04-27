@@ -17,7 +17,7 @@ interface RequestConfig {
   token?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api').replace(/\/$/, '');
 
 /**
  * Obtiene el token del almacenamiento local
@@ -41,7 +41,8 @@ export async function apiCall<T = any>(
     token,
   } = config;
 
-  const url = `${API_URL}${endpoint}`;
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_URL}${normalizedEndpoint}`;
   
   // Headers por defecto
   const defaultHeaders: Record<string, string> = {
@@ -58,6 +59,7 @@ export async function apiCall<T = any>(
   try {
     const response = await fetch(url, {
       method,
+      credentials: 'include',
       headers: defaultHeaders,
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -126,7 +128,8 @@ export async function apiPostFormData<T = any>(
   formData: FormData,
   token?: string
 ): Promise<ApiResponse<T>> {
-  const url = `${API_URL}${endpoint}`;
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_URL}${normalizedEndpoint}`;
   
   const headers: Record<string, string> = {};
   
@@ -138,6 +141,7 @@ export async function apiPostFormData<T = any>(
   try {
     const response = await fetch(url, {
       method: 'POST',
+      credentials: 'include',
       headers,
       body: formData,
     });

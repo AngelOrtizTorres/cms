@@ -3,9 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\Section;
-use App\Models\Tag;
-use App\Http\Resources\ArticleResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -137,81 +134,6 @@ class ArticleController extends Controller
     }
 
     /**
-     * Obtener artículos por sección
-     */
-    public function bySection($sectionId, Request $request)
-    {
-        $query = Article::where('section_id', $sectionId)
-            ->where('status', 'published')
-            ->with(['section', 'user', 'tags']);
-
-        // Búsqueda
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('excerpt', 'like', "%{$search}%");
-            });
-        }
-
-        $perPage = $request->get('per_page', 10);
-        $articles = $query->orderBy('published_at', 'desc')
-            ->paginate($perPage);
-
-        return response()->json($articles);
-    }
-
-    /**
-     * Obtener artículos por etiqueta
-     */
-    public function byTag($tagId, Request $request)
-    {
-        $query = Article::where('status', 'published')
-            ->whereHas('tags', function ($q) use ($tagId) {
-                $q->where('tags.id', $tagId);
-            })
-            ->with(['section', 'user', 'tags']);
-
-        // Búsqueda
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('excerpt', 'like', "%{$search}%");
-            });
-        }
-
-        $perPage = $request->get('per_page', 10);
-        $articles = $query->orderBy('published_at', 'desc')
-            ->paginate($perPage);
-
-        return response()->json($articles);
-    }
-
-    /**
-     * Buscar artículos
-     */
-    public function search(Request $request)
-    {
-        $request->validate([
-            'q' => 'required|string|min:3',
-        ]);
-
-        $query = $request->q;
-        $articles = Article::where('status', 'published')
-            ->with(['section', 'user', 'tags'])
-            ->where(function ($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('excerpt', 'like', "%{$query}%")
-                  ->orWhere('content', 'like', "%{$query}%");
-            })
-            ->orderBy('published_at', 'desc')
-            ->paginate(10);
-
-        return response()->json($articles);
-    }
-
-    /**
      * Crear artículo (solo autenticados)
      */
     public function store(Request $request)
@@ -249,8 +171,10 @@ class ArticleController extends Controller
     /**
      * Actualizar artículo
      */
-    public function update(Request $request, Article $article)
+    public function update(Request $request, int $id)
     {
+        $article = Article::findOrFail($id);
+
         $validated = $request->validate([
             'title' => 'string|max:255',
             'slug' => 'string|max:255|unique:articles,slug,' . $article->id,
@@ -278,9 +202,11 @@ class ArticleController extends Controller
     /**
      * Eliminar artículo
      */
-    public function destroy(Article $article)
+    public function destroy(int $id)
     {
+        $article = Article::findOrFail($id);
         $article->delete();
+
         return response()->json(null, 204);
     }
 }

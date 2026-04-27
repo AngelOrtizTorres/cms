@@ -10,15 +10,26 @@ export interface Article {
   slug: string;
   excerpt: string;
   content: string;
+  featured_image?: string | null;
+  gallery_images?: string[] | null;
   featured: boolean;
-  status: 'draft' | 'published';
+  status: 'draft' | 'scheduled' | 'published' | 'archived';
+  meta_title?: string | null;
+  meta_description?: string | null;
   section_id: number;
+  user_id?: number;
   parent_id?: number | null;
   section?: Section;
+  user?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
   parent?: Article;
   tags?: Tag[];
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
 }
 
 export interface Section {
@@ -26,6 +37,9 @@ export interface Section {
   name: string;
   slug: string;
   description: string;
+  active?: boolean;
+  position?: number;
+  parent_id?: number | null;
   article_count?: number;
 }
 
@@ -33,6 +47,8 @@ export interface Tag {
   id: number;
   name: string;
   slug: string;
+  description?: string;
+  active?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -65,7 +81,24 @@ export async function getArticles(params: {
     `/articles?${query.toString()}`
   );
 
-  return (response.data || response) as PaginatedResponse<Article>;
+  const direct = response as unknown as PaginatedResponse<Article>;
+  if (Array.isArray(direct.data)) {
+    return direct;
+  }
+
+  const wrapped = response.data as unknown as PaginatedResponse<Article>;
+  if (wrapped && Array.isArray(wrapped.data)) {
+    return wrapped;
+  }
+
+  return {
+    data: [],
+    meta: {
+      current_page: 1,
+      total: 0,
+      per_page: params.per_page || 10,
+    },
+  };
 }
 
 /**
@@ -119,8 +152,8 @@ export async function getSections() {
  * Obtener artículos de una sección
  */
 export async function getArticlesBySection(slug: string) {
-  const response = await apiGet(`/sections/${slug}`);
-  return response;
+  const response = await apiGet<Section>(`/sections/${slug}`);
+  return (response.data || response) as Section;
 }
 
 /**
@@ -135,16 +168,62 @@ export async function getTags() {
  * Obtener artículos por etiqueta
  */
 export async function getArticlesByTag(slug: string) {
-  const response = await apiGet(`/tags/${slug}`);
-  return response;
+  const response = await apiGet<Tag>(`/tags/${slug}`);
+  return (response.data || response) as Tag;
 }
 
 /**
  * Buscar artículos
  */
-export async function searchArticles(query: string, limit: number = 10) {
+export async function searchArticles(query: string, per_page: number = 10) {
   const response = await apiGet<Article[]>(
-    `/search?q=${encodeURIComponent(query)}&limit=${limit}`
+    `/search?q=${encodeURIComponent(query)}&per_page=${per_page}`
   );
   return (response.data || response) as Article[];
+}
+
+/**
+ * Crear sección
+ */
+export async function createSection(section: Partial<Section>, token?: string) {
+  const response = await apiPost<Section>('/sections', section, token);
+  return (response.data || response) as Section;
+}
+
+/**
+ * Actualizar sección
+ */
+export async function updateSection(id: number, section: Partial<Section>, token?: string) {
+  const response = await apiPut<Section>(`/sections/${id}`, section, token);
+  return (response.data || response) as Section;
+}
+
+/**
+ * Eliminar sección
+ */
+export async function deleteSection(id: number, token?: string) {
+  return apiDelete(`/sections/${id}`, token);
+}
+
+/**
+ * Crear etiqueta
+ */
+export async function createTag(tag: Partial<Tag>, token?: string) {
+  const response = await apiPost<Tag>('/tags', tag, token);
+  return (response.data || response) as Tag;
+}
+
+/**
+ * Actualizar etiqueta
+ */
+export async function updateTag(id: number, tag: Partial<Tag>, token?: string) {
+  const response = await apiPut<Tag>(`/tags/${id}`, tag, token);
+  return (response.data || response) as Tag;
+}
+
+/**
+ * Eliminar etiqueta
+ */
+export async function deleteTag(id: number, token?: string) {
+  return apiDelete(`/tags/${id}`, token);
 }

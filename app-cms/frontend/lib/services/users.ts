@@ -13,12 +13,19 @@ export interface UserProfile {
   updated_at: string;
 }
 
+export interface UsersPaginatedResponse {
+  data: UserProfile[];
+  current_page?: number;
+  last_page?: number;
+  total?: number;
+}
+
 /**
  * Obtener lista de usuarios (solo admin)
  */
 export async function getUsers(token?: string) {
-  const response = await apiGet<UserProfile[]>('/users', token);
-  return (response.data || response) as UserProfile[];
+  const response = await apiGet<UsersPaginatedResponse>('/users', token);
+  return (response.data || response) as UsersPaginatedResponse;
 }
 
 /**

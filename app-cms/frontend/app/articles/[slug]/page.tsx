@@ -70,7 +70,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
             }
 
             setRelatedArticles(relatedList.slice(0, 4));
-          } catch (err) {
+          } catch {
             console.log('No se pudieron cargar artículos relacionados');
           }
         }
@@ -100,7 +100,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'Artículo no encontrado'}</p>
-          <Link href="/examples/articles" className="text-blue-600 hover:underline">
+          <Link href="/articles" className="text-blue-600 hover:underline">
             ← Volver al listado
           </Link>
         </div>
@@ -112,7 +112,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
     <article className="max-w-4xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-8">
-        <Link href="/examples/articles" className="hover:text-blue-600">
+        <Link href="/articles" className="hover:text-blue-600">
           Artículos
         </Link>
         {article.section && (
@@ -275,7 +275,7 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug: 
       {/* Back Button */}
       <div className="pt-8 border-t border-gray-200 dark:border-gray-700">
         <Link
-          href="/examples/articles"
+          href="/articles"
           className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
         >
           ← Volver al listado
