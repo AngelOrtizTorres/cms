@@ -23,7 +23,6 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        $user->syncRoles(['admin']);
 
         // Ejecutar seeders
         $this->call([
@@ -31,5 +30,7 @@ class DatabaseSeeder extends Seeder
             SectionSeeder::class,
             ArticleSeeder::class,
         ]);
+        
+        $user->syncRoles(['admin']);
     }
 }
