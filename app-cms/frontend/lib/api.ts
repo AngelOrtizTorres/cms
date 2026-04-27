@@ -64,14 +64,27 @@ export async function apiCall<T = any>(
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    const data = await response.json();
+    // Intentar parsear JSON; si viene HTML u otro contenido, capturarlo como texto
+    const contentType = response.headers.get('content-type') || '';
+    let data: any = null;
 
-    // Si la respuesta no es exitosa, lanzar error
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        data = { raw: text };
+      }
+    }
+
+    // Si la respuesta no es exitosa, lanzar error con detalle (incluye texto bruto si no es JSON)
     if (!response.ok) {
       throw {
         status: response.status,
-        message: data.message || 'Error en la solicitud',
-        errors: data.errors,
+        message: (data && data.message) || 'Error en la solicitud',
+        errors: data && data.errors,
         data,
       };
     }

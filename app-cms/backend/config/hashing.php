@@ -46,7 +46,7 @@ return [
     */
 
     'argon' => [
-        'memory' => env('ARGON_MEMORY', 32768),
+        'memory' => env('ARGON_MEMORY', 65336),
         'threads' => env('ARGON_THREADS', 3),
         'time' => env('ARGON_TIME', 3),
         'verify' => env('HASH_VERIFY', true),
