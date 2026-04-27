@@ -1,120 +1,63 @@
-import Image from "next/image";
-import Link from "next/link";
+'use client';
 
-// ✅ Tipo del artículo
-type Article = {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt: string;
-  image?: string;
-};
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
-// ✅ Tipo de respuesta de Laravel (paginate)
-type ApiResponse = {
-  data: Article[];
-};
+export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loadingLocal, setLoadingLocal] = useState(false);
 
-// ✅ Fetch corregido
-async function getArticles(): Promise<Article[]> {
-  const res = await fetch("http://localhost:8000/api/articles", {
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error("Error al cargar artículos");
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoadingLocal(true);
+    console.log('[RootLogin] handleLogin start', { email });
+    try {
+      await login(email, password);
+      console.log('[RootLogin] login success');
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      console.error('[RootLogin] login error', err);
+      setError(err instanceof Error ? err.message : 'Credenciales incorrectas');
+    } finally {
+      setLoadingLocal(false);
+    }
   }
 
-  const json: ApiResponse = await res.json();
-
-  return json.data; // 👈 AQUÍ ESTÁ LA CLAVE
-}
-
-// ✅ Página
-export default async function Home() {
-  const articles = await getArticles();
-
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-black">
-      
-      {/* HEADER */}
-      <header className="w-full bg-white dark:bg-zinc-900 shadow p-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Mi Blog</h1>
-          <nav className="flex gap-4 text-sm">
-            <Link href="/">Inicio</Link>
-            <Link href="/articles">Artículos</Link>
-            <Link href="/contact">Contacto</Link>
-          </nav>
-        </div>
-      </header>
+    <div className="h-screen flex items-center justify-center bg-gray-100">
+      <form onSubmit={handleLogin} className="bg-white p-8 w-96 shadow rounded">
+        <h1 className="text-2xl mb-4">CMS Login</h1>
 
-      {/* MAIN */}
-      <main className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 p-6">
-        
-        {/* POSTS */}
-        <section className="md:col-span-2 flex flex-col gap-6">
-          {articles.length === 0 && (
-            <p>No hay artículos disponibles.</p>
-          )}
+        <input
+          className="w-full border p-2 mb-3"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-          {articles.map((article) => (
-            <article
-              key={article.id}
-              className="bg-white dark:bg-zinc-900 p-5 rounded-xl shadow"
-            >
-              {article.image && (
-                <Image
-                  src={article.image}
-                  alt={article.title}
-                  width={800}
-                  height={400}
-                  className="rounded-lg mb-4"
-                />
-              )}
+        <input
+          type="password"
+          className="w-full border p-2 mb-3"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-              <h2 className="text-xl font-semibold mb-2">
-                {article.title}
-              </h2>
+        {error && <p className="text-red-500 mb-3">{error}</p>}
 
-              <p className="text-zinc-600 dark:text-zinc-400 mb-3">
-                {article.excerpt}
-              </p>
-
-              <Link
-                href={`/articles/${article.slug}`}
-                className="text-blue-600 font-medium"
-              >
-                Leer más →
-              </Link>
-            </article>
-          ))}
-        </section>
-
-        {/* SIDEBAR */}
-        <aside className="flex flex-col gap-6">
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow">
-            <h3 className="font-semibold mb-2">Sobre mí</h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Blog hecho con Next.js + Laravel API.
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow">
-            <h3 className="font-semibold mb-2">Categorías</h3>
-            <ul className="text-sm flex flex-col gap-1">
-              <li>Tech</li>
-              <li>Backend</li>
-              <li>Frontend</li>
-            </ul>
-          </div>
-        </aside>
-      </main>
-
-      {/* FOOTER */}
-      <footer className="text-center p-6 text-sm text-zinc-500">
-        © 2026 - Mi Blog
-      </footer>
+        <button
+          type="submit"
+          disabled={loadingLocal}
+          className={`w-full p-2 rounded text-white ${loadingLocal ? 'bg-gray-400' : 'bg-blue-600'}`}
+        >
+          {loadingLocal ? 'Iniciando...' : 'Login'}
+        </button>
+      </form>
     </div>
   );
 }
