@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function DashboardLayout({
   children,
@@ -10,14 +11,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { isAuthenticated, loading, logout } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
+    if (!loading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [router]); // ✅ FIX ESLINT
+  }, [loading, isAuthenticated, router]);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -34,8 +34,8 @@ export default function DashboardLayout({
 
         <button
           className="mt-auto text-red-400"
-          onClick={() => {
-            localStorage.removeItem('token');
+          onClick={async () => {
+            await logout();
             router.push('/login');
           }}
         >
