@@ -13,10 +13,10 @@ class RoleSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $roles = [
-            'admin',           // Acceso total
-            'editor',          // Revisión y publicación de contenido
-            'author',          // Creación y edición de contenido
-            'viewer',          // Acceso de lectura
+            'admin',
+            'editor',
+            'author',
+            'viewer',
         ];
 
         foreach ($roles as $role) {
