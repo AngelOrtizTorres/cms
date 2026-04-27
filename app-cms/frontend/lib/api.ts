@@ -47,6 +47,7 @@ export async function apiCall<T = any>(
   // Headers por defecto
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...headers,
   };
 
@@ -78,6 +79,12 @@ export async function apiCall<T = any>(
         data = { raw: text };
       }
     }
+
+    // DEBUG: log resumen de la respuesta para facilitar diagnóstico en desarrollo
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[api] %s %s -> status=%d, content-type=%s, dataPreview=', method, url, response.status, contentType, (typeof data === 'object' ? (Array.isArray(data) ? `Array(${data.length})` : Object.keys(data).slice(0,10)) : String(data).slice(0,200)));
+    } catch (e) {}
 
     // Si la respuesta no es exitosa, lanzar error con detalle (incluye texto bruto si no es JSON)
     if (!response.ok) {

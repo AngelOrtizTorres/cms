@@ -29,8 +29,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-8 w-96 shadow rounded">
+    <div className="h-screen flex items-center justify-center bg-black">
+      <form onSubmit={handleLogin} className="bg-black p-8 w-96 shadow rounded">
         <h1 className="text-2xl mb-4">CMS Login</h1>
 
         <input

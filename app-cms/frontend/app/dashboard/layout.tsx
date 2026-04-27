@@ -26,11 +26,9 @@ export default function DashboardLayout({
       <aside className="w-64 bg-gray-900 text-white p-5 flex flex-col gap-4">
         <h2 className="text-xl font-bold mb-6">CMS Admin</h2>
 
-        <Link href="/dashboard">Dashboard</Link>
-        <Link href="/dashboard/articles">Articles</Link>
-        <Link href="/dashboard/sections">Sections</Link>
-        <Link href="/dashboard/tags">Tags</Link>
-        <Link href="/dashboard/users">Users</Link>
+        <Link href="/dashboard">Panel</Link>
+        <Link href="/dashboard/websites">Sitios web</Link>
+        <Link href="/dashboard/users">Usuarios</Link>
 
         <button
           className="mt-auto text-red-400"

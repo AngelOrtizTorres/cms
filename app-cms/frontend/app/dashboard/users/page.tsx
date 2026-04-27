@@ -2,27 +2,80 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getUsers, UserProfile } from '@/lib/services/users';
 
 export default function DashboardUsersPage() {
-  const { token } = useAuth();
+  const { token, refreshUser, loading: authLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [localLoading, setLocalLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
+    // Esperar a que AuthProvider termine la inicialización
+    if (authLoading) return;
+
+    // DEBUG: mostrar estado de autenticación antes de cargar
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[users] authLoading:', authLoading, 'isAuthenticated:', isAuthenticated, 'tokenPresent:', !!token);
+    } catch (e) {}
+
     async function load() {
       try {
+        console.log('[users] solicitando /api/users...');
         const res = await getUsers(token || undefined);
+        console.log('[users] getUsers response:', res);
         if (!mounted) return;
-        setUsers(res.data || []);
+        const payload = Array.isArray(res) ? res : (res && (res.data ?? res));
+        setUsers(payload || []);
       } catch (err: any) {
+        console.error('Error cargando users:', err);
+
+        // Si la API responde 401, intentar refrescar la sesión (cookie HttpOnly)
+        if (err && err.status === 401) {
+          setError('No autorizado. Intentando refrescar sesión...');
+          try {
+            await refreshUser();
+            // reintentar
+            const retry = await getUsers(token || undefined);
+            const retryPayload = Array.isArray(retry) ? retry : (retry && (retry.data ?? retry));
+            setUsers(retryPayload || []);
+            setError(null);
+            return;
+          } catch (e) {
+            // Si el refresh falla, intentar con token en localStorage (fallback)
+            try {
+              const localToken = typeof window !== 'undefined' ? localStorage.getItem('cms_token') : null;
+              if (localToken) {
+                const retry2 = await getUsers(localToken);
+                const retry2Payload = Array.isArray(retry2) ? retry2 : (retry2 && (retry2.data ?? retry2));
+                setUsers(retry2Payload || []);
+                setError(null);
+                return;
+              }
+            } catch (e2) {
+              console.error('Fallback con token local falló:', e2);
+            }
+
+            setError('No autorizado. Redirigiendo a login...');
+            setTimeout(() => router.push('/login'), 700);
+            return;
+          }
+        }
+
+        // Si el servidor respondió HTML u otro contenido no JSON, mostrar en consola
+        if (err && err.data && err.data.raw) {
+          console.error('Respuesta no JSON del servidor:', err.data.raw);
+        }
+
         setError(err?.message || 'Error cargando usuarios');
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) setLocalLoading(false);
       }
     }
 
@@ -31,7 +84,7 @@ export default function DashboardUsersPage() {
     return () => {
       mounted = false;
     };
-  }, [token]);
+  }, [token, authLoading]);
 
   return (
     <div>
@@ -51,7 +104,36 @@ export default function DashboardUsersPage() {
         </div>
       </div>
 
-      {loading ? (
+      {/* Panel de depuración rápido */}
+      <div className="mb-4">
+        <div className="text-sm text-gray-400">Debug: authLoading={String(authLoading)}, isAuthenticated={String(isAuthenticated)}, tokenPresent={String(!!token)}, users={users.length}</div>
+        <div className="mt-2">
+          <button
+            onClick={async () => {
+              try {
+                console.log('[users] manual refreshUser + recarga');
+                await refreshUser();
+                // reintentar carga simple
+                const res = await getUsers(token || undefined);
+                console.log('[users] reintento response:', res);
+                const manualPayload = Array.isArray(res) ? res : (res && (res.data ?? res));
+                setUsers(manualPayload || []);
+                setError(null);
+              } catch (e) {
+                console.error('Reintento manual falló:', e);
+                setError('Reintento manual falló');
+              } finally {
+                setLocalLoading(false);
+              }
+            }}
+            className="inline-block bg-gray-700 text-white px-3 py-1 rounded mr-2"
+          >
+            Reintentar carga
+          </button>
+        </div>
+      </div>
+
+      {localLoading || authLoading ? (
         <p>Cargando usuarios...</p>
       ) : error ? (
         <p className="text-red-600">{error}</p>

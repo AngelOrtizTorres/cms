@@ -1,7 +1,7 @@
 export default function DashboardPage() {
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-4">Panel</h1>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded shadow">
@@ -9,11 +9,11 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white p-4 rounded shadow">
-          Users
+          Usuarios
         </div>
 
         <div className="bg-white p-4 rounded shadow">
-          Comments
+          Comentarios
         </div>
       </div>
     </div>
