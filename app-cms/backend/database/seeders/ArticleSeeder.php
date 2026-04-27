@@ -19,6 +19,10 @@ class ArticleSeeder extends Seeder
             'role' => 'admin',
         ]);
 
+        if (!$user->hasRole('admin')) {
+            $user->syncRoles(['admin']);
+        }
+
         Article::create([
             'title' => 'Bienvenido al CMS',
             'slug' => 'bienvenido-al-cms',

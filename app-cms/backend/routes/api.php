@@ -49,17 +49,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
     Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
 
-    Route::post('/sections', [SectionController::class, 'store']);
-    Route::put('/sections/{id}', [SectionController::class, 'update']);
-    Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
+	Route::post('/sections', [SectionController::class, 'store']);
+	Route::put('/sections/{id}', [SectionController::class, 'update']);
+	Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
 
-    Route::post('/tags', [TagController::class, 'store']);
-    Route::put('/tags/{id}', [TagController::class, 'update']);
-    Route::delete('/tags/{id}', [TagController::class, 'destroy']);
+	Route::post('/tags', [TagController::class, 'store']);
+	Route::put('/tags/{id}', [TagController::class, 'update']);
+	Route::delete('/tags/{id}', [TagController::class, 'destroy']);
 
-    Route::post('/banners', [BannerController::class, 'store']);
-    Route::put('/banners/{id}', [BannerController::class, 'update']);
-    Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
+	Route::post('/banners', [BannerController::class, 'store']);
+	Route::put('/banners/{id}', [BannerController::class, 'update']);
+	Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
 
     Route::put('/users/{id}', [UserController::class, 'update']);
 });
