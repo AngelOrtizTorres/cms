@@ -71,7 +71,6 @@ export default function DashboardWebsitesPage() {
       </div>
 
       <div className="mb-4">
-        <div className="text-sm text-gray-400">Debug: authLoading={String(authLoading)}, isAuthenticated={String(isAuthenticated)}, sites={sites.length}</div>
         <div className="mt-2">
           <button
             onClick={async () => {

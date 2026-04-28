@@ -19,17 +19,11 @@ export default function DashboardUsersPage() {
     // Esperar a que AuthProvider termine la inicialización
     if (authLoading) return;
 
-    // DEBUG: mostrar estado de autenticación antes de cargar
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[users] authLoading:', authLoading, 'isAuthenticated:', isAuthenticated, 'tokenPresent:', !!token);
-    } catch (e) {}
+    // esperar a que AuthProvider termine la inicialización (sin logs)
 
     async function load() {
       try {
-        console.log('[users] solicitando /api/users...');
         const res = await getUsers(token || undefined);
-        console.log('[users] getUsers response:', res);
         if (!mounted) return;
         const payload = Array.isArray(res) ? res : (res && (res.data ?? res));
         setUsers(payload || []);
@@ -104,34 +98,29 @@ export default function DashboardUsersPage() {
         </div>
       </div>
 
-      {/* Panel de depuración rápido */}
-      <div className="mb-4">
-        <div className="text-sm text-gray-400">Debug: authLoading={String(authLoading)}, isAuthenticated={String(isAuthenticated)}, tokenPresent={String(!!token)}, users={users.length}</div>
-        <div className="mt-2">
-          <button
-            onClick={async () => {
-              try {
-                console.log('[users] manual refreshUser + recarga');
-                await refreshUser();
-                // reintentar carga simple
-                const res = await getUsers(token || undefined);
-                console.log('[users] reintento response:', res);
-                const manualPayload = Array.isArray(res) ? res : (res && (res.data ?? res));
-                setUsers(manualPayload || []);
-                setError(null);
-              } catch (e) {
-                console.error('Reintento manual falló:', e);
-                setError('Reintento manual falló');
-              } finally {
-                setLocalLoading(false);
-              }
-            }}
-            className="inline-block bg-gray-700 text-white px-3 py-1 rounded mr-2"
-          >
-            Reintentar carga
-          </button>
+        <div className="mb-4">
+          <div className="mt-2">
+            <button
+              onClick={async () => {
+                try {
+                  await refreshUser();
+                  const res = await getUsers(token || undefined);
+                  const manualPayload = Array.isArray(res) ? res : (res && (res.data ?? res));
+                  setUsers(manualPayload || []);
+                  setError(null);
+                } catch (e) {
+                  console.error('Reintento manual falló:', e);
+                  setError('Reintento manual falló');
+                } finally {
+                  setLocalLoading(false);
+                }
+              }}
+              className="inline-block bg-gray-700 text-white px-3 py-1 rounded mr-2"
+            >
+              Reintentar carga
+            </button>
+          </div>
         </div>
-      </div>
 
       {localLoading || authLoading ? (
         <p>Cargando usuarios...</p>
