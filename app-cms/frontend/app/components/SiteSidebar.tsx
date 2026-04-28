@@ -141,7 +141,7 @@ export default function SiteSidebar({ logout, router: routerProp }: { logout: an
               </Link>
             </li>
             <li>
-              <Link href={`/dashboard/websites/${selectedSite.id}/sections`} className="flex items-center gap-3 text-gray-700 hover:text-gray-900">
+              <Link href={`/site/${selectedSite.id}/category`} className="flex items-center gap-3 text-gray-700 hover:text-gray-900">
                 <span className="w-6 h-6 flex items-center justify-center text-gray-600">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -153,7 +153,7 @@ export default function SiteSidebar({ logout, router: routerProp }: { logout: an
               </Link>
             </li>
             <li>
-              <Link href={`/dashboard/websites/${selectedSite.id}/tags`} className="flex items-center gap-3 text-gray-700 hover:text-gray-900">
+              <Link href={`/site/${selectedSite.id}/tag`} className="flex items-center gap-3 text-gray-700 hover:text-gray-900">
                 <span className="w-6 h-6 flex items-center justify-center text-gray-600">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 11.99 12 2l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
