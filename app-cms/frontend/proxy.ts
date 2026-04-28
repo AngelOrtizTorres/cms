@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function proxy(req: NextRequest) {
-  // DEBUG: mostrar la cabecera Cookie que llega al proxy
-  try {
-    // eslint-disable-next-line no-console
-    console.log('[proxy] Cookie header:', req.headers.get('cookie'));
-  } catch (e) {}
+  // en producción no mostrar cabeceras en consola
 
   const token = req.cookies.get('token')?.value;
 
@@ -21,10 +17,6 @@ export function proxy(req: NextRequest) {
     }
 
     // en desarrollo, permitir que el cliente gestione la protección
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[proxy] Desarrollo: token ausente, permitiendo NextResponse.next()');
-    } catch (e) {}
   }
 
   return NextResponse.next();
