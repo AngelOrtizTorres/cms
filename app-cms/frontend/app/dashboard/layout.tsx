@@ -11,7 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, loading, logout } = useAuth();
+  const { isAuthenticated, loading, logout, user } = useAuth();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -26,9 +26,18 @@ export default function DashboardLayout({
       <aside className="w-64 bg-gray-900 text-white p-5 flex flex-col gap-4">
         <h2 className="text-xl font-bold mb-6">CMS Admin</h2>
 
-        <Link href="/dashboard">Panel</Link>
-        <Link href="/dashboard/websites">Sitios web</Link>
-        <Link href="/dashboard/users">Usuarios</Link>
+        <nav className="flex flex-col gap-2">
+          <Link href="/dashboard">Panel</Link>
+          <Link href="/dashboard/sections">Secciones</Link>
+          <Link href="/dashboard/tags">Etiquetas</Link>
+          <Link href="/dashboard/banners">Banners</Link>
+          <Link href="/dashboard/articles">Noticias</Link>
+          <Link href="/dashboard/settings/homepage">Configuración portada</Link>
+          <Link href="/dashboard/websites">Sitios web</Link>
+          {user && user.role === 'admin' && (
+            <Link href="/dashboard/users">Usuarios</Link>
+          )}
+        </nav>
 
         <button
           className="mt-auto text-red-400"

@@ -142,6 +142,14 @@ export default function DashboardWebsitesPage() {
                         >
                           Eliminar
                         </button>
+                        <a
+                          href={`/site/${s.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-green-600"
+                        >
+                          Abrir panel
+                        </a>
                       </div>
                     </td>
                   </tr>

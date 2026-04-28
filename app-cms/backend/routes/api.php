@@ -9,7 +9,8 @@ use App\Http\Controllers\{
     SearchController,
     SectionController,
     TagController,
-    UserController
+    UserController,
+    WebsiteController
 };
 
 /*
@@ -48,6 +49,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
     Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
+
+    // Websites
+    Route::get('/websites', [WebsiteController::class, 'index']);
+    Route::get('/websites/{id}', [WebsiteController::class, 'show']);
+    Route::post('/websites', [WebsiteController::class, 'store']);
+    Route::put('/websites/{id}', [WebsiteController::class, 'update']);
+    Route::delete('/websites/{id}', [WebsiteController::class, 'destroy']);
 
 	Route::post('/sections', [SectionController::class, 'store']);
 	Route::put('/sections/{id}', [SectionController::class, 'update']);
