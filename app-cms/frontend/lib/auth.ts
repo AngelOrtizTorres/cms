@@ -3,7 +3,7 @@
  * Maneja login, logout y recuperación de datos del usuario
  */
 
-import { apiPost, apiGet } from './api';
+import { apiPost, apiGet, ApiError } from './api';
 
 export interface User {
   id: number;
@@ -47,8 +47,15 @@ export async function login(email: string, password: string): Promise<LoginRespo
 export async function logout(): Promise<void> {
   try {
     await apiPost('/auth/logout', {});
-  } catch (error) {
-    console.error('Error en logout:', error);
+  } catch (error: unknown) {
+    const apiError = error as Partial<ApiError>;
+    const status = typeof apiError?.status === 'number' ? apiError.status : undefined;
+
+    // Logout can be called when token/session already expired.
+    if (status !== 401 && status !== 419) {
+      const message = apiError?.message || 'Error desconocido en logout';
+      console.error('Error en logout:', { status, message, data: apiError?.data });
+    }
   } finally {
     // Limpiar localStorage
     localStorage.removeItem('cms_token');

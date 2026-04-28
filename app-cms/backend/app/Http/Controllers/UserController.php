@@ -62,10 +62,14 @@ class UserController extends Controller
             $validated['password'] = Hash::make($validated['password']);
         }
 
+        // `role` belongs to Spatie pivot tables, not to `users` columns.
+        $role = $validated['role'] ?? null;
+        unset($validated['role']);
+
         $target->update($validated);
 
-        if (isset($validated['role']) && $actor->hasRole('admin')) {
-            $target->syncRoles([$validated['role']]);
+        if ($role !== null && $actor->hasRole('admin')) {
+            $target->syncRoles([$role]);
         }
 
         return response()->json($target->load('roles'));
