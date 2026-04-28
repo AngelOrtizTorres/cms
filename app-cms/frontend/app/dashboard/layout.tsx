@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext';
 import { apiGet } from '@/lib/api';
