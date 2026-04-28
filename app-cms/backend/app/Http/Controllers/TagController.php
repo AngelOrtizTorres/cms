@@ -42,7 +42,6 @@ class TagController extends Controller
     public function update(Request $request, int $id)
     {
         $tag = Tag::findOrFail($id);
-
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255|unique:tags,name,' . $tag->id,
             'slug' => 'sometimes|string|max:255|unique:tags,slug,' . $tag->id,
