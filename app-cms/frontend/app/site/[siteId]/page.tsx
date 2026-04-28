@@ -6,7 +6,8 @@ import websitesService, { Website } from '@/lib/services/websites';
 
 export default function SiteDashboardPage() {
   const params = useParams();
-  const siteId = params?.siteId;
+  const rawSiteId = params?.siteId;
+  const siteId = Array.isArray(rawSiteId) ? rawSiteId[0] : rawSiteId;
   const [site, setSite] = useState<Website | null>(null);
   const [loading, setLoading] = useState(true);
 
