@@ -12,6 +12,7 @@ class Section extends Model
 
     protected $fillable = [
         'parent_id',
+        'website_id',
         'name',
         'slug',
         'description',
@@ -24,6 +25,7 @@ class Section extends Model
     protected $casts = [
         'active' => 'boolean',
         'position' => 'integer',
+        'website_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

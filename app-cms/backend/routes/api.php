@@ -28,7 +28,21 @@ Route::get('/articles', [ArticleController::class, 'index']);
 Route::get('/articles/featured', [ArticleController::class, 'featured']);
 Route::get('/articles/{slug}', [ArticleController::class, 'bySlug']);
 
+// Sections, Tags, Banners (singular resources used by frontend)
+Route::get('/sections/{slug}', [SectionController::class, 'bySlug']);
+Route::get('/categories/{slug}', [SectionController::class, 'bySlug']);
+Route::get('/tags/{slug}', [TagController::class, 'bySlug']);
+Route::get('/banners/{position}', [BannerController::class, 'byPosition']);
+
+// Settings & Homepage (public read)
+Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'show']);
+Route::get('/homepage', [\App\Http\Controllers\SettingsController::class, 'homepage']);
+
+// Allow public access to websites listing (frontend uses fallback when unauthenticated)
+Route::get('/websites', [WebsiteController::class, 'index']);
+
 Route::get('/sections', [SectionController::class, 'index']);
+Route::get('/categories', [SectionController::class, 'index']);
 Route::get('/tags', [TagController::class, 'index']);
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/search', [SearchController::class, 'search']);
@@ -60,6 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('/sections', [SectionController::class, 'store']);
 	Route::put('/sections/{id}', [SectionController::class, 'update']);
 	Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
+
+    Route::post('/categories', [SectionController::class, 'store']);
+    Route::put('/categories/{id}', [SectionController::class, 'update']);
+    Route::delete('/categories/{id}', [SectionController::class, 'destroy']);
 
 	Route::post('/tags', [TagController::class, 'store']);
 	Route::put('/tags/{id}', [TagController::class, 'update']);

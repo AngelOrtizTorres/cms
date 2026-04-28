@@ -9,16 +9,26 @@ class TagController extends Controller
 {
     public function index()
     {
-        $tags = Tag::where('active', true)->orderBy('name')->get();
+        $query = Tag::where('active', true)->orderBy('name');
+
+        if (request()->has('website_id')) {
+            $query->where('website_id', request('website_id'));
+        }
+
+        $tags = $query->get();
 
         return response()->json($tags);
     }
 
-    public function bySlug(string $slug)
+    public function bySlug(\Illuminate\Http\Request $request, string $slug)
     {
-        $tag = Tag::where('slug', $slug)
-            ->where('active', true)
-            ->firstOrFail();
+        $query = Tag::where('slug', $slug)->where('active', true);
+
+        if ($request->filled('website_id')) {
+            $query->where('website_id', $request->website_id);
+        }
+
+        $tag = $query->firstOrFail();
 
         return response()->json($tag);
     }
@@ -28,6 +38,7 @@ class TagController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:tags,name',
             'slug' => 'required|string|max:255|unique:tags,slug',
+            'website_id' => 'nullable|exists:websites,id',
             'description' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:160',
@@ -45,6 +56,7 @@ class TagController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255|unique:tags,name,' . $tag->id,
             'slug' => 'sometimes|string|max:255|unique:tags,slug,' . $tag->id,
+            'website_id' => 'nullable|exists:websites,id',
             'description' => 'nullable|string',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:160',

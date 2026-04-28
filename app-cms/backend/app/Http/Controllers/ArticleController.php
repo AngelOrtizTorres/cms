@@ -28,6 +28,13 @@ class ArticleController extends Controller
                 $query->where('section_id', $request->section_id);
             }
 
+            // Filtrar por sitio (website_id) mediante la sección
+            if ($request->filled('website_id')) {
+                $query->whereHas('section', function ($q) use ($request) {
+                    $q->where('website_id', $request->website_id);
+                });
+            }
+
             // Filtrar por etiqueta
             if ($request->has('tag_id')) {
                 $query->whereHas('tags', function ($q) {

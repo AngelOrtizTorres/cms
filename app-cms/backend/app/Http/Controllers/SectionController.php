@@ -11,6 +11,10 @@ class SectionController extends Controller
     {
         $query = Section::query()->where('active', true);
 
+        if ($request->filled('website_id')) {
+            $query->where('website_id', $request->website_id);
+        }
+
         if ($request->boolean('with_children')) {
             $query->with('children');
         }
@@ -20,12 +24,17 @@ class SectionController extends Controller
         return response()->json($sections);
     }
 
-    public function bySlug(string $slug)
+    public function bySlug(Request $request, string $slug)
     {
-        $section = Section::where('slug', $slug)
+        $query = Section::where('slug', $slug)
             ->where('active', true)
-            ->with('children')
-            ->firstOrFail();
+            ->with('children');
+
+        if ($request->filled('website_id')) {
+            $query->where('website_id', $request->website_id);
+        }
+
+        $section = $query->firstOrFail();
 
         return response()->json($section);
     }
@@ -34,6 +43,7 @@ class SectionController extends Controller
     {
         $validated = $request->validate([
             'parent_id' => 'nullable|exists:sections,id',
+            'website_id' => 'nullable|exists:websites,id',
             'name' => 'required|string|max:255|unique:sections,name',
             'slug' => 'required|string|max:255|unique:sections,slug',
             'description' => 'nullable|string',
@@ -54,6 +64,7 @@ class SectionController extends Controller
 
         $validated = $request->validate([
             'parent_id' => 'nullable|exists:sections,id',
+            'website_id' => 'nullable|exists:websites,id',
             'name' => 'sometimes|string|max:255|unique:sections,name,' . $section->id,
             'slug' => 'sometimes|string|max:255|unique:sections,slug,' . $section->id,
             'description' => 'nullable|string',

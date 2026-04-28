@@ -14,6 +14,7 @@ class Tag extends Model
         'name',
         'slug',
         'description',
+        'website_id',
         'meta_title',
         'meta_description',
         'active',
@@ -21,6 +22,7 @@ class Tag extends Model
 
     protected $casts = [
         'active' => 'boolean',
+        'website_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

@@ -20,6 +20,7 @@ class Settings extends Model
         'phone_number',
         'address',
         'social_links',
+        'homepage_config',
         'google_analytics_id',
         'facebook_pixel_id',
         'header_scripts',
@@ -29,6 +30,7 @@ class Settings extends Model
 
     protected $casts = [
         'social_links' => 'json',
+        'homepage_config' => 'json',
         'maintenance_mode' => 'boolean',
         'updated_at' => 'datetime',
     ];
