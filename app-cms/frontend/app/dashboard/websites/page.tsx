@@ -119,7 +119,7 @@ export default function DashboardWebsitesPage() {
                 .map((s) => (
                   <tr key={s.id}>
                     <td className="px-4 py-3">
-                      <Link href={`/dashboard/websites/${s.id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/dashboard/websites/${s.id}/site`} className="text-blue-600 hover:underline">
                         {s.name}
                       </Link>
                     </td>

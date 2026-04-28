@@ -17,7 +17,31 @@ interface RequestConfig {
   token?: string;
 }
 
+export interface ApiError extends Error {
+  status: number;
+  errors?: Record<string, string[]>;
+  data?: any;
+}
+
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api').replace(/\/$/, '');
+
+function createApiError(payload: {
+  status: number;
+  message: string;
+  errors?: Record<string, string[]>;
+  data?: any;
+  cause?: unknown;
+}): ApiError {
+  const err = new Error(payload.message) as ApiError;
+  err.name = 'ApiError';
+  err.status = payload.status;
+  err.errors = payload.errors;
+  err.data = payload.data;
+  if (payload.cause !== undefined) {
+    (err as Error & { cause?: unknown }).cause = payload.cause;
+  }
+  return err;
+}
 
 /**
  * Obtiene el token del almacenamiento local
@@ -80,31 +104,25 @@ export async function apiCall<T = any>(
       }
     }
 
-    // DEBUG: log resumen de la respuesta para facilitar diagnóstico en desarrollo
-    try {
-      // eslint-disable-next-line no-console
-      console.log('[api] %s %s -> status=%d, content-type=%s, dataPreview=', method, url, response.status, contentType, (typeof data === 'object' ? (Array.isArray(data) ? `Array(${data.length})` : Object.keys(data).slice(0,10)) : String(data).slice(0,200)));
-    } catch (e) {}
-
     // Si la respuesta no es exitosa, lanzar error con detalle (incluye texto bruto si no es JSON)
     if (!response.ok) {
-      throw {
+      throw createApiError({
         status: response.status,
         message: (data && data.message) || 'Error en la solicitud',
         errors: data && data.errors,
         data,
-      };
+      });
     }
 
     return data;
   } catch (error: any) {
     // Si es un error de red, lanzar error genérico
     if (error instanceof TypeError) {
-      throw {
+      throw createApiError({
         status: 0,
         message: 'Error de conexión con el servidor',
-        error,
-      };
+        cause: error,
+      });
     }
 
     // Re-lanzar errores conocidos
