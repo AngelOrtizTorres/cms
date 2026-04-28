@@ -117,11 +117,7 @@ export default function DashboardWebsitesPage() {
                 .filter((s) => (viewAll ? true : (s.owner ? s.owner === 'Admin' || s.owner === 'admin' : true)))
                 .map((s) => (
                   <tr key={s.id}>
-                    <td className="px-4 py-3">
-                      <Link href={`/dashboard/websites/${s.id}/site`} className="text-blue-600 hover:underline">
-                        {s.name}
-                      </Link>
-                    </td>
+                    <td className="px-4 py-3 font-medium text-blue-600">{s.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{s.url}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{s.owner}</td>
                     <td className="px-4 py-3">
@@ -141,14 +137,7 @@ export default function DashboardWebsitesPage() {
                         >
                           Eliminar
                         </button>
-                        <a
-                          href={`/site/${s.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-green-600"
-                        >
-                          Abrir panel
-                        </a>
+                        <Link href={`/site/${s.id}`} className="text-sm text-green-600">Abrir panel</Link>
                       </div>
                     </td>
                   </tr>
