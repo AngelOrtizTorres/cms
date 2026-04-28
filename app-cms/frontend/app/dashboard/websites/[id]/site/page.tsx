@@ -8,7 +8,8 @@ import { useSidebar } from '@/context/SidebarContext';
 export default function WebsiteSiteDashboardPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params?.id;
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const [site, setSite] = useState<Website | null>(null);
   const [loading, setLoading] = useState(true);
   const { setSelectedSite, clearSelectedSite } = useSidebar();

@@ -67,15 +67,39 @@ export async function logout(): Promise<void> {
  * Obtener datos del usuario actual
  */
 export async function getCurrentUser(token?: string): Promise<User> {
-  const response = await apiGet<User>('/auth/me', token);
-  // El API devuelve directamente el objeto User, o envuelto en { data: User }
-  const user = (response.data || response) as User;
+  const response = await apiGet<any>('/auth/me', token);
 
-  if (!user.role && user.roles && user.roles.length > 0) {
-    user.role = user.roles[0].name as User['role'];
+  // Normalizar posibles formas de respuesta del backend:
+  // - { user: User }
+  // - { data: User }
+  // - { data: { user: User } }
+  // - User (directo)
+  let payload: any = null;
+
+  if (response && typeof response === 'object') {
+    if ('user' in response && response.user) {
+      payload = response.user;
+    } else if ('data' in response) {
+      const d = response.data;
+      if (d && typeof d === 'object') {
+        payload = d.user ?? d;
+      } else {
+        payload = d;
+      }
+    } else {
+      payload = response;
+    }
+  } else {
+    payload = response;
   }
 
-  return user;
+  const user = (payload || null) as User;
+
+  if (user && !user.role && (user as any).roles && (user as any).roles.length > 0) {
+    user.role = (user as any).roles[0].name as User['role'];
+  }
+
+  return user as User;
 }
 
 /**
