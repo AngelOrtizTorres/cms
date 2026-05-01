@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {
@@ -40,7 +41,25 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $e)
     {
         if ($e instanceof TokenMismatchException) {
-            if ($request->expectsJson() || $request->is('api/*')) {
+            // Registrar información útil para depuración
+            Log::warning('TokenMismatchException capturada', [
+                'path' => $request->path(),
+                'url' => $request->fullUrl(),
+                'method' => $request->method(),
+                'accept' => $request->header('Accept'),
+                'x-requested-with' => $request->header('X-Requested-With'),
+                'referer' => $request->header('Referer'),
+                'cookies' => $request->cookies->all(),
+            ]);
+
+            // Detectar si la petición espera JSON (por cabeceras o por ruta API)
+            $accept = $request->header('Accept', '');
+            $wantsJson = $request->expectsJson()
+                || (is_string($accept) && str_contains($accept, 'application/json'))
+                || $request->header('X-Requested-With') === 'XMLHttpRequest'
+                || $request->is('api/*');
+
+            if ($wantsJson) {
                 return response()->json([
                     'message' => 'Token CSRF inválido o expirado. Intente refrescar y reintentar.'
                 ], 419);

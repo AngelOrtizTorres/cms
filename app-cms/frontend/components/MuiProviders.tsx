@@ -99,6 +99,35 @@ export default function MuiProviders({
             default: mode === "light" ? "#f5f5f5" : "#121212",
           },
         },
+        typography: {
+          // WordPress admin uses a humanist sans; use Open Sans stack
+          fontFamily:
+            '"Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          button: { textTransform: "none" },
+        },
+        shape: { borderRadius: 6 },
+        components: {
+          MuiPaper: {
+            styleOverrides: {
+              root: {
+                borderRadius: 6,
+              },
+            },
+          },
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                "&.MuiButton-containedPrimary": {
+                  backgroundColor: primaryColor,
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: "#006799",
+                  },
+                },
+              },
+            },
+          },
+        },
       }),
     [mode, primaryColor],
   );
