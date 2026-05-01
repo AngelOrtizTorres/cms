@@ -14,7 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Habilitar CORS para solicitudes desde localhost:3000
-        $middleware->statefulApi();
+        // Llamada a statefulApi() solo si Laravel Sanctum está disponible
+        if (class_exists(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class)) {
+            $middleware->statefulApi();
+        }
+
         $middleware->api(prepend: [
             Cors::class,
         ]);

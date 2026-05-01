@@ -8,6 +8,7 @@ use App\Models\Tag;
 use App\Http\Resources\ArticleResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class ArticleController extends Controller
 {
@@ -231,6 +232,15 @@ class ArticleController extends Controller
             'tags' => 'nullable|array',
         ]);
 
+        // Soporte de autenticación por token Bearer: si se envía Authorization: Bearer <token>
+        $token = $request->bearerToken();
+        if ($token && !Auth::check()) {
+            $tokenUser = User::where('api_token', $token)->first();
+            if ($tokenUser) {
+                Auth::login($tokenUser);
+            }
+        }
+
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -266,6 +276,20 @@ class ArticleController extends Controller
             'tags' => 'nullable|array',
         ]);
 
+        // Intentar autenticar por token si está disponible
+        $token = $request->bearerToken();
+        if ($token && !Auth::check()) {
+            $tokenUser = User::where('api_token', $token)->first();
+            if ($tokenUser) {
+                Auth::login($tokenUser);
+            }
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         $article->update($validated);
 
         if ($request->has('tags')) {
@@ -280,6 +304,21 @@ class ArticleController extends Controller
      */
     public function destroy(Article $article)
     {
+        // Intentar autenticar por token si está disponible
+        $request = request();
+        $token = $request->bearerToken();
+        if ($token && !Auth::check()) {
+            $tokenUser = User::where('api_token', $token)->first();
+            if ($tokenUser) {
+                Auth::login($tokenUser);
+            }
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         $article->delete();
         return response()->json(null, 204);
     }

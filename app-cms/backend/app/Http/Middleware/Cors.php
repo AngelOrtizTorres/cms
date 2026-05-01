@@ -18,7 +18,12 @@ class Cors
         ];
 
         $origin = $request->header('origin');
-        $response = $next($request);
+        // Si es preflight OPTIONS, devolver respuesta corta con headers CORS
+        if (strtoupper($request->getMethod()) === 'OPTIONS') {
+            $response = response('', 204);
+        } else {
+            $response = $next($request);
+        }
 
         // Agregar headers CORS si el origen está permitido
         if (in_array($origin, $allowedOrigins)) {
