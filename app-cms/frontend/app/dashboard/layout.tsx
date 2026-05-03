@@ -1,32 +1,12 @@
 "use client";
 
-import React from "react";
-import NextLink from "next/link";
+import React, { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { apiGet } from "@/lib/api";
 import Box from "@mui/material/Box";
-import Drawer from "@mui/material/Drawer";
 import Toolbar from "@mui/material/Toolbar";
 import Header from "@/components/Header";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
-import Avatar from "@mui/material/Avatar";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ArticleIcon from "@mui/icons-material/Article";
-import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
-import DescriptionIcon from "@mui/icons-material/Description";
-import CommentIcon from "@mui/icons-material/Comment";
-import BrushIcon from "@mui/icons-material/Brush";
-import ExtensionIcon from "@mui/icons-material/Extension";
-import GroupIcon from "@mui/icons-material/Group";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AddBoxIcon from "@mui/icons-material/AddBox";
-import LogoutButton from "@/components/LogoutButton";
 import { useThemeSettings } from "@/components/MuiProviders";
 import LeftSidebar from "@/components/LeftSidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -39,23 +19,67 @@ export default function DashboardLayout({
   const { compactSidebar } = useThemeSettings();
   const drawerWidth = compactSidebar ? 80 : 240;
   const auth = useAuth();
-  const navItems = [
-    { text: "Escritorio", href: "/dashboard", icon: <DashboardIcon /> },
-    { text: "Entradas", href: "/dashboard/articles", icon: <ArticleIcon /> },
-    { text: "Medios", href: "/dashboard/media", icon: <PhotoLibraryIcon /> },
-    { text: "Páginas", href: "/dashboard/pages", icon: <DescriptionIcon /> },
-    { text: "Comentarios", href: "/dashboard/comments", icon: <CommentIcon /> },
-    { text: "Apariencia", href: "/dashboard/appearance", icon: <BrushIcon /> },
-    { text: "Plugins", href: "/dashboard/plugins", icon: <ExtensionIcon /> },
-    { text: "Usuarios", href: "/dashboard/users", icon: <GroupIcon /> },
-    { text: "Ajustes", href: "/dashboard/settings", icon: <SettingsIcon /> },
-  ];
+  const pathname = usePathname();
+
+  const [currentSiteId, setCurrentSiteId] = useState<number | null>(null);
+  const [siteOwnerId, setSiteOwnerId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!pathname) {
+      setCurrentSiteId(null);
+      setSiteOwnerId(null);
+      return;
+    }
+
+    const m = pathname.match(/^\/dashboard\/sites\/([^\/]+)/);
+    const id = m ? m[1] : null;
+    setCurrentSiteId(id ? Number(id) : null);
+
+    if (!id || !auth.token) {
+      setSiteOwnerId(null);
+      return;
+    }
+
+    let cancelled = false;
+    apiGet(`/sites/${id}`, auth.token)
+      .then((res: unknown) => {
+        if (cancelled) return;
+        let ownerRaw: unknown = null;
+        if (res && typeof res === "object") {
+          const r = res as Record<string, unknown>;
+          if ("owner_id" in r) ownerRaw = r["owner_id"];
+          else if ("data" in r && typeof r.data === "object") {
+            const d = r.data as Record<string, unknown>;
+            if ("owner_id" in d) ownerRaw = d["owner_id"];
+          }
+        }
+
+        const ownerNum = ownerRaw != null ? Number(ownerRaw) : null;
+        setSiteOwnerId(
+          ownerNum !== null && Number.isFinite(ownerNum) ? ownerNum : null,
+        );
+      })
+      .catch((err) => {
+        console.error("Failed to load site owner", err);
+        setSiteOwnerId(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, auth.token]);
+  // Nav items removed (unused) — LeftSidebar builds menu based on role/site
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       <Header drawerWidth={drawerWidth} />
 
-      <LeftSidebar role={auth.user?.role} userId={auth.user?.id} />
+      <LeftSidebar
+        role={auth.user?.role}
+        userId={auth.user?.id}
+        currentSiteId={currentSiteId}
+        siteOwnerId={siteOwnerId}
+      />
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />

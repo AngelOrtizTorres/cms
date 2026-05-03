@@ -44,10 +44,10 @@ export default function LeftSidebar({
   const drawerWidth = compactSidebar ? 80 : 240;
 
   const isViewingSite = !!currentSiteId;
-  const isSiteOwner = !!(
-    siteOwnerId &&
-    effectiveUserId &&
-    siteOwnerId === effectiveUserId
+  const isSiteOwner = Boolean(
+    siteOwnerId != null &&
+    effectiveUserId != null &&
+    Number(siteOwnerId) === Number(effectiveUserId),
   );
 
   let menuItems: Array<{ text: string; href: string; icon?: React.ReactNode }> =

@@ -34,14 +34,15 @@ export default function WebsPage() {
     const role = auth.user?.role;
     if (!auth.user) return false;
     if (role === "admin") return true;
-    if (role === "author") return site.owner_id === auth.user?.id;
+    if (role === "author")
+      return Number(site.owner_id) === Number(auth.user?.id);
     return false;
   };
 
   const canEnter = (site: any) => {
     // per README: enter only if owner
     if (!auth.user) return false;
-    return site.owner_id === auth.user?.id;
+    return Number(site.owner_id) === Number(auth.user?.id);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
