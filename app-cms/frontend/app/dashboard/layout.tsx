@@ -4,8 +4,8 @@ import React from "react";
 import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
+import Header from "@/components/Header";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -28,6 +28,8 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import LogoutButton from "@/components/LogoutButton";
 import { useThemeSettings } from "@/components/MuiProviders";
+import LeftSidebar from "@/components/LeftSidebar";
+import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardLayout({
   children,
@@ -36,6 +38,7 @@ export default function DashboardLayout({
 }) {
   const { compactSidebar } = useThemeSettings();
   const drawerWidth = compactSidebar ? 80 : 240;
+  const auth = useAuth();
   const navItems = [
     { text: "Escritorio", href: "/dashboard", icon: <DashboardIcon /> },
     { text: "Entradas", href: "/dashboard/articles", icon: <ArticleIcon /> },
@@ -50,103 +53,13 @@ export default function DashboardLayout({
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <AppBar
-        position="fixed"
-        sx={{
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: "#23282d",
-        }}
-      >
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Avatar
-              sx={{ bgcolor: "white", color: "#23282d", fontWeight: "bold" }}
-            >
-              W
-            </Avatar>
-            <Typography
-              variant="h6"
-              component={NextLink}
-              href="/"
-              sx={{ textDecoration: "none", color: "inherit" }}
-            >
-              Mi Sitio
-            </Typography>
-          </Box>
+      <Header drawerWidth={drawerWidth} />
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Tooltip title="Crear">
-              <IconButton color="inherit">
-                <AddBoxIcon />
-              </IconButton>
-            </Tooltip>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.9)" }}>
-              Hola, admin
-            </Typography>
-            <Avatar
-              sx={{ bgcolor: "white", color: "#23282d", width: 32, height: 32 }}
-            >
-              A
-            </Avatar>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: {
-            width: drawerWidth,
-            boxSizing: "border-box",
-            backgroundColor: "#23282d",
-            color: "#fff",
-          },
-        }}
-      >
-        <Toolbar />
-        <Box
-          sx={{
-            overflow: "auto",
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-          }}
-        >
-          <Box sx={{ p: 2, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <Typography variant="h6">Mi Blog</Typography>
-            <Typography variant="caption" color="rgba(255,255,255,0.6)">
-              Panel de administración
-            </Typography>
-          </Box>
-
-          <List sx={{ flex: 1 }}>
-            {navItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  component={NextLink}
-                  href={item.href}
-                  sx={{ color: "#fff" }}
-                >
-                  <ListItemIcon sx={{ color: "#fff" }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-
-          <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <LogoutButton />
-          </Box>
-        </Box>
-      </Drawer>
+      <LeftSidebar role={auth.user?.role} userId={auth.user?.id} />
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-        <Box sx={{ bgcolor: "background.paper", p: 2, borderRadius: 1, mb: 2 }}>
+        <Box sx={{ bgcolor: "background.paper", p: 2, borderRadius: 0, mb: 2 }}>
           <Typography variant="h5">Escritorio</Typography>
           <Typography variant="body2" color="text.secondary">
             Bienvenido

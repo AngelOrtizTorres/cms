@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SiteController;
+use App\Http\Controllers\UserController;
 
 // Endpoint de prueba
 Route::get('/test', function () {
@@ -23,4 +25,17 @@ Route::prefix('articles')->group(function () {
 	Route::get('/tag/{tagId}', [ArticleController::class, 'byTag']);
 	Route::get('/{slug}', [ArticleController::class, 'bySlug']);
 });
+
+// Sites (Webs) - lightweight JSON-backed implementation
+Route::get('/sites', [SiteController::class, 'index']);
+Route::get('/sites/{id}', [SiteController::class, 'show']);
+Route::post('/sites', [SiteController::class, 'store']);
+Route::put('/sites/{id}', [SiteController::class, 'update']);
+Route::delete('/sites/{id}', [SiteController::class, 'destroy']);
+Route::get('/sites/{id}/capabilities', [SiteController::class, 'capabilities']);
+
+// Users management
+Route::get('/users', [UserController::class, 'index']);
+Route::put('/users/{id}', [UserController::class, 'update']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
 

@@ -105,18 +105,26 @@ export default function MuiProviders({
             '"Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           button: { textTransform: "none" },
         },
-        shape: { borderRadius: 6 },
+        shape: { borderRadius: 0 },
         components: {
           MuiPaper: {
             styleOverrides: {
               root: {
-                borderRadius: 6,
+                borderRadius: 0,
+              },
+            },
+          },
+          MuiCard: {
+            styleOverrides: {
+              root: {
+                borderRadius: 0,
               },
             },
           },
           MuiButton: {
             styleOverrides: {
               root: {
+                borderRadius: 0,
                 "&.MuiButton-containedPrimary": {
                   backgroundColor: primaryColor,
                   color: "#fff",
@@ -124,6 +132,14 @@ export default function MuiProviders({
                     backgroundColor: "#006799",
                   },
                 },
+              },
+            },
+          },
+          MuiAppBar: {
+            styleOverrides: {
+              root: {
+                borderRadius: 0,
+                boxShadow: "none",
               },
             },
           },

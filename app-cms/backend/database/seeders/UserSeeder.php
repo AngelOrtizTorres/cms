@@ -26,5 +26,37 @@ class UserSeeder extends Seeder
         if (method_exists($user, 'assignRole')) {
             $user->assignRole('admin');
         }
+
+        // Usuario autor idempotente
+        $author = User::updateOrCreate(
+            ['email' => 'author@gmail.com'],
+            [
+                'name' => 'Autor',
+                'password' => Hash::make('author123456789'),
+                'remember_token' => Str::random(16),
+                'role' => 'author',
+                'api_token' => Str::random(60),
+            ]
+        );
+
+        if (method_exists($author, 'assignRole')) {
+            $author->assignRole('author');
+        }
+
+        // Usuario editor idempotente
+        $editor = User::updateOrCreate(
+            ['email' => 'editor@gmail.com'],
+            [
+                'name' => 'Editor',
+                'password' => Hash::make('editor123456789'),
+                'remember_token' => Str::random(16),
+                'role' => 'editor',
+                'api_token' => Str::random(60),
+            ]
+        );
+
+        if (method_exists($editor, 'assignRole')) {
+            $editor->assignRole('editor');
+        }
     }
 }
