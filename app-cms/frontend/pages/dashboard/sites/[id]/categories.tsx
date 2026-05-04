@@ -1,15 +1,9 @@
 import React from 'react';
 import CategoriesManager from '@/components/dashboard/CategoriesManager';
-import AdminLayout from '@/components/AdminLayout';
 import type { GetServerSideProps } from 'next';
 
 export default function CategoriesPage({ siteId }: { siteId: string }) {
-  const currentSiteId = siteId ? Number(siteId) : undefined;
-  return (
-    <AdminLayout currentSiteId={currentSiteId}>
-      <CategoriesManager siteId={siteId} />
-    </AdminLayout>
-  );
+  return <CategoriesManager siteId={siteId} />;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
