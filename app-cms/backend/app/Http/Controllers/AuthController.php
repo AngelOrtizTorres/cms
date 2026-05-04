@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Schema;
 
 class AuthController extends Controller
 {
@@ -33,7 +34,7 @@ class AuthController extends Controller
         $user->api_token = $token;
         $user->save();
 
-        $role = $user->getRoleNames()->first() ?? 'user';
+        $role = $this->resolveUserRole($user) ?? 'user';
 
         return response()->json([
             'token' => $token,
@@ -124,10 +125,14 @@ class AuthController extends Controller
         // Evitar crear un segundo administrador: comprobar si ya existe
         try {
             $adminExists = User::role('admin')->exists();
-        } catch (\Exception $e) {
-            // Si por alguna razón el paquete de roles no está disponible,
-            // intentamos comprobar columnas comunes (fallback).
-            $adminExists = User::where('is_admin', true)->exists() || User::where('role', 'admin')->exists();
+        } catch (\Throwable $e) {
+            // Si el paquete de roles no está disponible, comprobar columnas existentes
+            $adminExists = false;
+            if (Schema::hasColumn('users', 'role')) {
+                $adminExists = User::where('role', 'admin')->exists();
+            } elseif (Schema::hasColumn('users', 'is_admin')) {
+                $adminExists = User::where('is_admin', true)->exists();
+            }
         }
 
         if ($adminExists) {
@@ -151,15 +156,28 @@ class AuthController extends Controller
             if (method_exists($user, 'assignRole')) {
                 $user->assignRole('admin');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // ignore role assignment errors (seeder may not have run)
+        }
+
+        // Asegurar que el atributo/columna de rol queda como 'admin'
+        // (fallback si Spatie no está configurado o la columna tiene default 'editor')
+        try {
+            if (Schema::hasColumn('users', 'role')) {
+                $user->role = 'admin';
+            } elseif (Schema::hasColumn('users', 'is_admin')) {
+                $user->is_admin = true;
+            }
+            $user->save();
+        } catch (\Throwable $e) {
+            // ignorar errores al persistir el campo de rol
         }
 
         // Login the new user using session
         Auth::login($user);
         $request->session()->regenerate();
 
-        $role = $user->getRoleNames()->first() ?? 'admin';
+        $role = $this->resolveUserRole($user) ?? 'admin';
 
         return response()->json([
             'user' => [
@@ -179,8 +197,13 @@ class AuthController extends Controller
     {
         try {
             $exists = User::role('admin')->exists();
-        } catch (\Exception $e) {
-            $exists = User::where('is_admin', true)->exists() || User::where('role', 'admin')->exists();
+        } catch (\Throwable $e) {
+            $exists = false;
+            if (Schema::hasColumn('users', 'role')) {
+                $exists = User::where('role', 'admin')->exists();
+            } elseif (Schema::hasColumn('users', 'is_admin')) {
+                $exists = User::where('is_admin', true)->exists();
+            }
         }
 
         return response()->json(['admin_exists' => (bool) $exists]);
@@ -204,7 +227,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
         $user = Auth::user();
-        $role = $user->getRoleNames()->first() ?? 'user';
+        $role = $this->resolveUserRole($user) ?? 'user';
 
         return response()->json([
             'user' => [
@@ -235,7 +258,7 @@ class AuthController extends Controller
         // If session auth present, return that user
         if (Auth::check()) {
             $user = Auth::user();
-            $role = $user->getRoleNames()->first() ?? 'user';
+            $role = $this->resolveUserRole($user) ?? 'user';
 
             return response()->json([
                 'id' => $user->id,
@@ -256,7 +279,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'No autenticado'], 401);
         }
 
-        $role = $user->getRoleNames()->first() ?? 'user';
+        $role = $this->resolveUserRole($user) ?? 'user';
 
         return response()->json([
             'id' => $user->id,
@@ -276,7 +299,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
-        $role = $user->getRoleNames()->first() ?? 'user';
+        $role = $this->resolveUserRole($user) ?? 'user';
 
         return response()->json([
             'id' => $user->id,
@@ -284,5 +307,33 @@ class AuthController extends Controller
             'email' => $user->email,
             'role' => $role,
         ]);
+    }
+
+    /**
+     * Resolve the user's role in a safe way (supports Spatie or simple role column)
+     */
+    private function resolveUserRole(User $user): string
+    {
+        try {
+            if (method_exists($user, 'getRoleNames')) {
+                $names = $user->getRoleNames();
+                if (is_object($names) && method_exists($names, 'first')) {
+                    $first = $names->first();
+                    if ($first) {
+                        return (string) $first;
+                    }
+                }
+                if (is_array($names) && count($names)) {
+                    return (string) $names[0];
+                }
+                if (is_string($names) && $names !== '') {
+                    return $names;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        return $user->role ?? 'user';
     }
 }

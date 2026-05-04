@@ -45,6 +45,10 @@ Qué se ha implementado
   - El frontend ahora intenta primero el flujo por sesión al llamar a `login()` y `getCurrentUser()`. Si no hay sesión disponible, mantiene la compatibilidad con el flujo token-based existente (`api_token`).
   - `app-cms/frontend/app/register/page.tsx` es la nueva página de registro de administrador (estilo "instalación" similar a WordPress): formulario para `Título del sitio`, `Nombre de usuario`, `Contraseña`, `Confirmar contraseña`, `Correo electrónico` y opción de visibilidad. Al enviar llama a `POST /register-admin` y redirige a `/dashboard`.
 
+Nota importante sobre rol por defecto
+
+- El endpoint `POST /register-admin` ahora garantiza que el usuario creado tenga el rol `admin` asignado y persistido. Si Spatie/permission está disponible se invoca `assignRole('admin')`; además, como fallback el controlador persiste el atributo/columna de base de datos (`role = 'admin'` o `is_admin = true`) para evitar que la migración por defecto (`editor`) se aplique accidentalmente. Esto asegura que el flujo de instalación siempre deje un administrador activo.
+
 Requisitos de configuración (backend)
 
 - `config/cors.php` debe contener el origen del frontend y `supports_credentials => true` (ya está configurado con `http://localhost:3000`).

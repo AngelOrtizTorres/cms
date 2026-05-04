@@ -29,17 +29,18 @@ Senior Laravel specialist with deep expertise in Laravel 10+, Eloquent ORM, and 
 
 Load detailed guidance based on context:
 
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Eloquent ORM | `references/eloquent.md` | Models, relationships, scopes, query optimization |
-| Routing & APIs | `references/routing.md` | Routes, controllers, middleware, API resources |
-| Queue System | `references/queues.md` | Jobs, workers, Horizon, failed jobs, batching |
-| Livewire | `references/livewire.md` | Components, wire:model, actions, real-time |
-| Testing | `references/testing.md` | Feature tests, factories, mocking, Pest PHP |
+| Topic          | Reference                | Load When                                         |
+| -------------- | ------------------------ | ------------------------------------------------- |
+| Eloquent ORM   | `references/eloquent.md` | Models, relationships, scopes, query optimization |
+| Routing & APIs | `references/routing.md`  | Routes, controllers, middleware, API resources    |
+| Queue System   | `references/queues.md`   | Jobs, workers, Horizon, failed jobs, batching     |
+| Livewire       | `references/livewire.md` | Components, wire:model, actions, real-time        |
+| Testing        | `references/testing.md`  | Feature tests, factories, mocking, Pest PHP       |
 
 ## Constraints
 
 ### MUST DO
+
 - Use PHP 8.2+ features (readonly, enums, typed properties)
 - Type hint all method parameters and return types
 - Use Eloquent relationships properly (avoid N+1 with eager loading)
@@ -50,6 +51,7 @@ Load detailed guidance based on context:
 - Follow PSR-12 coding standards
 
 ### MUST NOT DO
+
 - Use raw queries without protection (SQL injection)
 - Skip eager loading (causes N+1 problems)
 - Store sensitive data unencrypted
@@ -249,16 +251,112 @@ it('queues a publish job when a draft is submitted', function (): void {
 
 Run these at each workflow stage to confirm correctness before proceeding:
 
-| Stage | Command | Expected Result |
-|-------|---------|-----------------|
-| After migration | `php artisan migrate:status` | All migrations show `Ran` |
-| After routing | `php artisan route:list --path=api` | New routes appear with correct verbs |
-| After job dispatch | `php artisan queue:work --once` | Job processes without exception |
-| After implementation | `php artisan test --coverage` | >85% coverage, 0 failures |
-| Before PR | `./vendor/bin/pint --test` | PSR-12 linting passes |
+| Stage                | Command                             | Expected Result                      |
+| -------------------- | ----------------------------------- | ------------------------------------ |
+| After migration      | `php artisan migrate:status`        | All migrations show `Ran`            |
+| After routing        | `php artisan route:list --path=api` | New routes appear with correct verbs |
+| After job dispatch   | `php artisan queue:work --once`     | Job processes without exception      |
+| After implementation | `php artisan test --coverage`       | >85% coverage, 0 failures            |
+| Before PR            | `./vendor/bin/pint --test`          | PSR-12 linting passes                |
 
 ## Knowledge Reference
 
-Laravel 10+, Eloquent ORM, PHP 8.2+, API resources, Sanctum/Passport, queues, Horizon, Livewire, Inertia, Octane, Pest/PHPUnit, Redis, broadcasting, events/listeners, notifications, task scheduling
+Laravel 13+, Eloquent ORM, PHP 8.2+, API resources, Sanctum/Passport, queues, Horizon, Livewire, Inertia, Octane, Pest/PHPUnit, Redis, broadcasting, events/listeners, notifications, task scheduling
 
 [Documentation](https://jeffallan.github.io/claude-skills/skills/backend/laravel-specialist/)
+
+## Gestión de sitios y usuarios (Admin / Autor / Editor)
+
+Esta sección documenta el comportamiento esperado en la interfaz de administración respecto a la gestión de _webs_ (sitios) y usuarios, así como permisos por rol. Añadirla a los `SKILL.md` ayuda a mantener estándares comunes entre equipo backend/frontend.
+
+### Resumen de roles
+
+- **Administrador (admin)**: acceso total. Puede ver/entrar/editar/eliminar cualquier sitio (propio y ajeno). Puede crear, editar y eliminar usuarios y asignarles rol mediante un `select`.
+- **Autor (author)**: puede crear sitios y administrar sus propios sitios (ver, entrar, editar, eliminar). En la vista de administración verá un `select` con las webs para ayudar a filtrar, pero las acciones sobre sitios ajenos estarán deshabilitadas según las políticas del backend.
+- **Editor (editor)**: no muestra el `select` de filtrado global. Solo podrá ver y entrar en los sitios a los que esté asignado; no podrá editar ni eliminar sitios.
+
+> Nota: las reglas de acceso deben estar aplicadas por políticas/Eloquent policies en backend (p. ej. `SitePolicy::view`, `update`, `delete`) y reforzadas en la API.
+
+### Vista: Webs (Sites)
+
+- En la lista/panel de webs debe mostrarse la siguiente información por sitio:
+  - **Título** (string)
+  - **Descripción** (string)
+  - **Creador** (correo electrónico del usuario que creó la web)
+  - **Dominio** (string, opcional)
+  - **Opciones / acciones** según rol
+
+- Comportamiento de acciones por rol:
+  - **Administrador**: verá las acciones `Ver`, `Entrar`, `Editar`, `Eliminar` para cualquier sitio. `Ver` muestra ficha de información; `Entrar` abre el front del sitio; `Editar` abre el editor/ajustes del sitio; `Eliminar` borra el sitio tras confirmación.
+  - **Autor**: verá `Ver` y `Entrar` para todos los sitios listados, pero sólo podrá `Editar` y `Eliminar` los sitios cuya columna `creador` coincida con su correo (o `creator_id`). Para sitios ajenos, los botones de `Editar`/`Eliminar` deben estar ocultos o deshabilitados.
+  - **Editor**: verá `Ver` y `Entrar` únicamente para los sitios a los que tenga asignación; los botones `Editar`/`Eliminar` no aparecen.
+
+### Control select / filtrado
+
+- En la vista de administración (panel de webs):
+  - **Admin** y **Author** verán un `select` (o combobox) que lista las webs (propias y ajenas) para permitir filtrar la lista y mostrar la ficha informativa en la parte derecha o un panel central. Esto facilita cambiar rápidamente entre sitios.
+  - **Editor** no verá este `select` (o estará oculto); su vista es más limitada y depende de las asignaciones que tenga.
+
+### Crear / editar sitio
+
+- Formulario mínimo al crear un sitio:
+  - `name` (nombre del sitio) — requerido
+  - `description` — requerido
+  - `icon` — opcional (imagen, `multipart/form-data` upload)
+  - `email` — requerido (correo asociado al sitio)
+  - `domain` — opcional (validar formato de dominio)
+
+- Validaciones recomendadas:
+  - `name`: string, max 191
+  - `description`: string
+  - `email`: email válido
+  - `icon`: tipo imagen, tamaño razonable (p. ej. < 2MB)
+  - `domain`: regexp/validator de hostname
+
+### Vista: Usuarios (admin only)
+
+- En la vista de usuarios mostrar:
+  - `name` (nombre de usuario)
+  - `email` (correo electrónico)
+  - `site` (web a la que pertenece o a la que está asignado)
+  - `role` (admin | author | editor | user)
+
+- Permisos:
+  - **Administrador**: puede crear usuarios, seleccionando su `role` mediante un `select`; puede editar y eliminar cualquier usuario.
+  - **Autor / Editor**: no pueden crear usuarios globalmente desde esta vista; pueden gestionar su propio perfil (nombre, email, password) si corresponde.
+
+### Modelo y migración sugerida (resumen)
+
+- `sites` table (ejemplo):
+  - `id` (bigIncrements)
+  - `title` (string)
+  - `description` (text)
+  - `icon_path` (string, nullable)
+  - `creator_id` (foreignId -> users.id)
+  - `domain` (string, nullable)
+  - `created_at`, `updated_at`
+
+- Relaciones Eloquent:
+  - `Site::creator()` -> belongsTo(User::class, 'creator_id')
+  - `User::sites()` -> hasMany(Site::class, 'creator_id')
+
+### Endpoints/API recomendados
+
+- `GET /api/sites` — lista (admin filtra todo; author devuelve sus sitios y opcionalmente listado completo para el select; editor devuelve sólo asignados)
+- `GET /api/sites/{id}` — obtiene ficha del sitio
+- `POST /api/sites` — crea sitio (admin/author)
+- `PUT /api/sites/{id}` — actualiza (policy en backend)
+- `DELETE /api/sites/{id}` — elimina (policy en backend)
+- `GET /api/users` — lista usuarios (admin)
+- `POST /api/users` — crear usuario (admin)
+- `PUT /api/users/{id}` — editar usuario (admin)
+- `DELETE /api/users/{id}` — eliminar usuario (admin)
+
+### Notas de implementación
+
+- Aplicar `Policy` por modelo (`SitePolicy`, `UserPolicy`) y registrar en `AuthServiceProvider`.
+- Usar Spatie Roles & Permissions o gates para comprobar `hasRole('admin')` en acciones sensibles.
+- En el frontend, **mostrar u ocultar** controles según el rol y deshabilitar acciones no permitidas; no confiar sólo en ocultar UI — el backend debe validar y negar operaciones no autorizadas.
+- Para la lista/`select` de webs, proporcionar una API que devuelva { id, title, creator_email, domain } para poblar el combobox sin exponer datos sensibles.
+
+Esta especificación debe añadirse a los `SKILL.md` correspondientes (backend/frontend) para que los desarrolladores conozcan el contrato de la UI y las reglas de autorización.

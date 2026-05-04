@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -14,28 +14,55 @@ import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
+import CircularProgress from '@mui/material/CircularProgress';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import OutlinedInput from '@mui/material/OutlinedInput';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adminExists, setAdminExists] = useState<boolean | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    // Validación cliente mínima
+    let valid = true;
+    if (!email) { setEmailError('Correo requerido'); valid = false; } else if (!/^\S+@\S+\.\S+$/.test(email)) { setEmailError('Correo inválido'); valid = false; } else { setEmailError(null); }
+    if (!password) { setPasswordError('Contraseña requerida'); valid = false; } else { setPasswordError(null); }
+    if (!valid) {
+      // foco en el primer campo inválido
+      if (!email) { emailRef.current?.focus(); }
+      else if (!password) { passwordRef.current?.focus(); }
+      setLoading(false);
+      return;
+    }
     try {
       await login(email, password);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err?.message || "Credenciales inválidas");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err ?? 'Credenciales inválidas');
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -60,14 +87,32 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <Container
+    <Box
       component="main"
-      maxWidth="xs"
-      sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(180deg,#0f1720 0%, #0b0f12 100%)',
+        py: 8,
+      }}
     >
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 1, minWidth: 360, width: 420 }}>
+      <Paper
+        elevation={8}
+        sx={{
+          p: 4,
+          borderRadius: 2,
+          minWidth: 360,
+          width: '100%',
+          maxWidth: 480,
+          boxShadow: '0 10px 30px rgba(2,6,23,0.6)',
+          bgcolor: 'rgba(10,12,15,0.85)',
+          border: '1px solid rgba(255,255,255,0.03)',
+        }}
+      >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+          <Avatar sx={{ m: 1, bgcolor: "primary.main", width: 64, height: 64 }}>
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
@@ -78,12 +123,12 @@ export default function LoginPage() {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+            <Alert severity="error" sx={{ width: "100%", mb: 2 }} role="alert">
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={submit} sx={{ mt: 1, width: "100%" }}>
+          <Box component="form" onSubmit={submit} sx={{ mt: 1, width: "100%" }} noValidate role="form" aria-describedby={error ? 'login-error' : undefined}>
             <TextField
               margin="normal"
               required
@@ -93,24 +138,42 @@ export default function LoginPage() {
               name="email"
               autoComplete="email"
               autoFocus
+              inputRef={emailRef}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              error={Boolean(emailError)}
+              helperText={emailError ?? ''}
             />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Contraseña"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <FormControl margin="normal" required fullWidth variant="outlined" error={Boolean(passwordError)}>
+              <InputLabel htmlFor="password">Contraseña</InputLabel>
+              <OutlinedInput
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                inputRef={passwordRef}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                      type="button"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label="Contraseña"
+                inputProps={{ name: 'password', 'aria-describedby': passwordError ? 'password-helper-text' : undefined }}
+              />
+              {passwordError && <FormHelperText id="password-helper-text">{passwordError}</FormHelperText>}
+            </FormControl>
 
             <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
+              control={<Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} color="primary" />}
               label="Recordarme"
             />
 
@@ -118,8 +181,11 @@ export default function LoginPage() {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 2, mb: 2 }}
+              sx={{ mt: 2, mb: 2, py: 1.5, fontWeight: 700, textTransform: 'none' }}
               disabled={loading}
+              aria-disabled={loading}
+              startIcon={loading ? <CircularProgress size={18} color="inherit" /> : undefined}
+              aria-busy={loading}
             >
               {loading ? "Accediendo..." : "Acceder"}
             </Button>
@@ -130,14 +196,16 @@ export default function LoginPage() {
                   href="/register"
                   fullWidth
                   variant="outlined"
-                  sx={{ mt: 1 }}
+                  startIcon={<PersonAddIcon />}
+                  sx={{ mt: 1, textTransform: 'none' }}
+                  aria-label="Crear cuenta de administrador"
                 >
                   Crear cuenta de administrador
                 </Button>
               )}
               {adminExists === true && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
-                  Registro de administrador deshabilitado
+                  
                 </Typography>
               )}
 
@@ -154,14 +222,14 @@ export default function LoginPage() {
               </Link>
             </Box>
           </Box>
-        </Box>
-      </Paper>
 
       <Box sx={{ mt: 2, textAlign: "center" }}>
         <Typography variant="caption" color="text.secondary">
           © 2026 - Panel estilo WordPress
         </Typography>
       </Box>
-    </Container>
+        </Box>
+      </Paper>
+    </Box>
   );
 }

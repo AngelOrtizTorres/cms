@@ -34,3 +34,16 @@ body {
 .rounded-full {
   border-radius: 0 !important;
 }
+
+/* Make all buttons show pointer cursor by default; keep disabled state non-clickable */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input[disabled] {
+  cursor: not-allowed;
+}

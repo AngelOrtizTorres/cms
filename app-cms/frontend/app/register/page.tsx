@@ -32,7 +32,7 @@ export default function RegisterAdminPage() {
 
     try {
       await registerAdmin(name, email, password, passwordConfirmation);
-      router.push('/dashboard');
+      router.push('/login');
     } catch (err: any) {
       setError(err?.message || 'Error registrando administrador');
     } finally {
@@ -64,7 +64,7 @@ export default function RegisterAdminPage() {
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
         <Paper sx={{ p: 4, width: '100%' }} elevation={3} component="form" onSubmit={submit}>
           <Box sx={{ textAlign: 'center', mb: 2 }}>
-            <img src="/logo.png" alt="logo" style={{ height: 72 }} />
+            <img src="/next.svg" alt="logo" style={{ height: 72 }} />
           </Box>
 
           <Typography variant="h5" gutterBottom>Hola</Typography>
@@ -78,11 +78,29 @@ export default function RegisterAdminPage() {
 
           <TextField label="Nombre de usuario" fullWidth required value={name} onChange={(e) => setName(e.target.value)} sx={{ mb: 2 }} />
 
-          <TextField type="password" label="Contraseña" fullWidth required value={password} onChange={(e) => setPassword(e.target.value)} sx={{ mb: 1 }} />
+          <TextField
+            type="password"
+            label="Contraseña"
+            fullWidth
+            required
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{ mb: 1 }}
+          />
 
-          <TextField type="password" label="Confirmar contraseña" fullWidth required value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} sx={{ mb: 2 }} />
+          <TextField
+            type="password"
+            label="Confirmar contraseña"
+            fullWidth
+            required
+            autoComplete="new-password"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            sx={{ mb: 2 }}
+          />
 
-          <TextField type="email" label="Tu correo electrónico" fullWidth required value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2 }} />
+          <TextField type="email" label="Tu correo electrónico" fullWidth required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2 }} />
 
           <FormControlLabel control={<Checkbox checked={noIndex} onChange={(e) => setNoIndex(e.target.checked)} />} label="Pedir a los motores de búsqueda que no indexen este sitio" sx={{ mb: 2 }} />
 

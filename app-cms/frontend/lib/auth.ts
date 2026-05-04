@@ -89,22 +89,14 @@ export async function logout(): Promise<void> {
  * Obtener datos del usuario actual
  */
 export async function getCurrentUser(token?: string): Promise<User> {
-  // Obtener usuario por sesión (web route)
-  const resp = await fetch(`${API_URL}/session/me`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  });
-
-  if (!resp.ok) {
-    throw { status: resp.status, message: 'No autenticado' };
+  // Usar el endpoint /api/auth/me que hace fallback: sesión (Auth::check) o api_token
+  try {
+    const data = await apiGet<User>('/auth/me');
+    // apiGet devuelve el body JSON directamente cuando es 2xx
+    return data as unknown as User;
+  } catch (err) {
+    throw err;
   }
-
-  const data = await resp.json();
-  return data as User;
 }
 
 /**

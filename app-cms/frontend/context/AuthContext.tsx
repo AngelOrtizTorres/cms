@@ -10,6 +10,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  // Indica si la sesión fue verificada por el backend (/session/me)
+  sessionVerified: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionVerified, setSessionVerified] = useState(false);
 
   // Inicializar: preferir sesión (consulta al backend), fallback a token/localStorage
   useEffect(() => {
@@ -31,12 +34,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = await getCurrentUser();
         if (!mounted) return;
         setUser(user);
+        setSessionVerified(true);
         try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
       } catch (err) {
         if (!mounted) return;
         // fallback: usar usuario en localStorage si existe
         if (storedUser) {
+          // Mostrar datos de usuario desde localStorage pero no marcar la sesión como verificada
           setUser(storedUser);
+          setSessionVerified(false);
         } else {
           setUser(null);
         }
@@ -85,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     isAuthenticated: !!user,
+    sessionVerified,
   };
 
   return (

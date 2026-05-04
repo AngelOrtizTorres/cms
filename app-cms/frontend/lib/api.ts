@@ -28,6 +28,16 @@ export const API_URL = DEFAULT_API_URL.replace(/\/$/, "");
 
 // token-based local storage removed; prefer session cookies (Sanctum)
 
+// Obtener token legacy del almacenamiento local (compatibilidad)
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('cms_token');
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Realiza una petición HTTP a la API
  */
@@ -51,7 +61,7 @@ export async function apiCall<T = any>(
   };
 
   // Agregar token si se pasó explícitamente (retrocompatibilidad)
-  const authToken = token;
+  const authToken = token || getToken();
   if (authToken) {
     defaultHeaders["Authorization"] = `Bearer ${authToken}`;
   }
@@ -64,6 +74,8 @@ export async function apiCall<T = any>(
     if (match) return decodeURIComponent(match[2]);
     return null;
   }
+
+  // (La función getToken está definida a nivel de módulo)
 
   const xsrf = getCookie('XSRF-TOKEN');
   if (xsrf && !defaultHeaders['X-XSRF-TOKEN'] && !defaultHeaders['X-CSRF-TOKEN']) {
@@ -177,6 +189,18 @@ export async function apiPostFormData<T = any>(
   // Aceptar JSON por defecto para respuestas FormData también
   headers["Accept"] = "application/json";
   headers["X-Requested-With"] = "XMLHttpRequest";
+
+  // Leer cookie XSRF-TOKEN y añadir header X-XSRF-TOKEN si existe
+  function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) return decodeURIComponent(match[2]);
+    return null;
+  }
+  const xsrf = getCookie('XSRF-TOKEN');
+  if (xsrf) {
+    headers['X-XSRF-TOKEN'] = xsrf;
+  }
 
   try {
     const response = await fetch(url, {
