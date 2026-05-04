@@ -39,11 +39,7 @@ export default function EditSitePage() {
     if (!id) return;
     setSaving(true);
     try {
-      await apiPut(
-        `/sites/${id}`,
-        { title, domain, status },
-        auth.token || undefined,
-      );
+      await apiPut(`/sites/${id}`, { title, domain, status });
       router.push("/dashboard/webs");
     } catch (err) {
       console.error("Error updating site", err);

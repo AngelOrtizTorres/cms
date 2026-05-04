@@ -15,7 +15,7 @@ export default function UsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiGet("/users", auth.token || undefined);
+      const res = await apiGet("/users");
       setUsers((res as any) ?? []);
     } catch (err) {
       console.error("Error fetching users", err);
@@ -26,19 +26,19 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    // only fetch when we have an auth token
-    if (!auth.token) {
+    // only fetch when authenticated and admin
+    if (!auth.isAuthenticated || auth.user?.role !== 'admin') {
       setUsers([]);
       setError(null);
       return;
     }
     fetchUsers();
-  }, [auth.token]);
+  }, [auth.isAuthenticated, auth.user?.role]);
 
   const handleRoleChange = async (id: number, role: string) => {
     setUpdating(id);
     try {
-      await apiPut(`/users/${id}`, { role }, auth.token || undefined);
+      await apiPut(`/users/${id}`, { role });
       await fetchUsers();
     } catch (err) {
       console.error("Error updating role", err);
@@ -50,7 +50,7 @@ export default function UsersPage() {
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar usuario?")) return;
     try {
-      await apiDelete(`/users/${id}`, auth.token || undefined);
+      await apiDelete(`/users/${id}`);
       await fetchUsers();
     } catch (err) {
       console.error("Error deleting user", err);
@@ -60,7 +60,7 @@ export default function UsersPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-2xl font-semibold mb-4">Usuarios</h1>
-      {!auth.token ? (
+      {(!auth.isAuthenticated || auth.user?.role !== 'admin') ? (
         <div className="bg-white p-4 shadow">
           <p>
             Debes iniciar sesión como administrador para ver y gestionar

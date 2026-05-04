@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { apiGet } from '@/lib/api';
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adminExists, setAdminExists] = useState<boolean | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,16 +41,32 @@ export default function LoginPage() {
     }
   };
 
+  // Comprobar si ya existe administrador para ocultar CTA de registro
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await apiGet('/admin-exists');
+        if (!mounted) return;
+        setAdminExists(Boolean(res?.admin_exists));
+      } catch (e) {
+        // En caso de error, dejamos visible el botón para compatibilidad
+        console.error('No se pudo comprobar admin-exists', e);
+        if (mounted) setAdminExists(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
+
   return (
-    <Container component="main" maxWidth="xs" sx={{ mt: 8 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+    <Container
+      component="main"
+      maxWidth="xs"
+      sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 1, minWidth: 360, width: 420 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
             <LockOutlinedIcon />
           </Avatar>
@@ -105,6 +123,23 @@ export default function LoginPage() {
             >
               {loading ? "Accediendo..." : "Acceder"}
             </Button>
+
+              {adminExists === false && (
+                <Button
+                  component={NextLink}
+                  href="/register"
+                  fullWidth
+                  variant="outlined"
+                  sx={{ mt: 1 }}
+                >
+                  Crear cuenta de administrador
+                </Button>
+              )}
+              {adminExists === true && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
+                  Registro de administrador deshabilitado
+                </Typography>
+              )}
 
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Link

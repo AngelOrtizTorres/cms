@@ -15,6 +15,11 @@ Route::get('/test', function () {
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
+// Comprueba si ya existe un administrador (frontend lo usa para ocultar registro)
+Route::get('/admin-exists', [AuthController::class, 'adminExists']);
+// Forgot/reset password via API (Fortify-compatible)
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 // Artículos públicas
 Route::prefix('articles')->group(function () {

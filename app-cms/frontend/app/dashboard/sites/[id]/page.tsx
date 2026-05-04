@@ -17,16 +17,23 @@ export default function SiteDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Redirigir al login si ya cargó el estado de auth y no estamos autenticados
+    if (!auth.loading && !auth.isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
     if (!id) return;
+    // Solo solicitar datos si estamos autenticados
     setLoading(true);
-    apiGet(`/sites/${id}`, auth.token)
+    apiGet(`/sites/${id}`)
       .then((res: any) => setSite(res))
       .catch((err) => {
         console.error("Error fetching site", err);
         setError(err?.message || "Error al cargar el sitio");
       })
       .finally(() => setLoading(false));
-  }, [id, auth.token]);
+  }, [id, auth.isAuthenticated]);
 
   if (loading) return <div className="p-4">Cargando...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;

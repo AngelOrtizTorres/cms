@@ -3,7 +3,14 @@
  * Maneja login, logout y recuperación de datos del usuario
  */
 
-import { apiPost, apiGet } from './api';
+import { apiPost, apiGet, csrfCookie, API_URL } from './api';
+
+function getCookieValue(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  if (match) return decodeURIComponent(match[2]);
+  return null;
+}
 
 export interface User {
   id: number;
@@ -15,7 +22,6 @@ export interface User {
 }
 
 export interface LoginResponse {
-  token: string;
   user: User;
 }
 
@@ -23,35 +29,59 @@ export interface LoginResponse {
  * Login - Obtener token
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const response = await apiPost<LoginResponse>('/auth/login', {
-    email,
-    password,
-  });
-
-  if (response.token) {
-    // Guardar token y usuario en localStorage
-    localStorage.setItem('cms_token', response.token);
-    localStorage.setItem('cms_user', JSON.stringify(response.user));
+  // Petición al endpoint CSRF (Sanctum) para asegurar cookie XSRF-TOKEN
+  try {
+    await csrfCookie();
+  } catch (err) {
+    // No bloqueamos el login por si el backend no usa Sanctum; solo avisamos
+    console.warn('No se pudo obtener cookie CSRF (sanctum), continuando...', err);
   }
 
-  return {
-    token: response.token,
-    user: response.user,
-  };
+  // Flujo por sesión (Sanctum) - backend debe exponer /session/login
+  const xsrf = getCookieValue('XSRF-TOKEN');
+
+  const sessionResp = await fetch(`${API_URL}/session/login`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!sessionResp.ok) {
+    const text = await sessionResp.text();
+    throw { status: sessionResp.status, message: text || 'Error en login por sesión' };
+  }
+
+  const data = await sessionResp.json();
+  try { localStorage.setItem('cms_user', JSON.stringify(data.user)); } catch {}
+  return { user: data.user } as LoginResponse;
 }
 
 /**
  * Logout - Invalidar token
  */
 export async function logout(): Promise<void> {
+  // Cerrar sesión por cookie (Sanctum)
   try {
-    await apiPost('/auth/logout', {});
-  } catch (error) {
-    console.error('Error en logout:', error);
+    try { await csrfCookie(); } catch {}
+
+    await fetch(`${API_URL}/session/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({}),
+    });
+  } catch (err) {
+    console.warn('Error logout session:', err);
   } finally {
-    // Limpiar localStorage
-    localStorage.removeItem('cms_token');
-    localStorage.removeItem('cms_user');
+    try { localStorage.removeItem('cms_user'); } catch {}
   }
 }
 
@@ -59,9 +89,77 @@ export async function logout(): Promise<void> {
  * Obtener datos del usuario actual
  */
 export async function getCurrentUser(token?: string): Promise<User> {
-  const response = await apiGet<User>('/auth/me', token);
-  // El API devuelve directamente el objeto User, o envuelto en { data: User }
-  return (response.data || response) as User;
+  // Obtener usuario por sesión (web route)
+  const resp = await fetch(`${API_URL}/session/me`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  });
+
+  if (!resp.ok) {
+    throw { status: resp.status, message: 'No autenticado' };
+  }
+
+  const data = await resp.json();
+  return data as User;
+}
+
+/**
+ * Registrar administrador vía endpoint web personalizado `/register-admin`.
+ */
+export async function registerAdmin(name: string, email: string, password: string, password_confirmation: string): Promise<User> {
+  try {
+    await csrfCookie();
+  } catch {}
+
+  const xsrf = getCookieValue('XSRF-TOKEN');
+
+  const res = await fetch(`${API_URL}/register-admin`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
+    },
+    body: JSON.stringify({ name, email, password, password_confirmation }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw { status: res.status, message: text || 'Error en registro' };
+  }
+
+  const data = await res.json();
+  try { localStorage.setItem('cms_user', JSON.stringify(data.user)); } catch {}
+  return data.user as User;
+}
+
+/**
+ * Solicitar enlace de reseteo (forgot password)
+ */
+export async function forgotPassword(email: string): Promise<{ message: string }>{
+  try {
+    await csrfCookie();
+  } catch {}
+
+  const res = await apiPost<{ message: string }>('/auth/forgot-password', { email });
+  return res as any;
+}
+
+/**
+ * Resetear password usando token recibido por email
+ */
+export async function resetPassword(token: string, email: string, password: string, password_confirmation: string): Promise<{ message: string }> {
+  try {
+    await csrfCookie();
+  } catch {}
+
+  const res = await apiPost<{ message: string }>('/auth/reset-password', { token, email, password, password_confirmation });
+  return res as any;
 }
 
 /**
@@ -69,7 +167,7 @@ export async function getCurrentUser(token?: string): Promise<User> {
  */
 export function isAuthenticated(): boolean {
   if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('cms_token');
+  return !!localStorage.getItem('cms_user');
 }
 
 /**
@@ -89,7 +187,9 @@ export function getStoredUser(): User | null {
 }
 
 /**
- * Obtener token del almacenamiento local
+ * Obtener token del almacenamiento local (compat shim)
+ * Durante la migración a autenticación por sesión mantenemos un shim
+ * para evitar errores en módulos que aún importen `getStoredToken`.
  */
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;

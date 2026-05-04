@@ -1,11 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, login as apiLogin, logout as apiLogout, getCurrentUser, getStoredUser, getStoredToken } from '@/lib/auth';
+import { User, login as apiLogin, logout as apiLogout, getCurrentUser, getStoredUser } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
@@ -17,21 +16,36 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Inicializar desde localStorage al montar
+  // Inicializar: preferir sesión (consulta al backend), fallback a token/localStorage
   useEffect(() => {
-    const storedUser = getStoredUser();
-    const storedToken = getStoredToken();
+    let mounted = true;
 
-    if (storedToken && storedUser) {
-      setUser(storedUser);
-      setToken(storedToken);
-    }
+    (async () => {
+      setLoading(true);
+      const storedUser = getStoredUser();
 
-    setLoading(false);
+      try {
+        const user = await getCurrentUser();
+        if (!mounted) return;
+        setUser(user);
+        try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
+      } catch (err) {
+        if (!mounted) return;
+        // fallback: usar usuario en localStorage si existe
+        if (storedUser) {
+          setUser(storedUser);
+        } else {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -41,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiLogin(email, password);
       setUser(response.user);
-      setToken(response.token);
     } catch (err: any) {
       const errorMessage = err?.message || 'Error en login';
       setError(errorMessage);
@@ -57,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiLogout();
       setUser(null);
-      setToken(null);
       setError(null);
     } catch (err: any) {
       console.error('Error en logout:', err);
@@ -68,12 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     user,
-    token,
     loading,
     error,
     login,
     logout,
-    isAuthenticated: !!token && !!user,
+    isAuthenticated: !!user,
   };
 
   return (

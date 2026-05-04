@@ -50,7 +50,7 @@ export default function WebsPage() {
     if (!title) return;
     setCreating(true);
     try {
-      await apiPost("/sites", { title, domain }, auth.token || undefined);
+      await apiPost("/sites", { title, domain });
       setTitle("");
       setDomain("");
       await fetchSites();
@@ -64,7 +64,7 @@ export default function WebsPage() {
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar este sitio?")) return;
     try {
-      await apiDelete(`/sites/${id}`, auth.token || undefined);
+      await apiDelete(`/sites/${id}`);
       await fetchSites();
     } catch (err) {
       console.error("Error deleting site", err);

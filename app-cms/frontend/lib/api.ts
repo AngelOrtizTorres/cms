@@ -15,6 +15,8 @@ interface RequestConfig {
   headers?: Record<string, string>;
   body?: any;
   token?: string;
+  // Controla el envío de cookies/credenciales. Por defecto se incluye ('include').
+  credentials?: RequestCredentials;
 }
 
 // URL base de la API con fallback para entornos locales
@@ -22,15 +24,9 @@ const DEFAULT_API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.API_URL ||
   "http://localhost:8000";
-const API_URL = DEFAULT_API_URL.replace(/\/$/, "");
+export const API_URL = DEFAULT_API_URL.replace(/\/$/, "");
 
-/**
- * Obtiene el token del almacenamiento local
- */
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("cms_token");
-}
+// token-based local storage removed; prefer session cookies (Sanctum)
 
 /**
  * Realiza una petición HTTP a la API
@@ -54,10 +50,24 @@ export async function apiCall<T = any>(
     ...headers,
   };
 
-  // Agregar token si existe
-  const authToken = token || getToken();
+  // Agregar token si se pasó explícitamente (retrocompatibilidad)
+  const authToken = token;
   if (authToken) {
     defaultHeaders["Authorization"] = `Bearer ${authToken}`;
+  }
+
+  // Si existe la cookie XSRF-TOKEN (establecida por /sanctum/csrf-cookie),
+  // envíala en el header `X-XSRF-TOKEN` para que Laravel la valide.
+  function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) return decodeURIComponent(match[2]);
+    return null;
+  }
+
+  const xsrf = getCookie('XSRF-TOKEN');
+  if (xsrf && !defaultHeaders['X-XSRF-TOKEN'] && !defaultHeaders['X-CSRF-TOKEN']) {
+    defaultHeaders['X-XSRF-TOKEN'] = xsrf;
   }
 
   try {
@@ -65,6 +75,7 @@ export async function apiCall<T = any>(
       method,
       headers: defaultHeaders,
       body: body ? JSON.stringify(body) : undefined,
+      credentials: config.credentials ?? 'include',
     });
 
     const contentType = response.headers.get("content-type") || "";
@@ -172,6 +183,7 @@ export async function apiPostFormData<T = any>(
       method: "POST",
       headers,
       body: formData,
+      credentials: token ? 'include' : 'include',
     });
 
     const contentType = response.headers.get("content-type") || "";
@@ -214,4 +226,21 @@ export async function apiPostFormData<T = any>(
     }
     throw error;
   }
+}
+
+/**
+ * Solicita la cookie CSRF de Laravel (Sanctum) para flujos SPA.
+ * Llama a `/sanctum/csrf-cookie` en el backend y asegura que la cookie
+ * `XSRF-TOKEN` sea establecida (fetch usa `credentials: 'include'`).
+ */
+export async function csrfCookie(): Promise<void> {
+  // Hacemos una petición GET directa a /sanctum/csrf-cookie (no bajo /api)
+  await fetch(`${API_URL}/sanctum/csrf-cookie`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      Accept: 'application/json',
+    },
+  });
 }
