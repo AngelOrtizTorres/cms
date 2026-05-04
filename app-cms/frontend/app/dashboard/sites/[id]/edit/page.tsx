@@ -3,13 +3,21 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { apiGet, apiPut } from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
+import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 
 export default function EditSitePage() {
   const params = useParams() as { id: string };
   const id = params?.id;
   const router = useRouter();
-  const auth = useAuth();
 
   const [site, setSite] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,61 +56,30 @@ export default function EditSitePage() {
     }
   };
 
-  if (loading) return <div className="p-4">Cargando...</div>;
-  if (!site) return <div className="p-4">Sitio no encontrado</div>;
+  if (loading) return <Container sx={{ py: 4 }}>Cargando...</Container>;
+  if (!site) return <Container sx={{ py: 4 }}>Sitio no encontrado</Container>;
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Editar web</h1>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper sx={{ p: 3 }} elevation={2}>
+        <Typography variant="h5" gutterBottom>Editar web</Typography>
+        <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField label="Título" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
+          <TextField label="Dominio" value={domain} onChange={(e) => setDomain(e.target.value)} fullWidth />
+          <FormControl fullWidth>
+            <InputLabel>Estado</InputLabel>
+            <Select value={status} label="Estado" onChange={(e) => setStatus(e.target.value)}>
+              <MenuItem value="active">Activo</MenuItem>
+              <MenuItem value="inactive">Inactivo</MenuItem>
+            </Select>
+          </FormControl>
 
-      <form onSubmit={handleSave} className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium">Título</label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="border rounded w-full px-2 py-1"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Dominio</label>
-          <input
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            className="border rounded w-full px-2 py-1"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Estado</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="border rounded w-full px-2 py-1"
-          >
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-          </select>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            className="bg-green-600 text-white px-3 py-1 rounded"
-            disabled={saving}
-            type="submit"
-          >
-            {saving ? "Guardando..." : "Guardar"}
-          </button>
-          <button
-            type="button"
-            className="px-3 py-1 rounded border"
-            onClick={() => router.back()}
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="contained" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+            <Button variant="outlined" onClick={() => router.back()}>Cancelar</Button>
+          </Box>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

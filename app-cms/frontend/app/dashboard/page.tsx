@@ -1,35 +1,42 @@
+import React from "react";
+import Container from "@mui/material/Container";
+// usar `Box` con CSS grid en lugar de `Grid item` para evitar prop `item` en el DOM
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+
 export default function DashboardPage() {
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Escritorio</h1>
+    <Container maxWidth="lg" sx={{ py: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+        <Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Paper sx={{ p: 2 }} elevation={1}>
+              <Typography variant="h6">Bienvenido</Typography>
+              <Typography variant="body2" color="text.secondary">Resumen rápido del sitio.</Typography>
+            </Paper>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-2 space-y-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="font-semibold">Bienvenido</h2>
-            <p className="text-sm text-gray-600">Resumen rápido del sitio.</p>
-          </div>
+            <Paper sx={{ p: 2 }} elevation={1}>
+              <Typography variant="subtitle1" gutterBottom>Publicaciones recientes</Typography>
+              <Typography variant="body2" color="text.secondary">Aquí iría una lista de artículos.</Typography>
+            </Paper>
+          </Box>
+        </Box>
 
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold mb-2">Publicaciones recientes</h3>
-            <p className="text-sm text-gray-600">
-              Aquí iría una lista de artículos.
-            </p>
-          </div>
-        </div>
+        <Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Paper sx={{ p: 2 }} elevation={1}>
+              <Typography variant="subtitle1">Actividad</Typography>
+              <Typography variant="body2" color="text.secondary">Últimas acciones.</Typography>
+            </Paper>
 
-        <aside className="space-y-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold">Actividad</h3>
-            <p className="text-sm text-gray-600">Últimas acciones.</p>
-          </div>
-
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-semibold">Estado del sitio</h3>
-            <p className="text-sm text-gray-600">Estado general.</p>
-          </div>
-        </aside>
-      </div>
-    </div>
+            <Paper sx={{ p: 2 }} elevation={1}>
+              <Typography variant="subtitle1">Estado del sitio</Typography>
+              <Typography variant="body2" color="text.secondary">Estado general.</Typography>
+            </Paper>
+          </Box>
+        </Box>
+      </Box>
+    </Container>
   );
 }
