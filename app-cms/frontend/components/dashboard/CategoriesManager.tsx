@@ -38,6 +38,7 @@ type Section = {
   description?: string;
   parent_id?: number | null;
   parent?: { id: number; name: string } | null;
+  position?: number;
   articles_count?: number;
   active?: boolean;
 };

@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --muted: rgba(0,0,0,0.72);
+  --primary: #0073aa;
 }
 
 @theme inline {
@@ -16,6 +18,8 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --muted: rgba(255,255,255,0.72);
+    --primary: #039be5;
   }
 }
 
@@ -46,4 +50,44 @@ input[type="reset"] {
 button:disabled,
 input[disabled] {
   cursor: not-allowed;
+}
+
+/* Ensure MUI components inherit the global foreground color (helps SSR consistency) */
+/* Ensure MUI textual components inherit readable foreground */
+.MuiTypography-root,
+.MuiPaper-root,
+.MuiButton-root,
+.MuiInputBase-root,
+.MuiFormLabel-root,
+.MuiInputLabel-root,
+.MuiOutlinedInput-root,
+.MuiOutlinedInput-input,
+.MuiInputBase-input,
+.MuiTableCell-root,
+.MuiTableRow-root,
+.MuiListItemText-root,
+.MuiListItem-root,
+.MuiListItemButton-root {
+  color: var(--foreground) !important;
+}
+
+/* Muted helper text / captions */
+.MuiFormHelperText-root,
+.MuiTypography-caption,
+.MuiTypography-body2 {
+  color: var(--muted) !important;
+}
+
+/* Placeholders */
+.MuiInputBase-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted) !important;
+  opacity: 1 !important;
+}
+
+/* Links use primary color */
+a,
+.MuiLink-root {
+  color: var(--primary) !important;
 }

@@ -14,8 +14,8 @@ import { resetPassword } from "@/lib/auth";
 export default function ResetPasswordClient() {
   const router = useRouter();
   const params = useSearchParams();
-  const token = params.get('token') || '';
-  const [email, setEmail] = useState(params.get('email') || '');
+  const token = params?.get('token') ?? '';
+  const [email, setEmail] = useState<string>(() => params?.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [loading, setLoading] = useState(false);

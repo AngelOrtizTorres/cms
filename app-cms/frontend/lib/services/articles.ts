@@ -31,6 +31,7 @@ export interface Section {
   name: string;
   slug: string;
   description: string;
+  position?: number;
   article_count?: number;
 }
 

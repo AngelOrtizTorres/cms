@@ -95,6 +95,9 @@ export default function MuiProviders({
           primary: {
             main: primaryColor,
           },
+          text: {
+            primary: mode === 'light' ? '#000000' : '#ffffff',
+          },
           background: {
             default: mode === "light" ? "#f5f5f5" : "#121212",
           },
@@ -107,6 +110,13 @@ export default function MuiProviders({
         },
         shape: { borderRadius: 0 },
         components: {
+          MuiCssBaseline: {
+            styleOverrides: {
+              body: {
+                color: mode === "light" ? "#000000" : "#ffffff",
+              },
+            },
+          },
           MuiPaper: {
             styleOverrides: {
               root: {
