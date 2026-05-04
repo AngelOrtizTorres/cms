@@ -18,7 +18,7 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Article::with(['section', 'user', 'tags', 'parent']);
+            $query = Article::with(['primarySection', 'sections', 'user', 'tags', 'parent']);
 
             // Filtro por estado
             if ($request->has('status')) {
@@ -29,7 +29,10 @@ class ArticleController extends Controller
 
             // Filtrar por sección
             if ($request->has('section_id')) {
-                $query->where('section_id', $request->section_id);
+                $sectionId = $request->section_id;
+                $query->whereHas('sections', function ($q) use ($sectionId) {
+                    $q->where('sections.id', $sectionId);
+                });
             }
 
             // Filtrar por etiqueta
@@ -86,7 +89,8 @@ class ArticleController extends Controller
                     'created_at' => $article->created_at,
                     'updated_at' => $article->updated_at,
                     'published_at' => $article->published_at,
-                    'section' => $article->section,
+                    'primary_section' => $article->primarySection,
+                    'sections' => $article->sections,
                     'user' => $article->user,
                     'tags' => $article->tags,
                 ];
@@ -116,7 +120,7 @@ class ArticleController extends Controller
         $limit = $request->get('limit', 6);
         $articles = Article::where('status', 'published')
             ->where('featured', true)
-            ->with(['section', 'user', 'tags'])
+            ->with(['primarySection', 'sections', 'user', 'tags'])
             ->orderBy('published_at', 'desc')
             ->limit($limit)
             ->get();
@@ -131,7 +135,7 @@ class ArticleController extends Controller
     {
         $article = Article::where('slug', $slug)
             ->where('status', 'published')
-            ->with(['section', 'user', 'tags', 'parent'])
+            ->with(['primarySection', 'sections', 'user', 'tags', 'parent'])
             ->firstOrFail();
 
         return response()->json($article);
@@ -142,9 +146,11 @@ class ArticleController extends Controller
      */
     public function bySection($sectionId, Request $request)
     {
-        $query = Article::where('section_id', $sectionId)
+        $query = Article::whereHas('sections', function ($q) use ($sectionId) {
+                $q->where('sections.id', $sectionId);
+            })
             ->where('status', 'published')
-            ->with(['section', 'user', 'tags']);
+            ->with(['primarySection', 'sections', 'user', 'tags']);
 
         // Búsqueda
         if ($request->has('search')) {
@@ -171,7 +177,7 @@ class ArticleController extends Controller
             ->whereHas('tags', function ($q) use ($tagId) {
                 $q->where('tags.id', $tagId);
             })
-            ->with(['section', 'user', 'tags']);
+            ->with(['primarySection', 'sections', 'user', 'tags']);
 
         // Búsqueda
         if ($request->has('search')) {
@@ -200,7 +206,7 @@ class ArticleController extends Controller
 
         $query = $request->q;
         $articles = Article::where('status', 'published')
-            ->with(['section', 'user', 'tags'])
+            ->with(['primarySection', 'sections', 'user', 'tags'])
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                   ->orWhere('excerpt', 'like', "%{$query}%")
@@ -224,7 +230,8 @@ class ArticleController extends Controller
             'content' => 'required|string',
             'featured' => 'boolean',
             'status' => 'required|in:draft,scheduled,published,archived',
-            'section_id' => 'required|exists:sections,id',
+            'primary_section_id' => 'required|exists:sections,id',
+            'sections' => 'nullable|array',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:160',
             'featured_image' => 'nullable|string',
@@ -249,9 +256,19 @@ class ArticleController extends Controller
         $validated['user_id'] = $user->id;
         $article = Article::create($validated);
 
+        // Sync tags
         if ($request->has('tags')) {
             $article->tags()->sync($request->tags);
         }
+
+        // Sync sections pivot — ensure primary is included
+        $sections = $request->input('sections', []);
+        if (!in_array($validated['primary_section_id'], $sections)) {
+            $sections[] = $validated['primary_section_id'];
+        }
+        $article->sections()->sync($sections);
+
+        return response()->json($article->load(['primarySection', 'sections', 'user', 'tags']), 201);
 
         return response()->json($article->load(['section', 'user', 'tags']), 201);
     }
@@ -268,7 +285,8 @@ class ArticleController extends Controller
             'content' => 'string',
             'featured' => 'boolean',
             'status' => 'in:draft,scheduled,published,archived',
-            'section_id' => 'exists:sections,id',
+            'primary_section_id' => 'exists:sections,id',
+            'sections' => 'nullable|array',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:160',
             'featured_image' => 'nullable|string',
@@ -296,7 +314,15 @@ class ArticleController extends Controller
             $article->tags()->sync($request->tags);
         }
 
-        return response()->json($article->load(['section', 'user', 'tags']));
+        if ($request->has('sections')) {
+            $sections = $request->input('sections', []);
+            if (isset($validated['primary_section_id']) && !in_array($validated['primary_section_id'], $sections)) {
+                $sections[] = $validated['primary_section_id'];
+            }
+            $article->sections()->sync($sections);
+        }
+
+        return response()->json($article->load(['primarySection', 'sections', 'user', 'tags']));
     }
 
     /**

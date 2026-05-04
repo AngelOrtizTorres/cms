@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
@@ -21,6 +21,9 @@ import CommentIcon from "@mui/icons-material/Comment";
 import CategoryIcon from "@mui/icons-material/Category";
 import LabelIcon from "@mui/icons-material/Label";
 import SettingsIcon from "@mui/icons-material/Settings";
+import Collapse from "@mui/material/Collapse";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 import { useThemeSettings } from "@/components/MuiProviders";
 import { useAuth } from "@/context/AuthContext";
 
@@ -53,6 +56,11 @@ export default function LeftSidebar({
   let menuItems: Array<{ text: string; href: string; icon?: React.ReactNode }> =
     [];
 
+  // state for the Entradas submenu (hover/click expandable)
+  const [entriesOpen, setEntriesOpen] = useState(false);
+  const handleEntriesOpen = () => setEntriesOpen(true);
+  const handleEntriesClose = () => setEntriesOpen(false);
+
   if (effectiveRole === "admin") {
     menuItems = [
       { text: "Panel", href: "/dashboard", icon: <DashboardIcon /> },
@@ -61,49 +69,16 @@ export default function LeftSidebar({
     ];
   } else if (effectiveRole === "author") {
     if (isViewingSite && isSiteOwner) {
-      // site management menu for owner
-      menuItems = [
+      // site management menu for owner — new requested order
+        menuItems = [
         { text: "Ver sitio", href: `/`, icon: <PublicIcon /> },
-        {
-          text: "Panel",
-          href: `/dashboard/sites/${currentSiteId}`,
-          icon: <DashboardIcon />,
-        },
-        {
-          text: "Entradas",
-          href: `/dashboard/sites/${currentSiteId}/entries`,
-          icon: <ArticleIcon />,
-        },
-        {
-          text: "Medios",
-          href: `/dashboard/sites/${currentSiteId}/media`,
-          icon: <PhotoLibraryIcon />,
-        },
-        {
-          text: "Páginas",
-          href: `/dashboard/sites/${currentSiteId}/pages`,
-          icon: <DescriptionIcon />,
-        },
-        {
-          text: "Categorías",
-          href: `/dashboard/sites/${currentSiteId}/categories`,
-          icon: <CategoryIcon />,
-        },
-        {
-          text: "Etiquetas",
-          href: `/dashboard/sites/${currentSiteId}/tags`,
-          icon: <LabelIcon />,
-        },
-        {
-          text: "Comentarios",
-          href: `/dashboard/sites/${currentSiteId}/comments`,
-          icon: <CommentIcon />,
-        },
-        {
-          text: "Configuración",
-          href: `/dashboard/sites/${currentSiteId}/settings`,
-          icon: <SettingsIcon />,
-        },
+        { text: "Panel", href: `/dashboard/sites/${currentSiteId}`, icon: <DashboardIcon /> },
+        { text: "Secciones", href: `/dashboard/sites/${currentSiteId}/sections`, icon: <CategoryIcon /> },
+        { text: "Categorías", href: `/dashboard/sites/${currentSiteId}/categories`, icon: <DescriptionIcon /> },
+        { text: "Etiquetas", href: `/dashboard/sites/${currentSiteId}/tags`, icon: <LabelIcon /> },
+        { text: "Banners", href: `/dashboard/sites/${currentSiteId}/banners`, icon: <PhotoLibraryIcon /> },
+        { text: "Noticias", href: `/dashboard/sites/${currentSiteId}/news`, icon: <ArticleIcon /> },
+        { text: "Configuración", href: `/dashboard/sites/${currentSiteId}/settings`, icon: <SettingsIcon /> },
       ];
     } else {
       menuItems = [
@@ -147,18 +122,86 @@ export default function LeftSidebar({
       </Box>
 
       <List sx={{ flex: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              component={NextLink}
-              href={item.href}
-              sx={{ color: "#fff" }}
-            >
-              <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {menuItems.map((item) => {
+          if (item.text === 'Entradas') {
+            return (
+              <Box key={item.text} onMouseEnter={handleEntriesOpen} onMouseLeave={handleEntriesClose}>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    sx={{ color: "#fff" }}
+                    onClick={() => setEntriesOpen((s) => !s)}
+                    aria-expanded={entriesOpen}
+                  >
+                    <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.text} />
+                    {entriesOpen ? (
+                      <ExpandLess sx={{ color: '#fff' }} />
+                    ) : (
+                      <ExpandMore sx={{ color: '#fff' }} />
+                    )}
+                  </ListItemButton>
+                </ListItem>
+
+                <Collapse in={entriesOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding sx={{ bgcolor: 'transparent' }}>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={NextLink}
+                        href={`/dashboard/sites/${currentSiteId}/entries/articulos`}
+                        sx={{ pl: 4, color: '#fff' }}
+                        onClick={handleEntriesClose}
+                      >
+                        <ListItemIcon sx={{ minWidth: 28 }}>
+                          <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
+                        </ListItemIcon>
+                        <ListItemText primary="Artículos" />
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={NextLink}
+                        href={`/dashboard/sites/${currentSiteId}/entries/seccion`}
+                        sx={{ pl: 4, color: '#fff' }}
+                        onClick={handleEntriesClose}
+                      >
+                        <ListItemIcon sx={{ minWidth: 28 }}>
+                          <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
+                        </ListItemIcon>
+                        <ListItemText primary="Sección" />
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={NextLink}
+                        href={`/dashboard/sites/${currentSiteId}/entries/noticias`}
+                        sx={{ pl: 4, color: '#fff' }}
+                        onClick={handleEntriesClose}
+                      >
+                        <ListItemIcon sx={{ minWidth: 28 }}>
+                          <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
+                        </ListItemIcon>
+                        <ListItemText primary="Noticias" />
+                      </ListItemButton>
+                    </ListItem>
+                  </List>
+                </Collapse>
+              </Box>
+            );
+          }
+
+          return (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                component={NextLink}
+                href={item.href}
+                sx={{ color: "#fff" }}
+              >
+                <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
 
       <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>

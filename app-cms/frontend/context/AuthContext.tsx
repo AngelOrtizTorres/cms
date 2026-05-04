@@ -31,16 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = getStoredUser();
 
       try {
-        const user = await getCurrentUser();
+        const result = await getCurrentUser();
         if (!mounted) return;
-        setUser(user);
-        setSessionVerified(true);
-        try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
+        setUser(result.user ?? null);
+        setSessionVerified(!!result.sessionVerified);
+        try { if (result.user) localStorage.setItem('cms_user', JSON.stringify(result.user)); } catch {}
       } catch (err) {
         if (!mounted) return;
         // fallback: usar usuario en localStorage si existe
         if (storedUser) {
-          // Mostrar datos de usuario desde localStorage pero no marcar la sesión como verificada
           setUser(storedUser);
           setSessionVerified(false);
         } else {

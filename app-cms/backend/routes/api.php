@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SectionController;
 use App\Http\Controllers\UserController;
 
 // Endpoint de prueba
@@ -38,6 +39,13 @@ Route::post('/sites', [SiteController::class, 'store']);
 Route::put('/sites/{id}', [SiteController::class, 'update']);
 Route::delete('/sites/{id}', [SiteController::class, 'destroy']);
 Route::get('/sites/{id}/capabilities', [SiteController::class, 'capabilities']);
+
+// Sections (categorías) - CRUD básico para el panel
+Route::get('/sections', [SectionController::class, 'index']);
+Route::get('/sections/{id}', [SectionController::class, 'show']);
+Route::post('/sections', [SectionController::class, 'store']);
+Route::put('/sections/{id}', [SectionController::class, 'update']);
+Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
 
 // Users management
 Route::get('/users', [UserController::class, 'index']);
