@@ -25,36 +25,39 @@ export default function AdminLayout({
   const [siteOwnerId, setSiteOwnerId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!currentSiteId) {
-      setSiteOwnerId(null);
-      return;
-    }
+    const load = async () => {
+      if (!currentSiteId) {
+        setSiteOwnerId(null);
+        return;
+      }
 
-    let cancelled = false;
-    apiGet(`/sites/${currentSiteId}`)
-      .then((res: any) => {
+      let cancelled = false;
+      try {
+        const res = await apiGet(`/sites/${currentSiteId}`);
         if (cancelled) return;
         let ownerRaw: unknown = null;
-        if (res && typeof res === "object") {
+        if (res && typeof res === 'object') {
           const r = res as Record<string, unknown>;
-          if ("owner_id" in r) ownerRaw = r["owner_id"];
-          else if ("data" in r && typeof r.data === "object") {
-            const d = r.data as Record<string, unknown>;
-            if ("owner_id" in d) ownerRaw = d["owner_id"];
+          if ('owner_id' in r) ownerRaw = r['owner_id'];
+          else if ('data' in r && typeof (r as any).data === 'object') {
+            const d = (r as any).data as Record<string, unknown>;
+            if ('owner_id' in d) ownerRaw = d['owner_id'];
           }
         }
 
         const ownerNum = ownerRaw != null ? Number(ownerRaw) : null;
         setSiteOwnerId(ownerNum !== null && Number.isFinite(ownerNum) ? ownerNum : null);
-      })
-      .catch((err) => {
-        console.error("Failed to load site owner", err);
+      } catch (err) {
+        console.error('Failed to load site owner', err);
         setSiteOwnerId(null);
-      });
+      }
 
-    return () => {
-      cancelled = true;
+      return () => {
+        cancelled = true;
+      };
     };
+
+    load();
   }, [currentSiteId]);
 
   const currentSiteNum = currentSiteId != null ? Number(currentSiteId) : null;
@@ -73,10 +76,6 @@ export default function AdminLayout({
 
         <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
           <Toolbar />
-          <Box sx={{ bgcolor: "background.paper", p: 2, borderRadius: 0, mb: 2 }}>
-            <Typography variant="h5">Escritorio</Typography>
-            <Typography variant="body2" color="text.secondary">Bienvenido</Typography>
-          </Box>
           <Box>{children}</Box>
         </Box>
       </Box>

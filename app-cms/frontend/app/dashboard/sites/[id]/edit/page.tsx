@@ -19,7 +19,7 @@ export default function EditSitePage() {
   const id = params?.id;
   const router = useRouter();
 
-  const [site, setSite] = useState<any | null>(null);
+  const [site, setSite] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
@@ -27,20 +27,25 @@ export default function EditSitePage() {
   const [status, setStatus] = useState("active");
 
   useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    apiGet(`/sites/${id}`)
-      .then((res: any) => setSite(res))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, [id]);
+    const load = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const res = await apiGet(`/sites/${id}`);
+        const s = res as unknown as Record<string, unknown>;
+        setSite(s);
+        setTitle(String(s['title'] ?? ''));
+        setDomain(String(s['domain'] ?? ''));
+        setStatus(String(s['status'] ?? 'active'));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    if (!site) return;
-    setTitle(site.title || "");
-    setDomain(site.domain || "");
-    setStatus(site.status || "active");
-  }, [site]);
+    load();
+  }, [id]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +73,7 @@ export default function EditSitePage() {
           <TextField label="Dominio" value={domain} onChange={(e) => setDomain(e.target.value)} fullWidth />
           <FormControl fullWidth>
             <InputLabel>Estado</InputLabel>
-            <Select value={status} label="Estado" onChange={(e) => setStatus(e.target.value)}>
+            <Select value={status} label="Estado" onChange={(e) => setStatus(String((e.target as HTMLInputElement).value))}>
               <MenuItem value="active">Activo</MenuItem>
               <MenuItem value="inactive">Inactivo</MenuItem>
             </Select>

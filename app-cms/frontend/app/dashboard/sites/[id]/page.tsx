@@ -16,32 +16,39 @@ export default function SiteDashboardPage() {
   const router = useRouter();
   const auth = useAuth();
 
-  const [site, setSite] = useState<any | null>(null);
+  const [site, setSite] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!auth.loading && !auth.isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+    const load = async () => {
+      if (!auth.loading && !auth.isAuthenticated) {
+        router.push('/login');
+        return;
+      }
 
-    if (!id) return;
-    setLoading(true);
-    apiGet(`/sites/${id}`)
-      .then((res: any) => setSite(res))
-      .catch((err) => {
-        console.error("Error fetching site", err);
-        setError(err?.message || "Error al cargar el sitio");
-      })
-      .finally(() => setLoading(false));
-  }, [id, auth.isAuthenticated]);
+      if (!id) return;
+      setLoading(true);
+      try {
+        const res = await apiGet(`/sites/${id}`);
+        setSite(res as unknown as Record<string, unknown>);
+      } catch (err: unknown) {
+        console.error('Error fetching site', err);
+        const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al cargar el sitio';
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id, auth.isAuthenticated, auth.loading, router]);
 
   if (loading) return <Container sx={{ py: 4 }}>Cargando...</Container>;
   if (error) return <Container sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
   if (!site) return <Container sx={{ py: 4 }}>Sitio no encontrado</Container>;
 
-  const canEnter = !!(auth.user && site.owner_id === auth.user?.id);
+  const canEnter = !!(auth.user && site && (site['owner_id'] as number) === auth.user?.id);
 
   if (!canEnter) {
     return (

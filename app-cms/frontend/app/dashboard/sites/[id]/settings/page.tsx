@@ -15,14 +15,25 @@ export default function SiteSettingsPage() {
   const id = params?.id;
   const router = useRouter();
   const auth = useAuth();
-  const [site, setSite] = useState<any | null>(null);
+  const [site, setSite] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    apiGet(`/sites/${id}`).then((s: any) => setSite(s)).catch((e) => setError(e?.message || 'Error')).finally(() => setLoading(false));
+    const load = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const s = await apiGet(`/sites/${id}`);
+        setSite(s as unknown as Record<string, unknown>);
+      } catch (e: unknown) {
+        const msg = (typeof e === 'object' && e !== null && 'message' in e) ? String((e as Record<string, unknown>)['message']) : 'Error';
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id]);
 
   if (loading) return <Container id="site-settings" sx={{ py: 4 }}>Cargando...</Container>;

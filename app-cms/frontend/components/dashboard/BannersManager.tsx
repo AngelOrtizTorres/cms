@@ -42,16 +42,22 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
     setLoading(true);
     try {
       const url = siteId ? `/sites/${siteId}/banners` : "/banners";
-      const res: any = await apiGet(url);
-      const list = Array.isArray(res) ? res : res.data ?? [];
+      const res = await apiGet<Banner[]>(url);
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: Banner[] = Array.isArray(res)
+        ? (res as unknown as Banner[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Banner[]) : []);
       setBanners(list);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError((err as any)?.message || "Error cargando banners");
-    } finally { setLoading(false); }
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error cargando banners';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchBanners(); }, [siteId]);
+  useEffect(() => { const load = async () => { await fetchBanners(); }; load(); }, [siteId]);
 
   const handleCreate = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -67,15 +73,17 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
       setSuccess("Banner creado");
       setTitle(""); setLink(""); setFile(null);
       await fetchBanners();
-    } catch (err: any) {
-      console.error(err); setError(err?.message || "Error creando banner");
+    } catch (err: unknown) {
+      console.error(err);
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error creando banner';
+      setError(msg);
     } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar este banner?")) return;
     try { await apiDelete(`/banners/${id}`); setSuccess("Banner eliminado"); await fetchBanners(); }
-    catch (err: any) { console.error(err); setError(err?.message || "Error al eliminar"); }
+    catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar'; setError(msg); }
   };
 
   return (

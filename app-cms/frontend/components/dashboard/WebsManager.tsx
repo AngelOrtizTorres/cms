@@ -62,18 +62,22 @@ export default function WebsManager() {
     try {
       let url = "/sites";
       if (auth.user?.role === "author") url += `?owner=${auth.user.id}`;
-      const res: any = await apiGet(url);
-      const list = Array.isArray(res) ? res : res.data ?? [];
+      const res = await apiGet<Site[]>(url);
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: Site[] = Array.isArray(res)
+        ? (res as unknown as Site[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Site[]) : []);
       setSites(list as Site[]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Evitar log ruidoso en consola para 401 Unauthenticated
-      const unauth = err?.status === 401 || String(err?.message || err?.data?.message || '').toLowerCase().includes('unauthenticated');
+      const unauth = (err && typeof err === 'object' && 'status' in err && (err as Record<string, unknown>)['status'] === 401) || String(((err as Record<string, unknown>)['message'] || (err as Record<string, unknown>)['data']?.['message'] || '') as unknown).toLowerCase().includes('unauthenticated');
       if (unauth) {
         setError('No autenticado');
         setSites([]);
       } else {
-        console.error("Error fetching sites", err?.message ?? err);
-        setError(err?.message || "Error fetching sites");
+        console.error("Error fetching sites", (err as Record<string, unknown>)['message'] ?? err);
+        const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error fetching sites';
+        setError(msg);
       }
     } finally {
       setLoading(false);
@@ -83,8 +87,9 @@ export default function WebsManager() {
   useEffect(() => {
     // No llamar a la API hasta que sepamos si la sesión está verificada o exista un usuario en localStorage
     if (!auth.sessionVerified && !auth.user) return;
-    fetchSites();
-  }, [auth.user, auth.sessionVerified]);
+    const load = async () => { await fetchSites(); };
+    load();
+  }, [auth.user?.id, auth.sessionVerified]);
 
   useEffect(() => {
     if (showCreate) setTimeout(() => createTitleRef.current?.focus(), 30);
@@ -131,9 +136,10 @@ export default function WebsManager() {
       setContactEmail("");
       setIconFile(null);
       await fetchSites();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error creando la web");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error creando la web';
+      setError(msg);
     } finally {
       setCreating(false);
     }
@@ -145,9 +151,10 @@ export default function WebsManager() {
       await apiDelete(`/sites/${id}`);
       setSuccess("Web eliminada");
       await fetchSites();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error eliminando la web");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error eliminando la web';
+      setError(msg);
     }
   };
 

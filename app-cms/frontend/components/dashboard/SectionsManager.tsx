@@ -47,16 +47,19 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const nameRef = useRef<HTMLInputElement | null>(null);
-  const [site, setSite] = useState<any | null>(null);
+  const [site, setSite] = useState<Record<string, unknown> | null>(null);
 
   const fetchSections = async () => {
     setLoading(true);
     try {
       const url = siteId ? `/sites/${siteId}/sections` : "/sections";
-      const res: any = await apiGet(url);
-      const list = Array.isArray(res) ? res : res.data ?? [];
+      const res = await apiGet<Section[]>(url);
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: Section[] = Array.isArray(res)
+        ? (res as unknown as Section[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Section[]) : []);
       setSections(list);
-    } catch (err) {
+    } catch (err: unknown) {
       const normalized = normalizeApiError(err);
       console.error("Error fetching sections", normalized);
       setSections([]);
@@ -66,13 +69,19 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
     }
   };
 
-  useEffect(() => {
-    fetchSections();
-  }, [siteId]);
+  useEffect(() => { const load = async () => { await fetchSections(); }; load(); }, [siteId]);
 
   useEffect(() => {
-    if (!siteId) return;
-    apiGet(`/sites/${siteId}`).then((s: any) => setSite(s)).catch(() => setSite(null));
+    const load = async () => {
+      if (!siteId) return;
+      try {
+        const s = await apiGet(`/sites/${siteId}`);
+        setSite(s as unknown as Record<string, unknown>);
+      } catch {
+        setSite(null);
+      }
+    };
+    load();
   }, [siteId]);
 
   useEffect(() => {
@@ -99,7 +108,7 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
     setSaving(true);
     setError(null);
     try {
-      const payload: any = { name, slug: slug || undefined, description };
+      const payload: Record<string, unknown> = { name, slug: slug || undefined, description };
       if (editingId) {
         await apiPut(`/sections/${editingId}`, payload);
         setSuccess("Sección actualizada");
@@ -110,9 +119,10 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
       }
       resetForm();
       await fetchSections();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error al guardar la sección");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al guardar la sección';
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -124,9 +134,10 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
       await apiDelete(`/sections/${id}`);
       setSuccess("Sección eliminada");
       await fetchSections();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error al eliminar");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar';
+      setError(msg);
     }
   };
 

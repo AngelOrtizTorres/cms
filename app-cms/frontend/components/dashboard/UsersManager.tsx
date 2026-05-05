@@ -61,12 +61,12 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("author");
+  const [newRole, setNewRole] = useState<'admin'|'author'|'editor'>('author');
 
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
-  const [editRole, setEditRole] = useState("author");
+  const [editRole, setEditRole] = useState<'admin'|'author'|'editor'>('author');
 
   const createNameRef = useRef<HTMLInputElement | null>(null);
   const editNameRef = useRef<HTMLInputElement | null>(null);
@@ -79,35 +79,42 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
     setLoading(true);
     setError(null);
     try {
-      let res: any = null;
+      let res: unknown = null;
       if (auth.sessionVerified) {
-        res = await apiGet("/users");
+        res = await apiGet<User[]>('/users');
       } else {
         const token = getStoredToken();
         if (!token) {
           setUsers([]);
-          setError("No autenticado");
+          setError('No autenticado');
           return;
         }
-        res = await apiGet("/users", token);
+        res = await apiGet<User[]>('/users', token);
       }
-      const list = Array.isArray(res) ? res : res.data ?? [];
-      setUsers(list as User[]);
-    } catch (err: any) {
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: User[] = Array.isArray(res)
+        ? (res as unknown as User[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as User[]) : []);
+      setUsers(list);
+    } catch (err: unknown) {
       console.error("Error fetching users", err);
-      setError(err?.message || "Error al obtener usuarios");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al obtener usuarios';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (auth.user?.role !== "admin") {
-      setUsers([]);
-      setError(null);
-      return;
-    }
-    fetchUsers();
+    const load = async () => {
+      if (auth.user?.role !== 'admin') {
+        setUsers([]);
+        setError(null);
+        return;
+      }
+      await fetchUsers();
+    };
+    load();
   }, [auth.user?.role, auth.sessionVerified]);
 
   useEffect(() => {
@@ -136,13 +143,15 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
     if (!newName || !newEmail || !newPassword) return setError("Rellena nombre, email y contraseña");
     setCreating(true);
     try {
-      await apiPost("/users", { name: newName, email: newEmail, password: newPassword, role: newRole });
-      setSuccess("Usuario creado");
+      const payload: Record<string, unknown> = { name: newName, email: newEmail, password: newPassword, role: newRole };
+      await apiPost('/users', payload);
+      setSuccess('Usuario creado');
       setShowCreate(false);
       await fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error creando usuario");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error creando usuario';
+      setError(msg);
     } finally {
       setCreating(false);
     }
@@ -160,16 +169,17 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
   const handleSaveEdit = async (id: number) => {
     setUpdatingId(id);
     try {
-      const payload: any = { name: editName, email: editEmail, role: editRole };
-      if (editPassword) payload.password = editPassword;
+      const payload: Record<string, unknown> = { name: editName, email: editEmail, role: editRole };
+      if (editPassword) (payload as Record<string, unknown>)['password'] = editPassword;
       await apiPut(`/users/${id}`, payload);
-      setSuccess("Usuario actualizado");
+      setSuccess('Usuario actualizado');
       setShowEdit(false);
       setEditingUser(null);
       await fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error actualizando usuario");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error actualizando usuario';
+      setError(msg);
     } finally {
       setUpdatingId(null);
     }
@@ -187,9 +197,10 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
       await apiDelete(`/users/${confirmTargetId}`);
       setSuccess("Usuario eliminado");
       await fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Error eliminando usuario");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error eliminando usuario';
+      setError(msg);
     } finally {
       setConfirmTargetId(null);
     }
@@ -216,7 +227,7 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
           <TextField size="small" placeholder="Buscar por nombre" value={filterName} onChange={(e) => setFilterName(e.target.value)} sx={{ minWidth: 220 }} />
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <InputLabel>Filtrar por rol</InputLabel>
-            <Select value={filterRole} label="Filtrar por rol" onChange={(e) => setFilterRole(e.target.value as any)}>
+            <Select value={filterRole} label="Filtrar por rol" onChange={(e) => setFilterRole(e.target.value as "all" | "admin" | "author" | "editor")}>
               <MenuItem value="all">Todos</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="author">Author</MenuItem>
@@ -276,7 +287,7 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
             <TextField label="Contraseña" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} fullWidth />
             <FormControl>
               <InputLabel>Rol</InputLabel>
-              <Select value={newRole} label="Rol" onChange={(e) => setNewRole(e.target.value)}>
+              <Select value={newRole} label="Rol" onChange={(e) => setNewRole(e.target.value as 'admin'|'author'|'editor')}>
                 <MenuItem value="admin">admin</MenuItem>
                 <MenuItem value="author">author</MenuItem>
                 <MenuItem value="editor">editor</MenuItem>
@@ -300,7 +311,7 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
             <TextField label="Contraseña (dejar vacío para no cambiar)" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} fullWidth />
             <FormControl>
               <InputLabel>Rol</InputLabel>
-              <Select value={editRole} label="Rol" onChange={(e) => setEditRole(e.target.value)}>
+              <Select value={editRole} label="Rol" onChange={(e) => setEditRole(e.target.value as 'admin'|'author'|'editor')}>
                 <MenuItem value="admin">admin</MenuItem>
                 <MenuItem value="author">author</MenuItem>
                 <MenuItem value="editor">editor</MenuItem>

@@ -75,7 +75,7 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: number) => { if (!confirm('¿Eliminar noticia?')) return; try { await apiDelete(`/news/${id}`); setSuccess('Noticia eliminada'); await fetchNews(); } catch (err: any) { console.error(err); setError(err?.message || 'Error al eliminar'); } };
+  const handleDelete = async (id: number) => { if (!confirm('¿Eliminar noticia?')) return; try { await apiDelete(`/news/${id}`); setSuccess('Noticia eliminada'); await fetchNews(); } catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar'; setError(msg); } };
 
   const filtered = items.filter(i => { if (!filter) return true; const q = filter.toLowerCase(); return (i.title || '').toLowerCase().includes(q) || (i.slug || '').toLowerCase().includes(q); });
 
@@ -93,7 +93,7 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
           <Box component="form" onSubmit={handleCreate} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label="Título" value={title} onChange={(e) => setTitle(e.target.value)} size="small" fullWidth />
             <TextField label="Slug (opcional)" value={slug} onChange={(e) => setSlug(e.target.value)} size="small" fullWidth />
-            <Select value={status} onChange={(e) => setStatus(e.target.value)} size="small">
+            <Select value={status} onChange={(e) => setStatus(String((e.target as HTMLInputElement).value))} size="small">
               <MenuItem value="draft">Borrador</MenuItem>
               <MenuItem value="published">Publicado</MenuItem>
             </Select>

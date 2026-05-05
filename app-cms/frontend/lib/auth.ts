@@ -162,7 +162,7 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   } catch {}
 
   const res = await apiPost<{ message: string }>('/auth/forgot-password', { email });
-  return res as any;
+  return res as unknown as { message: string };
 }
 
 /**
@@ -174,7 +174,7 @@ export async function resetPassword(token: string, email: string, password: stri
   } catch {}
 
   const res = await apiPost<{ message: string }>('/auth/reset-password', { token, email, password, password_confirmation });
-  return res as any;
+  return res as unknown as { message: string };
 }
 
 /**

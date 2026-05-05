@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/AdminLayout";
 
-export default function ClientAppWrapper({ Component, pageProps }: any) {
+export default function ClientAppWrapper({ Component, pageProps }: { Component: React.ComponentType<Record<string, unknown>>; pageProps: Record<string, unknown> }) {
   const router = useRouter();
   const path = router.asPath || router.pathname || "";
 

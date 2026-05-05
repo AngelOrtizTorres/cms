@@ -45,19 +45,23 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
     setLoading(true);
     try {
       const url = siteId ? `/sites/${siteId}/tags` : "/tags";
-      const res: any = await apiGet(url);
-      const list = Array.isArray(res) ? res : res.data ?? [];
+      const res = await apiGet<Tag[]>(url);
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: Tag[] = Array.isArray(res)
+        ? (res as unknown as Tag[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Tag[]) : []);
       setTags(list);
     } catch (err) {
       console.error("Error fetching tags", err);
       setTags([]);
-      setError((err as any)?.message || "Error al cargar etiquetas");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al cargar etiquetas';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchTags(); }, [siteId]);
+  useEffect(() => { const load = async () => { await fetchTags(); }; load(); }, [siteId]);
   useEffect(() => { if (nameRef.current) nameRef.current.focus(); }, [editingId]);
 
   const resetForm = () => { setName(""); setSlug(""); setEditingId(null); };
@@ -68,7 +72,7 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
     if (!name) return setError("Nombre requerido");
     setSaving(true); setError(null);
     try {
-      const payload: any = { name, slug: slug || undefined };
+      const payload: Record<string, unknown> = { name, slug: slug || undefined };
       if (editingId) {
         await apiPut(`/tags/${editingId}`, payload);
         setSuccess("Etiqueta actualizada");
@@ -78,15 +82,15 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
         setSuccess("Etiqueta creada");
       }
       resetForm(); await fetchTags();
-    } catch (err: any) {
-      console.error(err); setError(err?.message || "Error al guardar etiqueta");
+    } catch (err: unknown) {
+      console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al guardar etiqueta'; setError(msg);
     } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar etiqueta?")) return;
     try { await apiDelete(`/tags/${id}`); setSuccess("Etiqueta eliminada"); await fetchTags(); }
-    catch (err: any) { console.error(err); setError(err?.message || "Error al eliminar"); }
+    catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar'; setError(msg); }
   };
 
   const filtered = tags.filter(t => {
