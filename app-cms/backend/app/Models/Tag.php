@@ -11,6 +11,7 @@ class Tag extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'site_id',
         'name',
         'slug',
         'description',

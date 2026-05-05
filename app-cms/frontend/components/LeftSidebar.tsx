@@ -30,7 +30,7 @@ import { useAuth } from "@/context/AuthContext";
 interface Props {
   role?: string | null;
   userId?: number | null;
-  currentSiteId?: number | null;
+  currentSiteId?: string | number | null;
   siteOwnerId?: number | null;
 }
 

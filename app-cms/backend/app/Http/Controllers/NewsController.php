@@ -6,6 +6,7 @@ use App\Models\News;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class NewsController extends Controller
 {
@@ -23,7 +24,25 @@ class NewsController extends Controller
 
     public function siteIndex($siteId, Request $request)
     {
-        $query = News::where('site_id', $siteId);
+        $resolved = $siteId;
+        if (!is_numeric($siteId)) {
+            try {
+                $row = DB::table('sites')->where('slug', $siteId)->first();
+                if ($row && isset($row->id)) $resolved = $row->id;
+            } catch (\Exception $e) { $resolved = null; }
+            if (!$resolved) {
+                $path = storage_path('app/sites.json');
+                if (file_exists($path)) {
+                    $json = @file_get_contents($path);
+                    $arr = json_decode($json, true) ?? [];
+                    foreach ($arr as $s) {
+                        if (isset($s['slug']) && $s['slug'] === $siteId) { $resolved = $s['id']; break; }
+                    }
+                }
+            }
+        }
+
+        $query = is_numeric($resolved) ? News::where('site_id', $resolved) : News::query();
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
@@ -68,7 +87,25 @@ class NewsController extends Controller
 
     public function siteStore($siteId, Request $request)
     {
-        $request->merge(['site_id' => $siteId]);
+        $resolved = $siteId;
+        if (!is_numeric($siteId)) {
+            try {
+                $row = DB::table('sites')->where('slug', $siteId)->first();
+                if ($row && isset($row->id)) $resolved = $row->id;
+            } catch (\Exception $e) { $resolved = null; }
+            if (!$resolved) {
+                $path = storage_path('app/sites.json');
+                if (file_exists($path)) {
+                    $json = @file_get_contents($path);
+                    $arr = json_decode($json, true) ?? [];
+                    foreach ($arr as $s) {
+                        if (isset($s['slug']) && $s['slug'] === $siteId) { $resolved = $s['id']; break; }
+                    }
+                }
+            }
+        }
+
+        if ($resolved) $request->merge(['site_id' => $resolved]);
         return $this->store($request);
     }
 

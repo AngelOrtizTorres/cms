@@ -78,6 +78,10 @@ Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
 Route::get('/sites/{siteId}/banners', [BannerController::class, 'siteIndex']);
 Route::post('/sites/{siteId}/banners', [BannerController::class, 'siteStore']);
 
+// Sections por sitio (acepta id numérico o slug)
+Route::get('/sites/{siteId}/sections', [SectionController::class, 'index']);
+Route::post('/sites/{siteId}/sections', [SectionController::class, 'store']);
+
 // Media
 Route::get('/media', [MediaController::class, 'index']);
 Route::post('/media', [MediaController::class, 'store']);
@@ -97,6 +101,9 @@ Route::put('/homepage', [SettingsController::class, 'updateHomepage']);
 // Tags (list + articles by tag slug)
 Route::get('/tags', [TagController::class, 'index']);
 Route::get('/tags/{slug}', [TagController::class, 'show']);
+// Site-scoped tags
+Route::get('/sites/{siteId}/tags', [TagController::class, 'siteIndex']);
+Route::post('/sites/{siteId}/tags', [TagController::class, 'siteStore']);
 
 // Search (top-level alias)
 Route::get('/search', [ArticleController::class, 'search']);

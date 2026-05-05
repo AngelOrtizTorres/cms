@@ -11,6 +11,7 @@ class Banner extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'site_id',
         'title',
         'type',
         'image_url',

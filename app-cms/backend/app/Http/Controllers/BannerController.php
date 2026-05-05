@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class BannerController extends Controller
 {
@@ -107,12 +108,30 @@ class BannerController extends Controller
     // Site-scoped endpoints (best-effort: if site_id exists on table, filter by it)
     public function siteIndex($siteId)
     {
+        $resolved = $siteId;
+        if (!is_numeric($siteId)) {
+            // try resolve slug -> id
+            try {
+                $row = DB::table('sites')->where('slug', $siteId)->first();
+                if ($row && isset($row->id)) $resolved = $row->id;
+            } catch (\Exception $e) {
+                $resolved = null;
+            }
+            if (!$resolved) {
+                $path = storage_path('app/sites.json');
+                if (file_exists($path)) {
+                    $json = @file_get_contents($path);
+                    $arr = json_decode($json, true) ?? [];
+                    foreach ($arr as $s) {
+                        if (isset($s['slug']) && $s['slug'] === $siteId) { $resolved = $s['id']; break; }
+                    }
+                }
+            }
+        }
+
         $query = Banner::orderBy('display_order');
-        try {
-            // if the column exists, filter by it
-            $query->where('site_id', $siteId);
-        } catch (\Exception $e) {
-            // ignore if column doesn't exist
+        if ($resolved) {
+            try { $query->where('site_id', $resolved); } catch (\Exception $e) { }
         }
 
         return response()->json($query->get());
@@ -142,12 +161,26 @@ class BannerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Attach site_id if column present
-        try {
-            $validated['site_id'] = $siteId;
-        } catch (\Exception $e) {
-            // noop
+        // Attach resolved site_id if possible
+        $resolved = $siteId;
+        if (!is_numeric($siteId)) {
+            try {
+                $row = DB::table('sites')->where('slug', $siteId)->first();
+                if ($row && isset($row->id)) $resolved = $row->id;
+            } catch (\Exception $e) { $resolved = null; }
+            if (!$resolved) {
+                $path = storage_path('app/sites.json');
+                if (file_exists($path)) {
+                    $json = @file_get_contents($path);
+                    $arr = json_decode($json, true) ?? [];
+                    foreach ($arr as $s) {
+                        if (isset($s['slug']) && $s['slug'] === $siteId) { $resolved = $s['id']; break; }
+                    }
+                }
+            }
         }
+
+        if ($resolved) $validated['site_id'] = $resolved;
 
         $banner = Banner::create($validated);
         return response()->json($banner, 201);

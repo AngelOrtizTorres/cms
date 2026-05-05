@@ -30,6 +30,7 @@ import { apiGet, apiPostFormData, apiDelete } from "@/lib/api";
 
 type Site = {
   id: number;
+  slug?: string;
   title: string;
   domain?: string;
   description?: string;
@@ -236,8 +237,8 @@ export default function WebsManager() {
                     {s.domain ? (
                       <Button size="small" component={NextLink} href={`https://${s.domain}`} sx={{ mr: 1 }}>Ver</Button>
                     ) : null}
-                    <Button size="small" component={NextLink} href={`/dashboard/sites/${s.id}`} sx={{ mr: 1 }}>Entrar</Button>
-                    <Button size="small" component={NextLink} href={`/dashboard/sites/${s.id}/edit`} sx={{ mr: 1 }}>Editar</Button>
+                    <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}`} sx={{ mr: 1 }}>Entrar</Button>
+                    <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}/edit`} sx={{ mr: 1 }}>Editar</Button>
                     <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
                   </TableCell>
                 </TableRow>

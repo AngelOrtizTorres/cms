@@ -79,7 +79,7 @@ class SiteController extends Controller
     {
         $sites = $this->readSites();
         foreach ($sites as $s) {
-            if ($s['id'] == (int) $id) {
+            if ((is_numeric($id) && $s['id'] == (int) $id) || (!is_numeric($id) && isset($s['slug']) && $s['slug'] === $id)) {
                 $creator = User::find($s['owner_id']);
                 $s['creator_email'] = $creator?->email ?? null;
                 return response()->json($s);
@@ -159,7 +159,7 @@ class SiteController extends Controller
 
         $sites = $this->readSites();
         foreach ($sites as $idx => $s) {
-            if ($s['id'] == (int) $id) {
+            if ((is_numeric($id) && $s['id'] == (int) $id) || (!is_numeric($id) && isset($s['slug']) && $s['slug'] === $id)) {
                 $role = $user->getRoleNames()->first() ?? ($user->role ?? 'user');
                 $isOwner = $s['owner_id'] == $user->id;
                 if ($role !== 'admin' && !$isOwner) {
@@ -213,7 +213,7 @@ class SiteController extends Controller
 
         $sites = $this->readSites();
         foreach ($sites as $idx => $s) {
-            if ($s['id'] == (int) $id) {
+            if ((is_numeric($id) && $s['id'] == (int) $id) || (!is_numeric($id) && isset($s['slug']) && $s['slug'] === $id)) {
                 $role = $user->getRoleNames()->first() ?? ($user->role ?? 'user');
                 $isOwner = $s['owner_id'] == $user->id;
                 if ($role !== 'admin' && !$isOwner) {
@@ -241,7 +241,7 @@ class SiteController extends Controller
         $sites = $this->readSites();
         $site = null;
         foreach ($sites as $s) {
-            if ($s['id'] == (int) $id) {
+            if ((is_numeric($id) && $s['id'] == (int) $id) || (!is_numeric($id) && isset($s['slug']) && $s['slug'] === $id)) {
                 $site = $s;
                 break;
             }

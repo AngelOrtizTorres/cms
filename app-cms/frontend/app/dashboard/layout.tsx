@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const auth = useAuth();
   const pathname = usePathname();
 
-  const [currentSiteId, setCurrentSiteId] = useState<number | null>(null);
+  const [currentSiteId, setCurrentSiteId] = useState<string | number | null>(null);
   const [siteOwnerId, setSiteOwnerId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -32,7 +32,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       const m = pathname.match(/^\/dashboard\/sites\/([^\/]+)/);
       const id = m ? m[1] : null;
-      setCurrentSiteId(id ? Number(id) : null);
+      if (!id) setCurrentSiteId(null);
+      else if (/^\d+$/.test(id)) setCurrentSiteId(Number(id));
+      else setCurrentSiteId(id);
 
       if (!id || !auth.isAuthenticated) {
         setSiteOwnerId(null);

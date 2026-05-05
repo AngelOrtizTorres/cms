@@ -23,6 +23,7 @@ type Tag = {
   id: number;
   name: string;
   slug?: string;
+  description?: string;
   articles_count?: number;
 };
 
@@ -34,6 +35,7 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,15 +66,15 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
   useEffect(() => { const load = async () => { await fetchTags(); }; load(); }, [siteId]);
   useEffect(() => { if (nameRef.current) nameRef.current.focus(); }, [editingId]);
 
-  const resetForm = () => { setName(""); setSlug(""); setEditingId(null); };
-  const startEdit = (t: Tag) => { setEditingId(t.id); setName(t.name || ""); setSlug(t.slug || ""); };
+  const resetForm = () => { setName(""); setSlug(""); setDescription(""); setEditingId(null); };
+  const startEdit = (t: Tag) => { setEditingId(t.id); setName(t.name || ""); setSlug(t.slug || ""); setDescription(t.description || ""); };
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name) return setError("Nombre requerido");
     setSaving(true); setError(null);
     try {
-      const payload: Record<string, unknown> = { name, slug: slug || undefined };
+      const payload: Record<string, unknown> = { name, slug: slug || undefined, description: description || undefined };
       if (editingId) {
         await apiPut(`/tags/${editingId}`, payload);
         setSuccess("Etiqueta actualizada");
@@ -105,14 +107,24 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr' }, gap: 3 }}>
-        <Paper sx={{ p: 3 }} elevation={2}>
+          <Paper sx={{ p: 3 }} elevation={2}>
           <Typography variant="h6" gutterBottom>{editingId ? 'Editar etiqueta' : 'Añadir etiqueta'}</Typography>
           <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField inputRef={nameRef} label="Nombre" value={name} onChange={(e) => setName(e.target.value)} size="small" fullWidth />
-            <TextField label="Slug (opcional)" value={slug} onChange={(e) => setSlug(e.target.value)} size="small" fullWidth />
+            <TextField
+              label="Slug (opcional)"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              size="small"
+              fullWidth
+              helperText={"El «slug» es la versión amigable de la URL para el nombre. Suele estar en minúsculas y contener solo letras, números y guiones."}
+            />
+            <TextField label="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} size="small" fullWidth multiline rows={4} />
+            <Typography variant="body2" color="text.secondary">La descripción no se muestra por defecto; sin embargo, hay algunos temas que pueden mostrarla.</Typography>
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
               {editingId && <Button variant="outlined" onClick={resetForm}>Cancelar</Button>}
-              <Button variant="contained" type="submit" disabled={saving}>{saving ? 'Guardando...' : (editingId ? 'Actualizar' : 'Añadir')}</Button>
+              <Button variant="contained" type="submit" disabled={saving}>{saving ? 'Guardando...' : (editingId ? 'Actualizar etiqueta' : 'Añadir etiqueta')}</Button>
             </Box>
           </Box>
         </Paper>
@@ -133,6 +145,7 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
                 <TableHead>
                   <TableRow>
                     <TableCell>Nombre</TableCell>
+                    <TableCell>Descripción</TableCell>
                     <TableCell>Slug</TableCell>
                     <TableCell>Cantidad</TableCell>
                     <TableCell align="right">Acciones</TableCell>
@@ -140,12 +153,13 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
                 </TableHead>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5}>Cargando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={4}>No hay etiquetas</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5}>No hay etiquetas</TableCell></TableRow>
                   ) : filtered.map(t => (
                     <TableRow key={t.id} hover>
                       <TableCell>{t.name}</TableCell>
+                      <TableCell>{t.description || '—'}</TableCell>
                       <TableCell>{t.slug}</TableCell>
                       <TableCell>{t.articles_count ?? 0}</TableCell>
                       <TableCell align="right">
