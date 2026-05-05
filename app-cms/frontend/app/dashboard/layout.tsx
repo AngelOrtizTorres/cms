@@ -88,12 +88,7 @@ export default function DashboardLayout({
 
         <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
           <Toolbar />
-          <Box sx={{ bgcolor: "background.paper", p: 2, borderRadius: 0, mb: 2 }}>
-            <Typography variant="h5">Escritorio</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Bienvenido
-            </Typography>
-          </Box>
+          {/* Header removed as requested (was: 'Escritorio' / welcome box) */}
           <Box>{children}</Box>
         </Box>
       </Box>

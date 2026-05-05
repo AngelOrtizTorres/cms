@@ -66,14 +66,23 @@ export default function WebsManager() {
       const list = Array.isArray(res) ? res : res.data ?? [];
       setSites(list as Site[]);
     } catch (err: any) {
-      console.error("Error fetching sites", err);
-      setError(err?.message || "Error fetching sites");
+      // Evitar log ruidoso en consola para 401 Unauthenticated
+      const unauth = err?.status === 401 || String(err?.message || err?.data?.message || '').toLowerCase().includes('unauthenticated');
+      if (unauth) {
+        setError('No autenticado');
+        setSites([]);
+      } else {
+        console.error("Error fetching sites", err?.message ?? err);
+        setError(err?.message || "Error fetching sites");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // No llamar a la API hasta que sepamos si la sesión está verificada o exista un usuario en localStorage
+    if (!auth.sessionVerified && !auth.user) return;
     fetchSites();
   }, [auth.user, auth.sessionVerified]);
 
@@ -150,10 +159,41 @@ export default function WebsManager() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-          <TextField size="small" placeholder="Título" value={filterTitle} onChange={(e) => setFilterTitle(e.target.value)} sx={{ minWidth: 200 }} />
-          <TextField size="small" placeholder="Dominio" value={filterDomain} onChange={(e) => setFilterDomain(e.target.value)} sx={{ minWidth: 160 }} />
-          <TextField size="small" placeholder="Correo" value={filterEmail} onChange={(e) => setFilterEmail(e.target.value)} sx={{ minWidth: 200 }} />
+        <style>{`#webs-filters .MuiInputBase-input::placeholder { color: rgba(0,0,0,0.45) !important; opacity: 1 !important; }`}</style>
+        <Box id="webs-filters" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            size="small"
+            placeholder="Título"
+            value={filterTitle}
+            onChange={(e) => setFilterTitle(e.target.value)}
+            sx={{
+              minWidth: 200,
+              '& .MuiInputBase-input::placeholder': { color: 'rgba(0,0,0,0.45)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.12)' },
+            }}
+          />
+          <TextField
+            size="small"
+            placeholder="Dominio"
+            value={filterDomain}
+            onChange={(e) => setFilterDomain(e.target.value)}
+            sx={{
+              minWidth: 160,
+              '& .MuiInputBase-input::placeholder': { color: 'rgba(0,0,0,0.45)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.12)' },
+            }}
+          />
+          <TextField
+            size="small"
+            placeholder="Correo"
+            value={filterEmail}
+            onChange={(e) => setFilterEmail(e.target.value)}
+            sx={{
+              minWidth: 200,
+              '& .MuiInputBase-input::placeholder': { color: 'rgba(0,0,0,0.45)' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.12)' },
+            }}
+          />
           <Button variant="outlined" onClick={() => { setFilterTitle(''); setFilterDomain(''); setFilterEmail(''); }}>Limpiar</Button>
         </Box>
         <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>

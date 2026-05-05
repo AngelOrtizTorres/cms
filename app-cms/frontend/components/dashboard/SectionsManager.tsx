@@ -1,0 +1,212 @@
+"use client";
+
+import React, { useEffect, useState, useRef } from "react";
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableContainer,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+} from "@mui/material";
+import { useAuth } from "@/context/AuthContext";
+import { apiGet, apiPost, apiPut, apiDelete, normalizeApiError } from "@/lib/api";
+
+type Section = {
+  id: number;
+  name: string;
+  slug?: string;
+  description?: string;
+  position?: number;
+  active?: boolean;
+};
+
+export default function SectionsManager({ siteId }: { siteId?: string }) {
+  const auth = useAuth();
+  const [sections, setSections] = useState<Section[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("");
+
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const [site, setSite] = useState<any | null>(null);
+
+  const fetchSections = async () => {
+    setLoading(true);
+    try {
+      const url = siteId ? `/sites/${siteId}/sections` : "/sections";
+      const res: any = await apiGet(url);
+      const list = Array.isArray(res) ? res : res.data ?? [];
+      setSections(list);
+    } catch (err) {
+      const normalized = normalizeApiError(err);
+      console.error("Error fetching sections", normalized);
+      setSections([]);
+      setError(normalized.message || "Error al cargar secciones");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSections();
+  }, [siteId]);
+
+  useEffect(() => {
+    if (!siteId) return;
+    apiGet(`/sites/${siteId}`).then((s: any) => setSite(s)).catch(() => setSite(null));
+  }, [siteId]);
+
+  useEffect(() => {
+    if (nameRef.current) nameRef.current.focus();
+  }, [editingId]);
+
+  const resetForm = () => {
+    setName("");
+    setSlug("");
+    setDescription("");
+    setEditingId(null);
+  };
+
+  const startEdit = (s: Section) => {
+    setEditingId(s.id);
+    setName(s.name || "");
+    setSlug(s.slug || "");
+    setDescription(s.description || "");
+  };
+
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!name) return setError("Nombre requerido");
+    setSaving(true);
+    setError(null);
+    try {
+      const payload: any = { name, slug: slug || undefined, description };
+      if (editingId) {
+        await apiPut(`/sections/${editingId}`, payload);
+        setSuccess("Sección actualizada");
+      } else {
+        const url = siteId ? `/sites/${siteId}/sections` : "/sections";
+        await apiPost(url, payload);
+        setSuccess("Sección creada");
+      }
+      resetForm();
+      await fetchSections();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "Error al guardar la sección");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Eliminar esta sección?")) return;
+    try {
+      await apiDelete(`/sections/${id}`);
+      setSuccess("Sección eliminada");
+      await fetchSections();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "Error al eliminar");
+    }
+  };
+
+  const filtered = sections.filter((s) => {
+    if (!filter) return true;
+    const q = filter.toLowerCase();
+    return (s.name || "").toLowerCase().includes(q) || (s.slug || "").toLowerCase().includes(q);
+  });
+
+  const isSiteOwner = !!(auth.user && site && Number(site.owner_id) === Number(auth.user.id));
+  const canManage = auth.user?.role === "admin" || (auth.user?.role === "author" && isSiteOwner);
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" gutterBottom>Secciones</Typography>
+
+      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr' }, gap: 3 }}>
+        <Paper sx={{ p: 3 }} elevation={2}>
+          <Typography variant="h6" gutterBottom>{editingId ? 'Editar sección' : 'Añadir sección'}</Typography>
+          {!canManage ? (
+            <Box sx={{ p: 2, bgcolor: 'grey.900', color: 'grey.100', borderRadius: 1 }}>No tienes permisos para gestionar secciones.</Box>
+          ) : (
+            <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField inputRef={nameRef} label="Nombre" value={name} onChange={(e) => setName(e.target.value)} size="small" fullWidth />
+              <TextField label="Slug (opcional)" value={slug} onChange={(e) => setSlug(e.target.value)} size="small" fullWidth />
+              <TextField label="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} size="small" fullWidth multiline rows={3} />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                {editingId && <Button variant="outlined" onClick={resetForm}>Cancelar</Button>}
+                <Button variant="contained" type="submit" disabled={saving}>{saving ? 'Guardando...' : (editingId ? 'Actualizar' : 'Añadir')}</Button>
+              </Box>
+            </Box>
+          )}
+        </Paper>
+
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h5">Listado</Typography>
+            <style>{`#sections-filters .MuiInputBase-input::placeholder, #sections-filters .MuiFilledInput-input::placeholder { color: rgba(0,0,0,0.45) !important; opacity: 1 !important; }`}</style>
+            <Box id="sections-filters" sx={{ display: 'flex', gap: 1 }}>
+              <TextField placeholder="Buscar" value={filter} onChange={(e) => setFilter(e.target.value)} size="small" />
+              <Button variant="outlined" onClick={() => setFilter("")}>Limpiar</Button>
+            </Box>
+          </Box>
+
+          <Paper>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Nombre</TableCell>
+                    <TableCell>Slug</TableCell>
+                    <TableCell>Descripción</TableCell>
+                    <TableCell align="right">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {loading ? (
+                    <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={4}>No hay secciones</TableCell></TableRow>
+                  ) : filtered.map(s => (
+                    <TableRow key={s.id} hover>
+                      <TableCell>{s.name}</TableCell>
+                      <TableCell>{s.slug}</TableCell>
+                      <TableCell>{s.description || '—'}</TableCell>
+                      <TableCell align="right">
+                        <Button size="small" onClick={() => startEdit(s)} sx={{ mr: 1 }}>Editar</Button>
+                        <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Box>
+      </Box>
+    </Container>
+  );
+}

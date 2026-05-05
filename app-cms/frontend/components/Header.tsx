@@ -32,7 +32,7 @@ export default function Header({ drawerWidth = 0 }: { drawerWidth?: number }) {
             variant="h6"
             component={NextLink}
             href="/"
-            sx={{ textDecoration: "none", color: "inherit" }}
+            sx={{ textDecoration: "none", color: "#fff !important" }}
           >
             Mi Sitio
           </Typography>

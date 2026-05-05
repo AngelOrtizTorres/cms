@@ -96,7 +96,7 @@ export default function MuiProviders({
             main: primaryColor,
           },
           text: {
-            primary: mode === 'light' ? '#000000' : '#ffffff',
+            primary: mode === 'light' ? '#111111' : '#ffffff',
           },
           background: {
             default: mode === "light" ? "#f5f5f5" : "#121212",
@@ -113,7 +113,55 @@ export default function MuiProviders({
           MuiCssBaseline: {
             styleOverrides: {
               body: {
-                color: mode === "light" ? "#000000" : "#ffffff",
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+              '*, *::before, *::after': {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+            },
+          },
+          MuiTypography: {
+            styleOverrides: {
+              root: {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+            },
+          },
+          MuiTableCell: {
+            styleOverrides: {
+              root: {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+            },
+          },
+          MuiInputBase: {
+            styleOverrides: {
+              root: {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+              input: {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+            },
+          },
+          MuiOutlinedInput: {
+            styleOverrides: {
+              input: {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+            },
+          },
+          MuiInputLabel: {
+            styleOverrides: {
+              root: {
+                color: mode === "light" ? "#111111" : "#ffffff",
+              },
+            },
+          },
+          MuiFormHelperText: {
+            styleOverrides: {
+              root: {
+                color: mode === "light" ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.72)",
               },
             },
           },
@@ -135,6 +183,7 @@ export default function MuiProviders({
             styleOverrides: {
               root: {
                 borderRadius: 0,
+                color: mode === "light" ? "#111111" : "#ffffff",
                 "&.MuiButton-containedPrimary": {
                   backgroundColor: primaryColor,
                   color: "#fff",

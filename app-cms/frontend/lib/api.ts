@@ -268,3 +268,25 @@ export async function csrfCookie(): Promise<void> {
     },
   });
 }
+
+/**
+ * Normaliza distintos formatos de error lanzados por `apiCall` o por fetch
+ * y devuelve un objeto con propiedades comunes para el cliente.
+ */
+export function normalizeApiError(error: any) {
+  if (!error) return { message: "Error desconocido" };
+  if (typeof error === "string") return { message: error };
+  if (error instanceof Error) {
+    return { status: (error as any).status ?? null, message: error.message, stack: (error as any).stack ?? null };
+  }
+
+  try {
+    const status = error?.status ?? error?.data?.status ?? null;
+    const message = error?.message ?? error?.data?.message ?? "Error en la solicitud";
+    const errors = error?.errors ?? error?.data?.errors ?? null;
+    const raw = error?.raw ?? error?.data ?? error;
+    return { status, message, errors, raw };
+  } catch (e) {
+    return { message: String(error) };
+  }
+}

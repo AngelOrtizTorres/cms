@@ -133,7 +133,7 @@ export default function LeftSidebar({
                     aria-expanded={entriesOpen}
                   >
                     <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.text} />
+                    <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
                     {entriesOpen ? (
                       <ExpandLess sx={{ color: '#fff' }} />
                     ) : (
@@ -154,7 +154,7 @@ export default function LeftSidebar({
                         <ListItemIcon sx={{ minWidth: 28 }}>
                           <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        <ListItemText primary="Artículos" />
+                        <ListItemText primary="Artículos" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
                       </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
@@ -167,7 +167,7 @@ export default function LeftSidebar({
                         <ListItemIcon sx={{ minWidth: 28 }}>
                           <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        <ListItemText primary="Sección" />
+                        <ListItemText primary="Sección" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
                       </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
@@ -180,7 +180,7 @@ export default function LeftSidebar({
                         <ListItemIcon sx={{ minWidth: 28 }}>
                           <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        <ListItemText primary="Noticias" />
+                        <ListItemText primary="Noticias" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
                       </ListItemButton>
                     </ListItem>
                   </List>
@@ -197,7 +197,7 @@ export default function LeftSidebar({
                 sx={{ color: "#fff" }}
               >
                 <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
               </ListItemButton>
             </ListItem>
           );

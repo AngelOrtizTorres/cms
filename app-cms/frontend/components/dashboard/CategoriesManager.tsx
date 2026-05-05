@@ -223,7 +223,8 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5">Categorías</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <style>{`#categories-filters .MuiInputBase-input::placeholder, #categories-filters .MuiFilledInput-input::placeholder { color: rgba(0,0,0,0.45) !important; opacity: 1 !important; }`}</style>
+            <Box id="categories-filters" sx={{ display: 'flex', gap: 1 }}>
               <TextField placeholder="Buscar categorías" value={filter} onChange={(e) => setFilter(e.target.value)} size="small" variant="outlined" />
               <Button variant="outlined" onClick={() => setFilter("")}>Limpiar</Button>
             </Box>

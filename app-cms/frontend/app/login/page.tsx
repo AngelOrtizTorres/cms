@@ -61,8 +61,50 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err ?? 'Credenciales inválidas');
-      setError(message);
+      // Normalizar errores del servidor para mostrar mensajes legibles
+      try {
+        // reset field errors first
+        setEmailError(null);
+        setPasswordError(null);
+
+        if (err instanceof Error) {
+          setError(err.message);
+        } else if (err && typeof err === 'object') {
+          const e: any = err;
+
+          // Si el backend devolvió un texto JSON en `message`, intentar parsearlo
+          if (typeof e.message === 'string') {
+            try {
+              const parsed = JSON.parse(e.message);
+              if (parsed && parsed.errors) {
+                if (parsed.errors.email) setEmailError(Array.isArray(parsed.errors.email) ? parsed.errors.email.join(' ') : String(parsed.errors.email));
+                if (parsed.errors.password) setPasswordError(Array.isArray(parsed.errors.password) ? parsed.errors.password.join(' ') : String(parsed.errors.password));
+                setError(parsed.message || Object.values(parsed.errors).flat().join(' '));
+              } else if (parsed && parsed.message) {
+                setError(parsed.message);
+              } else {
+                setError(e.message);
+              }
+            } catch {
+              // message no es JSON
+              setError(e.message || 'Credenciales inválidas');
+            }
+          } else if (e.errors) {
+            // Forma: { errors: { field: [msg] }, message: '...' }
+            if (e.errors.email) setEmailError(Array.isArray(e.errors.email) ? e.errors.email.join(' ') : String(e.errors.email));
+            if (e.errors.password) setPasswordError(Array.isArray(e.errors.password) ? e.errors.password.join(' ') : String(e.errors.password));
+            setError(e.message || Object.values(e.errors).flat().join(' '));
+          } else if (e.status && e.message) {
+            setError(String(e.message));
+          } else {
+            setError('Credenciales inválidas');
+          }
+        } else {
+          setError(String(err ?? 'Credenciales inválidas'));
+        }
+      } catch (ex) {
+        setError('Error en el login');
+      }
     } finally {
       setLoading(false);
     }
@@ -107,18 +149,32 @@ export default function LoginPage() {
           width: '100%',
           maxWidth: 480,
           boxShadow: '0 10px 30px rgba(2,6,23,0.6)',
-          bgcolor: 'rgba(10,12,15,0.85)',
-          border: '1px solid rgba(255,255,255,0.03)',
+          bgcolor: 'rgba(10,12,15,0.92)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          color: '#ffffff',
+          // force readable colors for form controls inside the login panel
+          '& .MuiTypography-root': { color: '#ffffff' },
+          '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.8)' },
+          '& .MuiInputBase-input': { color: '#ffffff' },
+          '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.72)' },
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' },
+          '& .MuiLink-root': { color: 'rgba(255,255,255,0.9)' },
+          '& .MuiFormControlLabel-label': { color: 'rgba(255,255,255,0.9)' },
+          '& input::placeholder, textarea::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 },
+          '& .MuiCheckbox-root': { color: 'rgba(255,255,255,0.9)' },
+          '& .MuiCheckbox-root.Mui-checked': { color: 'primary.main' },
+          '& .MuiCheckbox-root svg': { color: 'rgba(255,255,255,0.9)', fill: 'currentColor' },
+          '& .MuiCheckbox-root.Mui-checked svg': { color: '#fff', fill: '#fff' },
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Avatar sx={{ m: 1, bgcolor: "primary.main", width: 64, height: 64 }}>
-            <LockOutlinedIcon />
+            <LockOutlinedIcon sx={{ color: '#fff' }} />
           </Avatar>
-          <Typography component="h1" variant="h5">
+          <Typography component="h1" variant="h5" sx={{ color: '#fff' }}>
             Acceder
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.78)', mb: 2 }}>
             Introduce tus credenciales
           </Typography>
 
@@ -143,6 +199,11 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               error={Boolean(emailError)}
               helperText={emailError ?? ''}
+              sx={{
+                '& .MuiInputBase-input': { color: '#ffffff' },
+                '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.72)' },
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' }
+              }}
             />
             <FormControl margin="normal" required fullWidth variant="outlined" error={Boolean(passwordError)}>
               <InputLabel htmlFor="password">Contraseña</InputLabel>
@@ -168,13 +229,15 @@ export default function LoginPage() {
                 }
                 label="Contraseña"
                 inputProps={{ name: 'password', 'aria-describedby': passwordError ? 'password-helper-text' : undefined }}
+                sx={{ '& input': { color: '#ffffff' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' } }}
               />
-              {passwordError && <FormHelperText id="password-helper-text">{passwordError}</FormHelperText>}
+              {passwordError && <FormHelperText id="password-helper-text" sx={{ color: 'rgba(255,255,255,0.8)' }}>{passwordError}</FormHelperText>}
             </FormControl>
 
             <FormControlLabel
               control={<Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} color="primary" />}
               label="Recordarme"
+              sx={{ '& .MuiFormControlLabel-label': { color: 'rgba(255,255,255,0.9)' } }}
             />
 
             <Button
@@ -213,7 +276,8 @@ export default function LoginPage() {
               <Link
                 component={NextLink}
                 href="/forgot-password"
-                variant="body2"
+                  variant="body2"
+                  sx={{ color: 'rgba(255,255,255,0.9)' }}
               >
                 ¿Olvidaste la contraseña?
               </Link>

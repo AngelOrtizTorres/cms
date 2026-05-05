@@ -7,13 +7,6 @@
   --primary: #0073aa;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -29,7 +22,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Remove rounded corners globally when user prefers no rounding */
+/* Minor utility overrides */
 .rounded,
 .rounded-sm,
 .rounded-md,
@@ -39,7 +32,6 @@ body {
   border-radius: 0 !important;
 }
 
-/* Make all buttons show pointer cursor by default; keep disabled state non-clickable */
 button,
 input[type="button"],
 input[type="submit"],
@@ -52,33 +44,14 @@ input[disabled] {
   cursor: not-allowed;
 }
 
-/* Ensure MUI components inherit the global foreground color (helps SSR consistency) */
-/* Ensure MUI textual components inherit readable foreground */
-.MuiTypography-root,
-.MuiPaper-root,
-.MuiButton-root,
-.MuiInputBase-root,
-.MuiFormLabel-root,
-.MuiInputLabel-root,
-.MuiOutlinedInput-root,
-.MuiOutlinedInput-input,
-.MuiInputBase-input,
-.MuiTableCell-root,
-.MuiTableRow-root,
-.MuiListItemText-root,
-.MuiListItem-root,
-.MuiListItemButton-root {
-  color: var(--foreground) !important;
-}
-
-/* Muted helper text / captions */
+/* Keep helper text muted by default */
 .MuiFormHelperText-root,
 .MuiTypography-caption,
 .MuiTypography-body2 {
   color: var(--muted) !important;
 }
 
-/* Placeholders */
+/* Placeholders default */
 .MuiInputBase-input::placeholder,
 input::placeholder,
 textarea::placeholder {
@@ -86,8 +59,47 @@ textarea::placeholder {
   opacity: 1 !important;
 }
 
-/* Links use primary color */
-a,
-.MuiLink-root {
-  color: var(--primary) !important;
+/* Links in main content use primary color (do not affect header/sidebar) */
+#__next main a,
+#__next main .MuiLink-root {
+  color: var(--primary);
+}
+
+/* AppBar/header links should be white for contrast */
+.MuiAppBar-root a,
+.MuiAppBar-root .MuiTypography-root {
+  color: #fff !important;
+}
+
+/* Scoped: force readable text inside the main content area only */
+#__next main, #__next main * {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  text-shadow: none !important;
+}
+
+/* Placeholders inside main should also be dark */
+#__next main input::placeholder,
+#__next main textarea::placeholder,
+#__next main .MuiInputBase-input::placeholder,
+#__next main .MuiOutlinedInput-input::placeholder {
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+/* Table headers and alert messages inside main */
+#__next main .MuiTableCell-root,
+#__next main .MuiTableCell-head,
+#__next main .MuiAlert-message {
+  color: #111111 !important;
+}
+
+/* Drawer/sidebar: force white text inside the sidebar to ensure contrast */
+.MuiDrawer-paper,
+.MuiDrawer-paper * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
