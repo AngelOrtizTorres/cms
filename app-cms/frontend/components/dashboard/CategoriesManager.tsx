@@ -43,6 +43,8 @@ type Section = {
   active?: boolean;
 };
 
+type MinimalSite = { owner_id?: number | string };
+
 export default function CategoriesManager({ siteId }: { siteId?: string }) {
   const auth = useAuth();
   const [sections, setSections] = useState<Section[]>([]);
@@ -58,7 +60,7 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [site, setSite] = useState<any | null>(null);
+  const [site, setSite] = useState<MinimalSite | null>(null);
 
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [bulkAction, setBulkAction] = useState("");
@@ -76,10 +78,13 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
   const fetchSections = async () => {
     setLoading(true);
     try {
-      const res: any = await apiGet("/sections");
-      const list = Array.isArray(res) ? res : res.data ?? [];
+      const res = await apiGet<Section[]>('/sections');
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: Section[] = Array.isArray(res)
+        ? (res as unknown as Section[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Section[]) : []);
       setSections(list);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error fetching categories", err);
     } finally {
       setLoading(false);
@@ -87,12 +92,23 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
   };
 
   useEffect(() => {
-    fetchSections();
+    const load = async () => { await fetchSections(); };
+    load();
   }, []);
 
   useEffect(() => {
     if (!siteId) return;
-    apiGet(`/sites/${siteId}`).then((s: any) => setSite(s)).catch(() => setSite(null));
+    const loadSite = async () => {
+      try {
+        const s = await apiGet(`/sites/${siteId}`);
+        const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+        if (isRecord(s)) setSite(s as unknown as MinimalSite);
+        else setSite(null);
+      } catch {
+        setSite(null);
+      }
+    };
+    loadSite();
   }, [siteId]);
 
   useEffect(() => {
@@ -124,7 +140,7 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
     if (!name) return alert("Nombre requerido");
     setSaving(true);
     try {
-      const payload: any = { name, slug: slug || undefined, parent_id: parentId || undefined, description, position, active };
+      const payload: Record<string, unknown> = { name, slug: slug || undefined, parent_id: parentId || undefined, description, position, active };
       if (editingId) {
         await apiPut(`/sections/${editingId}`, payload);
       } else {
@@ -132,9 +148,11 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
       }
       await fetchSections();
       resetForm();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error saving category", err);
-      alert(err?.message || "Error al guardar la categoría");
+      // try to get a readable message
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al guardar la categoría';
+      alert(msg || 'Error al guardar la categoría');
     } finally {
       setSaving(false);
     }
@@ -164,9 +182,10 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
       }
       await fetchSections();
       setSelected({});
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting", err);
-      alert(err?.message || "Error al eliminar");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar';
+      alert(msg || 'Error al eliminar');
     }
   };
 

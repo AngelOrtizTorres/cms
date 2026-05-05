@@ -3,17 +3,17 @@
  * Maneja autenticación, errores y transformaciones de datos
  */
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
   errors?: Record<string, string[]>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface RequestConfig {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
   token?: string;
   // Controla el envío de cookies/credenciales. Por defecto se incluye ('include').
   credentials?: RequestCredentials;
@@ -41,7 +41,7 @@ function getToken(): string | null {
 /**
  * Realiza una petición HTTP a la API
  */
-export async function apiCall<T = any>(
+export async function apiCall<T = unknown>(
   endpoint: string,
   config: RequestConfig = {},
 ): Promise<ApiResponse<T>> {
@@ -91,7 +91,7 @@ export async function apiCall<T = any>(
     });
 
     const contentType = response.headers.get("content-type") || "";
-    let data: any = null;
+    let data: unknown = null;
 
     if (contentType.includes("application/json")) {
       data = await response.json();
@@ -110,21 +110,28 @@ export async function apiCall<T = any>(
         };
       }
       // Si es 2xx pero no JSON, devolvemos el texto en la propiedad `data`
-      data = { data: text } as any;
+      data = { data: text } as unknown;
     }
 
     // Si la respuesta no es exitosa y el body es JSON, lanzar error con el mensaje adecuado
     if (!response.ok) {
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const message = isRecord(data) && typeof (data as Record<string, unknown>).message === 'string'
+        ? (data as Record<string, unknown>).message as string
+        : 'Error en la solicitud';
+      const errors = isRecord(data) && isRecord((data as Record<string, unknown>).errors)
+        ? (data as Record<string, unknown>).errors as Record<string, unknown>
+        : null;
       throw {
         status: response.status,
-        message: data?.message || "Error en la solicitud",
-        errors: data?.errors,
+        message,
+        errors,
         data,
       };
     }
 
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Si es un error de red, lanzar error genérico
     if (error instanceof TypeError) {
       throw {
@@ -142,35 +149,35 @@ export async function apiCall<T = any>(
 /**
  * GET - Obtener datos
  */
-export function apiGet<T = any>(endpoint: string, token?: string) {
+export function apiGet<T = unknown>(endpoint: string, token?: string) {
   return apiCall<T>(endpoint, { method: "GET", token });
 }
 
 /**
  * POST - Crear datos
  */
-export function apiPost<T = any>(endpoint: string, body: any, token?: string) {
+export function apiPost<T = unknown>(endpoint: string, body: unknown, token?: string) {
   return apiCall<T>(endpoint, { method: "POST", body, token });
 }
 
 /**
  * PUT - Actualizar datos
  */
-export function apiPut<T = any>(endpoint: string, body: any, token?: string) {
+export function apiPut<T = unknown>(endpoint: string, body: unknown, token?: string) {
   return apiCall<T>(endpoint, { method: "PUT", body, token });
 }
 
 /**
  * DELETE - Eliminar datos
  */
-export function apiDelete<T = any>(endpoint: string, token?: string) {
+export function apiDelete<T = unknown>(endpoint: string, token?: string) {
   return apiCall<T>(endpoint, { method: "DELETE", token });
 }
 
 /**
  * POST multipart - Para subir archivos
  */
-export async function apiPostFormData<T = any>(
+export async function apiPostFormData<T = unknown>(
   endpoint: string,
   formData: FormData,
   token?: string,
@@ -211,7 +218,7 @@ export async function apiPostFormData<T = any>(
     });
 
     const contentType = response.headers.get("content-type") || "";
-    let data: any = null;
+    let data: unknown = null;
 
     if (contentType.includes("application/json")) {
       data = await response.json();
@@ -227,20 +234,27 @@ export async function apiPostFormData<T = any>(
           raw: text,
         };
       }
-      data = { data: text } as any;
+      data = { data: text } as unknown;
     }
 
     if (!response.ok) {
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const message = isRecord(data) && typeof (data as Record<string, unknown>).message === 'string'
+        ? (data as Record<string, unknown>).message as string
+        : 'Error en la solicitud';
+      const errors = isRecord(data) && isRecord((data as Record<string, unknown>).errors)
+        ? (data as Record<string, unknown>).errors as Record<string, unknown>
+        : null;
       throw {
         status: response.status,
-        message: data?.message || "Error en la solicitud",
-        errors: data?.errors,
+        message,
+        errors,
         data,
       };
     }
 
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof TypeError) {
       throw {
         status: 0,
@@ -273,20 +287,22 @@ export async function csrfCookie(): Promise<void> {
  * Normaliza distintos formatos de error lanzados por `apiCall` o por fetch
  * y devuelve un objeto con propiedades comunes para el cliente.
  */
-export function normalizeApiError(error: any) {
+export function normalizeApiError(error: unknown): { status?: number | null; message: string; errors?: Record<string, unknown> | null; raw?: unknown } {
   if (!error) return { message: "Error desconocido" };
   if (typeof error === "string") return { message: error };
   if (error instanceof Error) {
-    return { status: (error as any).status ?? null, message: error.message, stack: (error as any).stack ?? null };
+    return { status: null, message: error.message, raw: undefined };
   }
 
-  try {
-    const status = error?.status ?? error?.data?.status ?? null;
-    const message = error?.message ?? error?.data?.message ?? "Error en la solicitud";
-    const errors = error?.errors ?? error?.data?.errors ?? null;
-    const raw = error?.raw ?? error?.data ?? error;
+  const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+  if (isRecord(error)) {
+    const errRec = error as Record<string, unknown>;
+    const status = typeof errRec.status === 'number' ? (errRec.status as number) : (isRecord(errRec.data) && typeof (errRec.data as Record<string, unknown>).status === 'number' ? ((errRec.data as Record<string, unknown>).status as number) : null);
+    const message = typeof errRec.message === 'string' ? errRec.message : (isRecord(errRec.data) && typeof (errRec.data as Record<string, unknown>).message === 'string' ? ((errRec.data as Record<string, unknown>).message as string) : 'Error en la solicitud');
+    const errors = isRecord(errRec.errors) ? (errRec.errors as Record<string, unknown>) : (isRecord(errRec.data) && isRecord((errRec.data as Record<string, unknown>).errors) ? ((errRec.data as Record<string, unknown>).errors as Record<string, unknown>) : null);
+    const raw = errRec.raw ?? errRec.data ?? errRec;
     return { status, message, errors, raw };
-  } catch (e) {
-    return { message: String(error) };
   }
+
+  return { message: String(error) };
 }

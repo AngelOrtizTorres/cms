@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, login as apiLogin, logout as apiLogout, getCurrentUser, getStoredUser } from '@/lib/auth';
+import { normalizeApiError } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -60,8 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiLogin(email, password);
       setUser(response.user);
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Error en login';
+    } catch (err: unknown) {
+      const parsed = normalizeApiError(err);
+      const errorMessage = parsed?.message || 'Error en login';
       setError(errorMessage);
       throw err;
     } finally {
@@ -76,8 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiLogout();
       setUser(null);
       setError(null);
-    } catch (err: any) {
-      console.error('Error en logout:', err);
+    } catch (err: unknown) {
+      const parsed = normalizeApiError(err);
+      console.error('Error en logout:', parsed);
     } finally {
       setLoading(false);
     }

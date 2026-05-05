@@ -46,28 +46,32 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
     setLoading(true);
     try {
       const url = siteId ? `/sites/${siteId}/news` : "/news";
-      const res: any = await apiGet(url);
-      const list = Array.isArray(res) ? res : res.data ?? [];
+      const res = await apiGet<News[]>(url);
+      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const list: News[] = Array.isArray(res)
+        ? (res as unknown as News[])
+        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as News[]) : []);
       setItems(list);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError((err as any)?.message || "Error cargando noticias");
+      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error cargando noticias';
+      setError(msg);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchNews(); }, [siteId]);
+  useEffect(() => { const load = async () => { await fetchNews(); }; load(); }, [siteId]);
 
   const handleCreate = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!title) return setError("Título requerido");
     setSaving(true); setError(null);
     try {
-      const payload: any = { title, slug: slug || undefined, status };
+      const payload: Record<string, unknown> = { title, slug: slug || undefined, status };
       const url = siteId ? `/sites/${siteId}/news` : "/news";
       await apiPost(url, payload);
       setSuccess("Noticia creada"); setTitle(""); setSlug(""); setStatus("draft");
       await fetchNews();
-    } catch (err: any) { console.error(err); setError(err?.message || "Error creando noticia"); }
+    } catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error creando noticia'; setError(msg); }
     finally { setSaving(false); }
   };
 
