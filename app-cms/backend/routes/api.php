@@ -6,6 +6,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\BannerController;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\MediaController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\SettingsController;
 
 // Endpoint de prueba
 Route::get('/test', function () {
@@ -52,4 +58,47 @@ Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+// News (noticias) - endpoints para listado y CRUD (incluye rutas por sitio)
+Route::get('/news', [NewsController::class, 'index']);
+Route::post('/news', [NewsController::class, 'store']);
+Route::get('/news/{id}', [NewsController::class, 'show']);
+Route::put('/news/{id}', [NewsController::class, 'update']);
+Route::delete('/news/{id}', [NewsController::class, 'destroy']);
+
+Route::get('/sites/{siteId}/news', [NewsController::class, 'siteIndex']);
+Route::post('/sites/{siteId}/news', [NewsController::class, 'siteStore']);
+
+// Banners
+Route::get('/banners', [BannerController::class, 'index']);
+Route::get('/banners/{position}', [BannerController::class, 'byPosition']);
+Route::post('/banners', [BannerController::class, 'store']);
+Route::put('/banners/{id}', [BannerController::class, 'update']);
+Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
+Route::get('/sites/{siteId}/banners', [BannerController::class, 'siteIndex']);
+Route::post('/sites/{siteId}/banners', [BannerController::class, 'siteStore']);
+
+// Media
+Route::get('/media', [MediaController::class, 'index']);
+Route::post('/media', [MediaController::class, 'store']);
+Route::delete('/media/{id}', [MediaController::class, 'destroy']);
+
+// Contact / Messages
+Route::post('/contact', [ContactController::class, 'store']);
+Route::get('/contact/messages', [ContactController::class, 'index']);
+Route::delete('/contact/messages/{id}', [ContactController::class, 'destroy']);
+
+// Settings / Homepage
+Route::get('/settings', [SettingsController::class, 'index']);
+Route::put('/settings', [SettingsController::class, 'update']);
+Route::get('/homepage', [SettingsController::class, 'getHomepage']);
+Route::put('/homepage', [SettingsController::class, 'updateHomepage']);
+
+// Tags (list + articles by tag slug)
+Route::get('/tags', [TagController::class, 'index']);
+Route::get('/tags/{slug}', [TagController::class, 'show']);
+
+// Search (top-level alias)
+Route::get('/search', [ArticleController::class, 'search']);
+
 

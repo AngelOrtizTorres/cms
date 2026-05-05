@@ -26,8 +26,35 @@ class SectionController extends Controller
         return response()->json($sections);
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
+        // Si el identificador no es numérico, lo tratamos como slug y devolvemos
+        // los artículos de esa sección (comportamiento esperado por el frontend)
+        if (!is_numeric($id)) {
+            $section = Section::where('slug', $id)->firstOrFail();
+
+            $query = Article::whereHas('sections', function ($q) use ($section) {
+                    $q->where('sections.id', $section->id);
+                })
+                ->where('status', 'published')
+                ->with(['primarySection', 'sections', 'user', 'tags']);
+
+            // Búsqueda
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('excerpt', 'like', "%{$search}%");
+                });
+            }
+
+            $perPage = $request->get('per_page', 10);
+            $articles = $query->orderBy('published_at', 'desc')
+                ->paginate($perPage);
+
+            return response()->json($articles);
+        }
+
         $section = Section::with(['parent', 'children'])->findOrFail($id);
         return response()->json($section);
     }
