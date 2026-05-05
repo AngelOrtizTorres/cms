@@ -244,7 +244,7 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.900' }}>
+                  <TableRow sx={{ bgcolor: 'action.hover', '& .MuiTableCell-root': { color: 'text.primary', fontWeight: 600 } }}>
                     <TableCell padding="checkbox">
                       <Checkbox onChange={(e) => { const checked = e.target.checked; const map: Record<number, boolean> = {}; sections.forEach(s => map[s.id] = checked); setSelected(map); }} />
                     </TableCell>
