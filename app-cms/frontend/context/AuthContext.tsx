@@ -1,27 +1,29 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, login as apiLogin, logout as apiLogout, getCurrentUser, getStoredUser, getStoredToken } from '@/lib/auth';
+import { User, login as apiLogin, logout as apiLogout, getCurrentUser, getStoredUser } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
+  // Indica si la sesión fue verificada por el backend (/session/me)
+  sessionVerified: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionVerified, setSessionVerified] = useState(false);
 
+<<<<<<< HEAD
   // Inicializar desde localStorage al montar; si no hay token, intentar cargar usuario por cookie
   useEffect(() => {
     let mounted = true;
@@ -65,6 +67,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
+=======
+  // Inicializar: preferir sesión (consulta al backend), fallback a token/localStorage
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      setLoading(true);
+      const storedUser = getStoredUser();
+
+      try {
+        const result = await getCurrentUser();
+        if (!mounted) return;
+        setUser(result.user ?? null);
+        setSessionVerified(!!result.sessionVerified);
+        try { if (result.user) localStorage.setItem('cms_user', JSON.stringify(result.user)); } catch {}
+      } catch (err) {
+        if (!mounted) return;
+        // fallback: usar usuario en localStorage si existe
+        if (storedUser) {
+          setUser(storedUser);
+          setSessionVerified(false);
+        } else {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+>>>>>>> main
   }, []);
 
   // Refrescar usuario explícitamente (útil cuando la cookie HttpOnly fue creada por login server-side)
@@ -93,7 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiLogin(email, password);
       setUser(response.user);
-      setToken(response.token);
     } catch (err: any) {
       const errorMessage = err?.message || 'Error en login';
       setError(errorMessage);
@@ -109,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiLogout();
       setUser(null);
-      setToken(null);
       setError(null);
     } catch (err: any) {
       console.error('Error en logout:', err);
@@ -120,14 +151,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     user,
-    token,
     loading,
     error,
     login,
     logout,
+<<<<<<< HEAD
     refreshUser,
     // Considerar autenticado cuando exista `user` (token puede no estar disponible si se usa cookie HttpOnly)
     isAuthenticated: !!user,
+=======
+    isAuthenticated: !!user,
+    sessionVerified,
+>>>>>>> main
   };
 
   return (

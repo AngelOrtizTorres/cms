@@ -21,7 +21,7 @@ class Article extends Model
         'status',
         'meta_title',
         'meta_description',
-        'section_id',
+        'primary_section_id',
         'user_id',
         'published_at',
     ];
@@ -36,9 +36,9 @@ class Article extends Model
     ];
 
     // Relaciones
-    public function section()
+    public function primarySection()
     {
-        return $this->belongsTo(Section::class);
+        return $this->belongsTo(Section::class, 'primary_section_id');
     }
 
     public function user()
@@ -85,7 +85,9 @@ class Article extends Model
 
     public function scopeBySection($query, $sectionId)
     {
-        return $query->where('section_id', $sectionId);
+        return $query->whereHas('sections', function ($q) use ($sectionId) {
+            $q->where('sections.id', $sectionId);
+        });
     }
 }
 

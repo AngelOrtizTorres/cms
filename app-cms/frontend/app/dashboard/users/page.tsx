@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 'use client';
 
 import Link from 'next/link';
@@ -176,4 +177,13 @@ export default function DashboardUsersPage() {
       )}
     </div>
   );
+=======
+"use client";
+
+import React from "react";
+import UsersManager from "@/components/dashboard/UsersManager";
+
+export default function UsersPage() {
+  return <UsersManager />;
+>>>>>>> main
 }

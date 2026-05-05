@@ -3,19 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --muted: rgba(0,0,0,0.72);
+  --primary: #0073aa;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --muted: rgba(255,255,255,0.72);
+    --primary: #039be5;
   }
 }
 
@@ -23,4 +20,86 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Minor utility overrides */
+.rounded,
+.rounded-sm,
+.rounded-md,
+.rounded-lg,
+.rounded-xl,
+.rounded-full {
+  border-radius: 0 !important;
+}
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input[disabled] {
+  cursor: not-allowed;
+}
+
+/* Keep helper text muted by default */
+.MuiFormHelperText-root,
+.MuiTypography-caption,
+.MuiTypography-body2 {
+  color: var(--muted) !important;
+}
+
+/* Placeholders default */
+.MuiInputBase-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted) !important;
+  opacity: 1 !important;
+}
+
+/* Links in main content use primary color (do not affect header/sidebar) */
+#__next main a,
+#__next main .MuiLink-root {
+  color: var(--primary);
+}
+
+/* AppBar/header links should be white for contrast */
+.MuiAppBar-root a,
+.MuiAppBar-root .MuiTypography-root {
+  color: #fff !important;
+}
+
+/* Scoped: force readable text inside the main content area only */
+#__next main, #__next main * {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  text-shadow: none !important;
+}
+
+/* Placeholders inside main should also be dark */
+#__next main input::placeholder,
+#__next main textarea::placeholder,
+#__next main .MuiInputBase-input::placeholder,
+#__next main .MuiOutlinedInput-input::placeholder {
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+/* Table headers and alert messages inside main */
+#__next main .MuiTableCell-root,
+#__next main .MuiTableCell-head,
+#__next main .MuiAlert-message {
+  color: #111111 !important;
+}
+
+/* Drawer/sidebar: force white text inside the sidebar to ensure contrast */
+.MuiDrawer-paper,
+.MuiDrawer-paper * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }

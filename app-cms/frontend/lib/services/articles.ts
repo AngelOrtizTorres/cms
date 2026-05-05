@@ -2,7 +2,8 @@
  * Servicio de Artículos
  */
 
-import { apiGet, apiPost, apiPut, apiDelete } from '../api';
+import { apiGet, apiPost, apiPut, apiDelete } from "../api";
+import { User } from "../auth";
 
 export interface Article {
   id: number;
@@ -13,9 +14,13 @@ export interface Article {
   featured_image?: string | null;
   gallery_images?: string[] | null;
   featured: boolean;
+<<<<<<< HEAD
   status: 'draft' | 'scheduled' | 'published' | 'archived';
   meta_title?: string | null;
   meta_description?: string | null;
+=======
+  status: "draft" | "published";
+>>>>>>> main
   section_id: number;
   user_id?: number;
   parent_id?: number | null;
@@ -26,6 +31,10 @@ export interface Article {
     email?: string;
   };
   parent?: Article;
+  user?: User | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  image?: string | null;
   tags?: Tag[];
   created_at: string;
   updated_at: string;
@@ -37,9 +46,13 @@ export interface Section {
   name: string;
   slug: string;
   description: string;
+<<<<<<< HEAD
   active?: boolean;
   position?: number;
   parent_id?: number | null;
+=======
+  position?: number;
+>>>>>>> main
   article_count?: number;
 }
 
@@ -63,22 +76,25 @@ export interface PaginatedResponse<T> {
 /**
  * Obtener lista de artículos paginada
  */
-export async function getArticles(params: {
-  page?: number;
-  per_page?: number;
-  sort?: string;
-  section_id?: number;
-  search?: string;
-} = {}) {
+export async function getArticles(
+  params: {
+    page?: number;
+    per_page?: number;
+    sort?: string;
+    section_id?: number;
+    search?: string;
+  } = {},
+) {
   const query = new URLSearchParams();
-  if (params.page) query.append('page', params.page.toString());
-  if (params.per_page) query.append('per_page', params.per_page.toString());
-  if (params.sort) query.append('sort', params.sort);
-  if (params.section_id) query.append('section_id', params.section_id.toString());
-  if (params.search) query.append('search', params.search);
+  if (params.page) query.append("page", params.page.toString());
+  if (params.per_page) query.append("per_page", params.per_page.toString());
+  if (params.sort) query.append("sort", params.sort);
+  if (params.section_id)
+    query.append("section_id", params.section_id.toString());
+  if (params.search) query.append("search", params.search);
 
   const response = await apiGet<PaginatedResponse<Article>>(
-    `/articles?${query.toString()}`
+    `/articles?${query.toString()}`,
   );
 
   const direct = response as unknown as PaginatedResponse<Article>;
@@ -121,14 +137,18 @@ export async function getArticleBySlug(slug: string) {
  * Crear artículo
  */
 export async function createArticle(article: Partial<Article>, token?: string) {
-  const response = await apiPost<Article>('/articles', article, token);
+  const response = await apiPost<Article>("/articles", article, token);
   return (response.data || response) as Article;
 }
 
 /**
  * Actualizar artículo
  */
-export async function updateArticle(id: number, article: Partial<Article>, token?: string) {
+export async function updateArticle(
+  id: number,
+  article: Partial<Article>,
+  token?: string,
+) {
   const response = await apiPut<Article>(`/articles/${id}`, article, token);
   return (response.data || response) as Article;
 }
@@ -144,7 +164,7 @@ export async function deleteArticle(id: number, token?: string) {
  * Obtener secciones
  */
 export async function getSections() {
-  const response = await apiGet<Section[]>('/sections');
+  const response = await apiGet<Section[]>("/sections");
   return (response.data || response) as Section[];
 }
 
@@ -160,7 +180,7 @@ export async function getArticlesBySection(slug: string) {
  * Obtener etiquetas
  */
 export async function getTags() {
-  const response = await apiGet<Tag[]>('/tags');
+  const response = await apiGet<Tag[]>("/tags");
   return (response.data || response) as Tag[];
 }
 
@@ -177,7 +197,11 @@ export async function getArticlesByTag(slug: string) {
  */
 export async function searchArticles(query: string, per_page: number = 10) {
   const response = await apiGet<Article[]>(
+<<<<<<< HEAD
     `/search?q=${encodeURIComponent(query)}&per_page=${per_page}`
+=======
+    `/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+>>>>>>> main
   );
   return (response.data || response) as Article[];
 }

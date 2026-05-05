@@ -12,7 +12,8 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // Añadimos las rutas de sesión y el endpoint de registro-admin
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'session/*', 'register-admin'],
 
     'allowed_methods' => ['*'],
 
