@@ -8,6 +8,12 @@ Route::get('/', function () {
     return response()->json(['message' => 'API running']);
 });
 
+// Sanctum CSRF cookie - required for session-based auth from SPA
+Route::get('/sanctum/csrf-cookie', function () {
+    \Illuminate\Support\Facades\Cookie::queue('XSRF-TOKEN', csrf_token(), 0, '/');
+    return response()->noContent();
+});
+
 // Session-based auth endpoints for SPA (expects /sanctum/csrf-cookie first)
 Route::post('/session/login', [AuthController::class, 'loginSession']);
 Route::post('/session/logout', [AuthController::class, 'logoutSession']);

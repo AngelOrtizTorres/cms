@@ -29,59 +29,21 @@ export interface LoginResponse {
  * Login - Obtener token
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  // Petición al endpoint CSRF (Sanctum) para asegurar cookie XSRF-TOKEN
+  // Sin necesidad de CSRF token (está deshabilitado en backend para rutas de auth)
+  // Intentamos login por sesión primero
   try {
-    await csrfCookie();
-  } catch (err) {
-    // No bloqueamos el login por si el backend no usa Sanctum; solo avisamos
-    console.warn('No se pudo obtener cookie CSRF (sanctum), continuando...', err);
-  }
-
-  // Flujo por sesión (Sanctum) - backend debe exponer /session/login
-  const xsrf = getCookieValue('XSRF-TOKEN');
-  const base = API_URL.replace(/\/api$/i, "");
-
-  // Try session-based login first; on CSRF/token mismatch fallback to token login.
-  try {
-    const sessionResp = await fetch(`${base}/session/login`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (sessionResp.ok) {
-      const data = await sessionResp.json();
-      try { localStorage.setItem('cms_user', JSON.stringify(data.user)); } catch {}
-      return { user: data.user } as LoginResponse;
+    const sessionResp = await apiPost<{ user: User }>('/session/login', { email, password });
+    const user = (sessionResp as unknown as Record<string, unknown>).user as User | undefined;
+    if (user) {
+      try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
+      return { user } as LoginResponse;
     }
-
-    // Inspect failure: if it's a CSRF/token mismatch try token login as fallback
-    const text = await sessionResp.text();
-    const lower = (text || '').toLowerCase();
-    if (sessionResp.status === 419 || lower.includes('csrf') || lower.includes('token')) {
+    throw new Error('No user in session response');
+  } catch (err) {
+    // Si falla sesión, intentamos token login como fallback
+    try {
       const apiResp = await apiPost<{ token?: string; user?: User }>('/auth/login', { email, password });
       const body = apiResp as unknown as Record<string, unknown>;
-      const token = typeof body.token === 'string' ? (body.token as string) : undefined;
-      const user = body.user as User | undefined;
-      if (token) try { localStorage.setItem('cms_token', token); } catch {}
-      if (user) {
-        try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
-        return { user } as LoginResponse;
-      }
-      throw { status: sessionResp.status, message: text || 'Session login failed and token login returned no user' };
-    }
-
-    throw { status: sessionResp.status, message: text || 'Error en login por sesión' };
-  } catch (err) {
-    // If session attempt threw (e.g., network/CSRF), attempt direct token login as best-effort
-    try {
-      const apiFallback = await apiPost<{ token?: string; user?: User }>('/auth/login', { email, password });
-      const body = apiFallback as unknown as Record<string, unknown>;
       const token = typeof body.token === 'string' ? (body.token as string) : undefined;
       const user = body.user as User | undefined;
       if (token) try { localStorage.setItem('cms_token', token); } catch {}
@@ -100,24 +62,14 @@ export async function login(email: string, password: string): Promise<LoginRespo
  * Logout - Invalidar token
  */
 export async function logout(): Promise<void> {
-  // Cerrar sesión por cookie (Sanctum)
+  // Cerrar sesión por cookie (sin CSRF requerido)
   try {
-    try { await csrfCookie(); } catch {}
-
-    const base = API_URL.replace(/\/api$/i, "");
-    await fetch(`${base}/session/logout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: JSON.stringify({}),
-    });
+    await apiPost<{ message: string }>('/session/logout', {});
   } catch (err) {
     console.warn('Error logout session:', err);
   } finally {
     try { localStorage.removeItem('cms_user'); } catch {}
+    try { localStorage.removeItem('cms_token'); } catch {}
   }
 }
 
@@ -130,21 +82,12 @@ export type CurrentUserResult = {
 };
 
 export async function getCurrentUser(token?: string): Promise<CurrentUserResult> {
-  // Primero intentar la ruta de sesión (web route) — requiere cookies y middleware web
+  // Primero intentar la ruta de sesión (/api/session/me) — requiere cookies y middleware web
   try {
-    const base = API_URL.replace(/\/api$/i, "");
-    const resp = await fetch(`${base}/session/me`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-    });
-
-    if (resp.ok) {
-      const data = await resp.json();
-      return { user: data as User, sessionVerified: true };
+    const resp = await apiGet<User>('/session/me');
+    const user = resp as unknown as User | undefined;
+    if (user?.id) {
+      return { user, sessionVerified: true };
     }
   } catch (e) {
     // ignore and fallback
@@ -160,45 +103,33 @@ export async function getCurrentUser(token?: string): Promise<CurrentUserResult>
 }
 
 /**
- * Registrar administrador vía endpoint web personalizado `/register-admin`.
+ * Registrar administrador vía endpoint `/api/register-admin`.
  */
 export async function registerAdmin(name: string, email: string, password: string, password_confirmation: string): Promise<User> {
-  try {
-    await csrfCookie();
-  } catch {}
-
-  const xsrf = getCookieValue('XSRF-TOKEN');
-
-  const base = API_URL.replace(/\/api$/i, "");
-  const res = await fetch(`${base}/register-admin`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
-    },
-    body: JSON.stringify({ name, email, password, password_confirmation }),
+  // Sin verificación CSRF (deshabilitada en backend)
+  const res = await apiPost<{ user: User }>('/register-admin', {
+    name,
+    email,
+    password,
+    password_confirmation,
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw { status: res.status, message: text || 'Error en registro' };
+  const data = res as unknown as Record<string, unknown>;
+  const user = data.user as User | undefined;
+  
+  if (!user?.id) {
+    throw new Error('No user in registration response');
   }
 
-  const data = await res.json();
-  try { localStorage.setItem('cms_user', JSON.stringify(data.user)); } catch {}
-  return data.user as User;
+  try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
+  return user;
 }
 
 /**
  * Solicitar enlace de reseteo (forgot password)
  */
 export async function forgotPassword(email: string): Promise<{ message: string }>{
-  try {
-    await csrfCookie();
-  } catch {}
-
+  // Sin CSRF requerido
   const res = await apiPost<{ message: string }>('/auth/forgot-password', { email });
   return res as unknown as { message: string };
 }
@@ -207,10 +138,7 @@ export async function forgotPassword(email: string): Promise<{ message: string }
  * Resetear password usando token recibido por email
  */
 export async function resetPassword(token: string, email: string, password: string, password_confirmation: string): Promise<{ message: string }> {
-  try {
-    await csrfCookie();
-  } catch {}
-
+  // Sin CSRF requerido
   const res = await apiPost<{ message: string }>('/auth/reset-password', { token, email, password, password_confirmation });
   return res as unknown as { message: string };
 }

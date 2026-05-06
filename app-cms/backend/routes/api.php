@@ -18,6 +18,12 @@ Route::get('/test', function () {
 	return response()->json(['message' => 'API funcionando correctamente']);
 });
 
+// Sanctum CSRF cookie alias - ensure `/api/sanctum/csrf-cookie` also works
+Route::get('/sanctum/csrf-cookie', function () {
+	\Illuminate\Support\Facades\Cookie::queue('XSRF-TOKEN', csrf_token(), 0, '/');
+	return response()->noContent();
+});
+
 // Autenticación (login/logout/me) - token simple
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);

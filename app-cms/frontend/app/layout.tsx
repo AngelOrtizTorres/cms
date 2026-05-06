@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import MuiProviders from "@/components/MuiProviders";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Use system fonts instead of remote Google Fonts to avoid build-time fetch issues
+const fontVars = `
+  --font-geist-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-geist-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+`;
 
 export const metadata: Metadata = {
   title: "CMS - Content Management System",
@@ -28,7 +23,8 @@ export default function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning={true}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ all: "revert" } as React.CSSProperties}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col">
         <MuiProviders>
