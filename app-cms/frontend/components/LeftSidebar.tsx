@@ -98,6 +98,7 @@ export default function LeftSidebar({
         { text: "Categorías", href: `/dashboard/sites/${stableCurrentSiteId}/categories`, icon: <DescriptionIcon /> },
         { text: "Etiquetas", href: `/dashboard/sites/${stableCurrentSiteId}/tags`, icon: <LabelIcon /> },
         { text: "Banners", href: `/dashboard/sites/${stableCurrentSiteId}/banners`, icon: <PhotoLibraryIcon /> },
+        { text: "Media", href: `/dashboard/sites/${stableCurrentSiteId}/media`, icon: <PhotoLibraryIcon /> },
         { text: "Noticias", href: `/dashboard/sites/${stableCurrentSiteId}/news`, icon: <ArticleIcon /> },
         { text: "Configuración", href: `/dashboard/sites/${stableCurrentSiteId}/settings`, icon: <SettingsIcon /> },
       ];
