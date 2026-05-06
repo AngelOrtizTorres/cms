@@ -16,6 +16,13 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Divider from "@mui/material/Divider";
 
+type Site = {
+  id: number;
+  title?: string | null;
+  domain?: string | null;
+  owner_id?: number | null;
+};
+
 export default function SiteDashboardPage() {
   const params = useParams() as { id: string };
   const id = params?.id;
@@ -42,7 +49,7 @@ export default function SiteDashboardPage() {
       setLoading(true);
       try {
         const res = await apiGet(`/sites/${id}`);
-        setSite(res as unknown as Record<string, unknown>);
+        setSite(res as unknown as Site);
       } catch (err: unknown) {
         console.error('Error fetching site', err);
         const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al cargar el sitio';

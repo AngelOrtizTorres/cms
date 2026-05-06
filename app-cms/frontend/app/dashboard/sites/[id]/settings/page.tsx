@@ -34,6 +34,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import { apiGet, apiPut, apiPostFormData, normalizeApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
+type Site = {
+  id: number;
+  title?: string | null;
+  owner_id?: number | null;
+};
+
 export default function SiteSettingsPage() {
   const params = useParams() as { id: string };
   const id = params?.id;
@@ -221,7 +227,7 @@ export default function SiteSettingsPage() {
 
   if (loading) return <Container id="site-settings" sx={{ py: 4 }}>Cargando...</Container>;
   if (error) return <Container id="site-settings" sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
-  if (!site) return <Container id="site-settings" sx={{ py: 4 }}>Sitio no encontrado</Container>;
+  if (!site) return <Container id="site-settings" sx={{ py: 4 }}>Site not found</Container>;
 
   return (
     <Container id="site-settings" sx={{ py: 4 }}>
