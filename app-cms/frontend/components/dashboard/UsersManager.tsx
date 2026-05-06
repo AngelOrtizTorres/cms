@@ -161,7 +161,7 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
     setEditingUser(u);
     setEditName(u.name || "");
     setEditEmail(u.email || "");
-    setEditRole(u.role || "author");
+    setEditRole((u.role as 'admin'|'author'|'editor') || "author");
     setEditPassword("");
     setShowEdit(true);
   };

@@ -10,12 +10,18 @@ import Paper from "@mui/material/Paper";
 import { apiGet } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
+type Site = {
+  id: number;
+  title?: string | null;
+  owner_id?: number | null;
+};
+
 export default function SiteSettingsPage() {
   const params = useParams() as { id: string };
   const id = params?.id;
   const router = useRouter();
   const auth = useAuth();
-  const [site, setSite] = useState<Record<string, unknown> | null>(null);
+  const [site, setSite] = useState<Site | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +31,7 @@ export default function SiteSettingsPage() {
       setLoading(true);
       try {
         const s = await apiGet(`/sites/${id}`);
-        setSite(s as unknown as Record<string, unknown>);
+        setSite(s as unknown as Site);
       } catch (e: unknown) {
         const msg = (typeof e === 'object' && e !== null && 'message' in e) ? String((e as Record<string, unknown>)['message']) : 'Error';
         setError(msg);
@@ -36,9 +42,9 @@ export default function SiteSettingsPage() {
     load();
   }, [id]);
 
-  if (loading) return <Container id="site-settings" sx={{ py: 4 }}>Cargando...</Container>;
+  if (loading) return <Container id="site-settings" sx={{ py: 4 }}>Loading...</Container>;
   if (error) return <Container id="site-settings" sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
-  if (!site) return <Container id="site-settings" sx={{ py: 4 }}>Sitio no encontrado</Container>;
+  if (!site) return <Container id="site-settings" sx={{ py: 4 }}>Site not found</Container>;
 
   const canManage = auth.user?.role === 'admin' || Number(site.owner_id) === Number(auth.user?.id);
 
@@ -55,9 +61,9 @@ export default function SiteSettingsPage() {
     <Container id="site-settings" sx={{ py: 4 }}>
       <style>{`#site-settings .MuiInputBase-input::placeholder, #site-settings .MuiFilledInput-input::placeholder { color: rgba(0,0,0,0.45) !important; opacity: 1 !important; }`}</style>
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5">Configuración de {site.title || `#${site.id}`}</Typography>
+        <Typography variant="h5">Settings for {site.title || `#${site.id}`}</Typography>
         <Box sx={{ mt: 2 }}>
-          <Typography variant="body2" color="text.secondary">Aquí puedes añadir opciones específicas de la web (placeholder).</Typography>
+          <Typography variant="body2" color="text.secondary">You can add site-specific options here (placeholder).</Typography>
         </Box>
       </Paper>
     </Container>

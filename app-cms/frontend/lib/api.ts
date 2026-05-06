@@ -24,7 +24,9 @@ const DEFAULT_API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.API_URL ||
   "http://localhost:8000";
-export const API_URL = DEFAULT_API_URL.replace(/\/$/, "");
+// Normalize base URL: remove trailing slash and accidental `/api` suffix so
+// web routes like `/session/login` and `/sanctum/csrf-cookie` resolve correctly.
+export const API_URL = DEFAULT_API_URL.replace(/\/$/, "").replace(/\/api$/i, "");
 
 // token-based local storage removed; prefer session cookies (Sanctum)
 
@@ -272,15 +274,28 @@ export async function apiPostFormData<T = unknown>(
  * `XSRF-TOKEN` sea establecida (fetch usa `credentials: 'include'`).
  */
 export async function csrfCookie(): Promise<void> {
-  // Hacemos una petición GET directa a /sanctum/csrf-cookie (no bajo /api)
-  await fetch(`${API_URL}/sanctum/csrf-cookie`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-      Accept: 'application/json',
-    },
-  });
+  // Try the common Sanctum CSRF endpoints. Some deployments expose it at
+  // /sanctum/csrf-cookie, others behind an /api prefix. Try both so SPA
+  // clients work regardless of backend routing choices.
+  const endpoints = [`${API_URL}/sanctum/csrf-cookie`, `${API_URL}/api/sanctum/csrf-cookie`];
+  for (const url of endpoints) {
+    try {
+      const resp = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          Accept: 'application/json',
+        },
+      });
+      if (resp.ok) return;
+      // otherwise try next
+    } catch (e) {
+      // ignore and try next
+    }
+  }
+  // If none succeeded, throw to let callers decide how to proceed
+  throw new Error('Could not obtain CSRF cookie');
 }
 
 /**

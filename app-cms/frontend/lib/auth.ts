@@ -39,26 +39,61 @@ export async function login(email: string, password: string): Promise<LoginRespo
 
   // Flujo por sesión (Sanctum) - backend debe exponer /session/login
   const xsrf = getCookieValue('XSRF-TOKEN');
+  const base = API_URL.replace(/\/api$/i, "");
 
-  const sessionResp = await fetch(`${API_URL}/session/login`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
-    },
-    body: JSON.stringify({ email, password }),
-  });
+  // Try session-based login first; on CSRF/token mismatch fallback to token login.
+  try {
+    const sessionResp = await fetch(`${base}/session/login`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-  if (!sessionResp.ok) {
+    if (sessionResp.ok) {
+      const data = await sessionResp.json();
+      try { localStorage.setItem('cms_user', JSON.stringify(data.user)); } catch {}
+      return { user: data.user } as LoginResponse;
+    }
+
+    // Inspect failure: if it's a CSRF/token mismatch try token login as fallback
     const text = await sessionResp.text();
-    throw { status: sessionResp.status, message: text || 'Error en login por sesión' };
-  }
+    const lower = (text || '').toLowerCase();
+    if (sessionResp.status === 419 || lower.includes('csrf') || lower.includes('token')) {
+      const apiResp = await apiPost<{ token?: string; user?: User }>('/auth/login', { email, password });
+      const body = apiResp as unknown as Record<string, unknown>;
+      const token = typeof body.token === 'string' ? (body.token as string) : undefined;
+      const user = body.user as User | undefined;
+      if (token) try { localStorage.setItem('cms_token', token); } catch {}
+      if (user) {
+        try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
+        return { user } as LoginResponse;
+      }
+      throw { status: sessionResp.status, message: text || 'Session login failed and token login returned no user' };
+    }
 
-  const data = await sessionResp.json();
-  try { localStorage.setItem('cms_user', JSON.stringify(data.user)); } catch {}
-  return { user: data.user } as LoginResponse;
+    throw { status: sessionResp.status, message: text || 'Error en login por sesión' };
+  } catch (err) {
+    // If session attempt threw (e.g., network/CSRF), attempt direct token login as best-effort
+    try {
+      const apiFallback = await apiPost<{ token?: string; user?: User }>('/auth/login', { email, password });
+      const body = apiFallback as unknown as Record<string, unknown>;
+      const token = typeof body.token === 'string' ? (body.token as string) : undefined;
+      const user = body.user as User | undefined;
+      if (token) try { localStorage.setItem('cms_token', token); } catch {}
+      if (user) {
+        try { localStorage.setItem('cms_user', JSON.stringify(user)); } catch {}
+        return { user } as LoginResponse;
+      }
+    } catch (e) {
+      // fall through to rethrow original error
+    }
+    throw err;
+  }
 }
 
 /**
@@ -69,7 +104,8 @@ export async function logout(): Promise<void> {
   try {
     try { await csrfCookie(); } catch {}
 
-    await fetch(`${API_URL}/session/logout`, {
+    const base = API_URL.replace(/\/api$/i, "");
+    await fetch(`${base}/session/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -96,7 +132,8 @@ export type CurrentUserResult = {
 export async function getCurrentUser(token?: string): Promise<CurrentUserResult> {
   // Primero intentar la ruta de sesión (web route) — requiere cookies y middleware web
   try {
-    const resp = await fetch(`${API_URL}/session/me`, {
+    const base = API_URL.replace(/\/api$/i, "");
+    const resp = await fetch(`${base}/session/me`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -132,7 +169,8 @@ export async function registerAdmin(name: string, email: string, password: strin
 
   const xsrf = getCookieValue('XSRF-TOKEN');
 
-  const res = await fetch(`${API_URL}/register-admin`, {
+  const base = API_URL.replace(/\/api$/i, "");
+  const res = await fetch(`${base}/register-admin`, {
     method: 'POST',
     credentials: 'include',
     headers: {

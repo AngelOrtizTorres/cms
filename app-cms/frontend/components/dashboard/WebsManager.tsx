@@ -70,14 +70,15 @@ export default function WebsManager() {
         : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Site[]) : []);
       setSites(list as Site[]);
     } catch (err: unknown) {
-      // Evitar log ruidoso en consola para 401 Unauthenticated
-      const unauth = (err && typeof err === 'object' && 'status' in err && (err as Record<string, unknown>)['status'] === 401) || String(((err as Record<string, unknown>)['message'] || (err as Record<string, unknown>)['data']?.['message'] || '') as unknown).toLowerCase().includes('unauthenticated');
+      // Avoid noisy console logs for 401 Unauthenticated
+      const e: any = err;
+      const unauth = (e && typeof e === 'object' && 'status' in e && e['status'] === 401) || String((e?.message || e?.data?.message || '') as string).toLowerCase().includes('unauthenticated');
       if (unauth) {
         setError('No autenticado');
         setSites([]);
       } else {
-        console.error("Error fetching sites", (err as Record<string, unknown>)['message'] ?? err);
-        const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error fetching sites';
+        console.error("Error fetching sites", e?.message ?? err);
+        const msg = (e && typeof e === 'object' && 'message' in e) ? String(e.message) : 'Error fetching sites';
         setError(msg);
       }
     } finally {

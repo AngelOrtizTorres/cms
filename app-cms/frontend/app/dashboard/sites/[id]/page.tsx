@@ -10,13 +10,20 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 
+type Site = {
+  id: number;
+  title?: string | null;
+  domain?: string | null;
+  owner_id?: number | null;
+};
+
 export default function SiteDashboardPage() {
   const params = useParams() as { id: string };
   const id = params?.id;
   const router = useRouter();
   const auth = useAuth();
 
-  const [site, setSite] = useState<Record<string, unknown> | null>(null);
+  const [site, setSite] = useState<Site | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +38,7 @@ export default function SiteDashboardPage() {
       setLoading(true);
       try {
         const res = await apiGet(`/sites/${id}`);
-        setSite(res as unknown as Record<string, unknown>);
+        setSite(res as unknown as Site);
       } catch (err: unknown) {
         console.error('Error fetching site', err);
         const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al cargar el sitio';
@@ -44,9 +51,9 @@ export default function SiteDashboardPage() {
     load();
   }, [id, auth.isAuthenticated, auth.loading, router]);
 
-  if (loading) return <Container sx={{ py: 4 }}>Cargando...</Container>;
+  if (loading) return <Container sx={{ py: 4 }}>Loading...</Container>;
   if (error) return <Container sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
-  if (!site) return <Container sx={{ py: 4 }}>Sitio no encontrado</Container>;
+  if (!site) return <Container sx={{ py: 4 }}>Site not found</Container>;
 
   const canEnter = !!(auth.user && site && (site['owner_id'] as number) === auth.user?.id);
   // Si no tiene permisos para entrar, redirigir silenciosamente a la lista de webs
@@ -62,8 +69,8 @@ export default function SiteDashboardPage() {
 
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom>Panel de {site.title || `#${site.id}`}</Typography>
-      <Typography variant="body2" color="text.secondary">Dominio: {site.domain || "-"}</Typography>
+      <Typography variant="h4" gutterBottom>Dashboard for {site.title || `#${site.id}`}</Typography>
+      <Typography variant="body2" color="text.secondary">Domain: {site.domain || "-"}</Typography>
       <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
         <NextLink href={`/dashboard/sites/${id}/entries`}>
           <Button variant="contained">Entradas</Button>

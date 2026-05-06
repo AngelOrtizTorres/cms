@@ -22,6 +22,11 @@ Route::get('/test', function () {
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
+// Also expose session-based endpoints under /api/session/* as an alias
+// so clients accidentally calling /api/session/* still reach the session handlers.
+Route::post('/session/login', [AuthController::class, 'loginSession']);
+Route::post('/session/logout', [AuthController::class, 'logoutSession']);
+Route::get('/session/me', [AuthController::class, 'sessionMe']);
 // Comprueba si ya existe un administrador (frontend lo usa para ocultar registro)
 Route::get('/admin-exists', [AuthController::class, 'adminExists']);
 // Forgot/reset password via API (Fortify-compatible)
