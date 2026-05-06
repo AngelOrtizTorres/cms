@@ -130,7 +130,7 @@ export async function apiCall<T = unknown>(
       };
     }
 
-    return data;
+    return data as ApiResponse<T>;
   } catch (error: unknown) {
     // Si es un error de red, lanzar error genérico
     if (error instanceof TypeError) {
@@ -253,7 +253,7 @@ export async function apiPostFormData<T = unknown>(
       };
     }
 
-    return data;
+    return data as ApiResponse<T>;
   } catch (error: unknown) {
     if (error instanceof TypeError) {
       throw {
