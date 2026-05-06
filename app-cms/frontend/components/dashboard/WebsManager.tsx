@@ -71,13 +71,14 @@ export default function WebsManager() {
       setSites(list as Site[]);
     } catch (err: unknown) {
       // Evitar log ruidoso en consola para 401 Unauthenticated
-      const unauth = (err && typeof err === 'object' && 'status' in err && (err as Record<string, unknown>)['status'] === 401) || String(((err as Record<string, unknown>)['message'] || (err as Record<string, unknown>)['data']?.['message'] || '') as unknown).toLowerCase().includes('unauthenticated');
+      const eAny = err as any;
+      const unauth = (eAny && typeof eAny === 'object' && 'status' in eAny && eAny['status'] === 401) || String((eAny?.message || eAny?.data?.message || '')).toLowerCase().includes('unauthenticated');
       if (unauth) {
         setError('No autenticado');
         setSites([]);
       } else {
-        console.error("Error fetching sites", (err as Record<string, unknown>)['message'] ?? err);
-        const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error fetching sites';
+        console.error("Error fetching sites", eAny?.message ?? err);
+        const msg = (typeof eAny === 'object' && eAny !== null && 'message' in eAny) ? String(eAny.message) : 'Error fetching sites';
         setError(msg);
       }
     } finally {

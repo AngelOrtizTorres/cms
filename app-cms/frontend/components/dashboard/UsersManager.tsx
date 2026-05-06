@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Grid,
@@ -117,6 +118,14 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
     load();
   }, [auth.user?.role, auth.sessionVerified]);
 
+  const router = useRouter();
+  useEffect(() => {
+    if (auth.loading) return;
+    if (auth.user?.role !== 'admin') {
+      router.push('/dashboard');
+    }
+  }, [auth.loading, auth.user, router]);
+
   useEffect(() => {
     if (showCreate) setTimeout(() => createNameRef.current?.focus(), 30);
   }, [showCreate]);
@@ -161,7 +170,9 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
     setEditingUser(u);
     setEditName(u.name || "");
     setEditEmail(u.email || "");
-    setEditRole(u.role || "author");
+    // ensure role matches allowed union, fallback to 'author'
+    const allowed = (u.role === 'admin' || u.role === 'author' || u.role === 'editor') ? (u.role as 'admin'|'author'|'editor') : 'author';
+    setEditRole(allowed);
     setEditPassword("");
     setShowEdit(true);
   };
@@ -206,14 +217,8 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
     }
   };
 
-  if (auth.user?.role !== "admin") {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" gutterBottom>Usuarios</Typography>
-        <Alert severity="warning">Debes iniciar sesión como administrador para ver y gestionar usuarios.</Alert>
-      </Container>
-    );
-  }
+  if (auth.loading) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (auth.user?.role !== "admin") return null;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

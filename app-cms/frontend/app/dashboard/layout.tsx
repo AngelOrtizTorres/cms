@@ -18,7 +18,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   const [currentSiteId, setCurrentSiteId] = useState<string | number | null>(null);
-  const [siteOwnerId, setSiteOwnerId] = useState<number | null>(null);
+  // undefined = loading, null = no owner / not applicable, number = owner id
+  const [siteOwnerId, setSiteOwnerId] = useState<number | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +41,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setSiteOwnerId(null);
         return;
       }
+
+      // mark owner as loading while we fetch
+      setSiteOwnerId(undefined);
 
       try {
         const res = await apiGet(`/sites/${id}`);

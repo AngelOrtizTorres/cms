@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
@@ -34,7 +34,8 @@ interface Props {
   role?: string | null;
   userId?: number | null;
   currentSiteId?: string | number | null;
-  siteOwnerId?: number | null;
+  // undefined = loading, null = no owner / not applicable, number = owner id
+  siteOwnerId?: number | null | undefined;
 }
 
 export default function LeftSidebar({
@@ -49,11 +50,28 @@ export default function LeftSidebar({
   const effectiveUserId = userId ?? auth.user?.id ?? null;
   const drawerWidth = compactSidebar ? 80 : 240;
 
-  const isViewingSite = !!currentSiteId;
+  // keep a stable snapshot of the last-resolved site values
+  const [stableSiteState, setStableSiteState] = useState<{
+    currentSiteId?: string | number | null;
+    siteOwnerId?: number | null | undefined;
+  }>({ currentSiteId, siteOwnerId });
+
+  useEffect(() => {
+    // only update the stable snapshot when siteOwnerId is resolved (not undefined)
+    if (siteOwnerId !== undefined) {
+      setStableSiteState({ currentSiteId, siteOwnerId });
+    }
+  }, [siteOwnerId, currentSiteId]);
+
+  const stableCurrentSiteId = stableSiteState.currentSiteId;
+  const stableSiteOwnerId = stableSiteState.siteOwnerId;
+
+  // consider 'viewing site' only when we have a resolved owner in the stable snapshot
+  const isViewingSite = !!stableCurrentSiteId && stableSiteOwnerId !== undefined;
   const isSiteOwner = Boolean(
-    siteOwnerId != null &&
+    stableSiteOwnerId != null &&
     effectiveUserId != null &&
-    Number(siteOwnerId) === Number(effectiveUserId),
+    Number(stableSiteOwnerId) === Number(effectiveUserId),
   );
 
   let menuItems: Array<{ text: string; href: string; icon?: React.ReactNode }> =
@@ -75,13 +93,13 @@ export default function LeftSidebar({
       // site management menu for owner — new requested order
         menuItems = [
         { text: "Ver sitio", href: `/`, icon: <PublicIcon /> },
-        { text: "Panel", href: `/dashboard/sites/${currentSiteId}`, icon: <DashboardIcon /> },
-        { text: "Secciones", href: `/dashboard/sites/${currentSiteId}/sections`, icon: <CategoryIcon /> },
-        { text: "Categorías", href: `/dashboard/sites/${currentSiteId}/categories`, icon: <DescriptionIcon /> },
-        { text: "Etiquetas", href: `/dashboard/sites/${currentSiteId}/tags`, icon: <LabelIcon /> },
-        { text: "Banners", href: `/dashboard/sites/${currentSiteId}/banners`, icon: <PhotoLibraryIcon /> },
-        { text: "Noticias", href: `/dashboard/sites/${currentSiteId}/news`, icon: <ArticleIcon /> },
-        { text: "Configuración", href: `/dashboard/sites/${currentSiteId}/settings`, icon: <SettingsIcon /> },
+        { text: "Panel", href: `/dashboard/sites/${stableCurrentSiteId}`, icon: <DashboardIcon /> },
+        { text: "Secciones", href: `/dashboard/sites/${stableCurrentSiteId}/sections`, icon: <CategoryIcon /> },
+        { text: "Categorías", href: `/dashboard/sites/${stableCurrentSiteId}/categories`, icon: <DescriptionIcon /> },
+        { text: "Etiquetas", href: `/dashboard/sites/${stableCurrentSiteId}/tags`, icon: <LabelIcon /> },
+        { text: "Banners", href: `/dashboard/sites/${stableCurrentSiteId}/banners`, icon: <PhotoLibraryIcon /> },
+        { text: "Noticias", href: `/dashboard/sites/${stableCurrentSiteId}/news`, icon: <ArticleIcon /> },
+        { text: "Configuración", href: `/dashboard/sites/${stableCurrentSiteId}/settings`, icon: <SettingsIcon /> },
       ];
     } else {
       menuItems = [
@@ -150,7 +168,7 @@ export default function LeftSidebar({
                     <ListItem disablePadding>
                       <ListItemButton
                         component={NextLink}
-                        href={`/dashboard/sites/${currentSiteId}/entries/articulos`}
+                        href={`/dashboard/sites/${stableCurrentSiteId}/entries/articulos`}
                         sx={{ pl: 4, color: '#fff' }}
                         onClick={handleEntriesClose}
                       >
@@ -163,7 +181,7 @@ export default function LeftSidebar({
                     <ListItem disablePadding>
                       <ListItemButton
                         component={NextLink}
-                        href={`/dashboard/sites/${currentSiteId}/entries/seccion`}
+                        href={`/dashboard/sites/${stableCurrentSiteId}/entries/seccion`}
                         sx={{ pl: 4, color: '#fff' }}
                         onClick={handleEntriesClose}
                       >
@@ -176,7 +194,7 @@ export default function LeftSidebar({
                     <ListItem disablePadding>
                       <ListItemButton
                         component={NextLink}
-                        href={`/dashboard/sites/${currentSiteId}/entries/noticias`}
+                        href={`/dashboard/sites/${stableCurrentSiteId}/entries/noticias`}
                         sx={{ pl: 4, color: '#fff' }}
                         onClick={handleEntriesClose}
                       >
@@ -208,7 +226,11 @@ export default function LeftSidebar({
       </List>
 
       <Box sx={{ p: 2 }}>
-        {currentSiteId ? <BannerDisplay position="sidebar" siteId={currentSiteId} maxHeight={180} /> : <BannerDisplay position="sidebar" maxHeight={180} />}
+        {stableCurrentSiteId && stableSiteOwnerId !== undefined ? (
+          <BannerDisplay position="sidebar" siteId={stableCurrentSiteId} maxHeight={180} />
+        ) : (
+          <BannerDisplay position="sidebar" maxHeight={180} />
+        )}
       </Box>
 
       <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>

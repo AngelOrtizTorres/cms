@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Box,
@@ -33,6 +34,9 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
   const auth = useAuth();
   const [items, setItems] = useState<News[]>([]);
   const [loading, setLoading] = useState(false);
+  // site: undefined = loading, null = not found, object = site
+  const [site, setSite] = useState<Record<string, unknown> | null | undefined>(undefined);
+  const [siteLoading, setSiteLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
   const [title, setTitle] = useState("");
@@ -61,6 +65,37 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
 
   useEffect(() => { const load = async () => { await fetchNews(); }; load(); }, [siteId]);
 
+  useEffect(() => {
+    if (!siteId) { setSite(null); setSiteLoading(false); return; }
+
+    const loadSite = async () => {
+      setSiteLoading(true);
+      try {
+        const s = await apiGet(`/sites/${siteId}`);
+        const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+        if (isRecord(s)) setSite(s as unknown as Record<string, unknown>);
+        else setSite(null);
+      } catch {
+        setSite(null);
+      } finally {
+        setSiteLoading(false);
+      }
+    };
+
+    loadSite();
+  }, [siteId]);
+
+  const router = useRouter();
+  const isSiteOwner = !!(auth.user && site && Number((site as Record<string, unknown>).owner_id) === Number(auth.user.id));
+  const canManage = auth.user?.role === 'admin' || (auth.user?.role === 'author' && isSiteOwner);
+  useEffect(() => {
+    if (auth.loading) return;
+    if (!siteId) return;
+    if (siteLoading) return;
+    if (site === null) { router.push('/dashboard/webs'); return; }
+    if (!canManage) router.push('/dashboard/webs');
+  }, [siteLoading, site, auth.user, auth.loading, router, siteId]);
+
   const handleCreate = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!title) return setError("Título requerido");
@@ -78,6 +113,10 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
   const handleDelete = async (id: number) => { if (!confirm('¿Eliminar noticia?')) return; try { await apiDelete(`/news/${id}`); setSuccess('Noticia eliminada'); await fetchNews(); } catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar'; setError(msg); } };
 
   const filtered = items.filter(i => { if (!filter) return true; const q = filter.toLowerCase(); return (i.title || '').toLowerCase().includes(q) || (i.slug || '').toLowerCase().includes(q); });
+
+  if (auth.loading) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (siteLoading && siteId) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (!siteLoading && siteId && !canManage && !auth.loading) return null;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

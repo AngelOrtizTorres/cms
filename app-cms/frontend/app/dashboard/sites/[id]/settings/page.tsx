@@ -16,7 +16,7 @@ export default function SiteSettingsPage() {
   const router = useRouter();
   const auth = useAuth();
   const [site, setSite] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function SiteSettingsPage() {
     <Container id="site-settings" sx={{ py: 4 }}>
       <style>{`#site-settings .MuiInputBase-input::placeholder, #site-settings .MuiFilledInput-input::placeholder { color: rgba(0,0,0,0.45) !important; opacity: 1 !important; }`}</style>
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5">Configuración de {site.title || `#${site.id}`}</Typography>
+        <Typography variant="h5">Configuración de {site.title ? String(site.title) : `#${String(site.id ?? '')}`}</Typography>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">Aquí puedes añadir opciones específicas de la web (placeholder).</Typography>
         </Box>

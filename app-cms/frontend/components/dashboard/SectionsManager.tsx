@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Box,
@@ -47,7 +48,9 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const nameRef = useRef<HTMLInputElement | null>(null);
-  const [site, setSite] = useState<Record<string, unknown> | null>(null);
+  // site: undefined = loading, null = not found, object = site
+  const [site, setSite] = useState<Record<string, unknown> | null | undefined>(undefined);
+  const [siteLoading, setSiteLoading] = useState(true);
 
   const fetchSections = async () => {
     setLoading(true);
@@ -72,17 +75,36 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
   useEffect(() => { const load = async () => { await fetchSections(); }; load(); }, [siteId]);
 
   useEffect(() => {
+    if (!siteId) {
+      setSite(null);
+      setSiteLoading(false);
+      return;
+    }
+
     const load = async () => {
-      if (!siteId) return;
+      setSiteLoading(true);
       try {
         const s = await apiGet(`/sites/${siteId}`);
         setSite(s as unknown as Record<string, unknown>);
       } catch {
         setSite(null);
+      } finally {
+        setSiteLoading(false);
       }
     };
     load();
   }, [siteId]);
+
+  const router = useRouter();
+  useEffect(() => {
+    if (auth.loading) return;
+    if (!siteId) return;
+    if (siteLoading) return;
+    if (site === null) { router.push('/dashboard/webs'); return; }
+    const isSiteOwner = !!(auth.user && site && Number((site as Record<string, unknown>).owner_id) === Number(auth.user.id));
+    const allowed = auth.user?.role === "admin" || (auth.user?.role === "author" && isSiteOwner);
+    if (!allowed) router.push('/dashboard/webs');
+  }, [siteLoading, site, auth.user, auth.loading, router, siteId]);
 
   useEffect(() => {
     if (nameRef.current) nameRef.current.focus();
@@ -149,6 +171,9 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
 
   const isSiteOwner = !!(auth.user && site && Number(site.owner_id) === Number(auth.user.id));
   const canManage = auth.user?.role === "admin" || (auth.user?.role === "author" && isSiteOwner);
+  if (auth.loading) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (siteLoading && siteId) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (!siteLoading && siteId && !canManage && !auth.loading) return null;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -160,7 +185,9 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr' }, gap: 3 }}>
         <Paper sx={{ p: 3 }} elevation={2}>
           <Typography variant="h6" gutterBottom>{editingId ? 'Editar sección' : 'Añadir sección'}</Typography>
-          {!canManage ? null : (
+          {siteLoading ? (
+            <Box sx={{ p: 2 }}>Cargando...</Box>
+          ) : !canManage ? null : (
             <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField inputRef={nameRef} label="Nombre" value={name} onChange={(e) => setName(e.target.value)} size="small" fullWidth />
               <TextField label="Slug (opcional)" value={slug} onChange={(e) => setSlug(e.target.value)} size="small" fullWidth />

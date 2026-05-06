@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Box,
@@ -41,6 +42,9 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
   const auth = useAuth();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(false);
+  // site: undefined = loading, null = not found, object = site
+  const [site, setSite] = useState<Record<string, unknown> | null | undefined>(undefined);
+  const [siteLoading, setSiteLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -72,6 +76,34 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
   };
 
   useEffect(() => { const load = async () => { await fetchBanners(); }; load(); }, [siteId]);
+
+  useEffect(() => {
+    if (!siteId) { setSite(null); setSiteLoading(false); return; }
+
+    const loadSite = async () => {
+      setSiteLoading(true);
+      try {
+        const s = await apiGet(`/sites/${siteId}`);
+        setSite(s as unknown as Record<string, unknown>);
+      } catch {
+        setSite(null);
+      } finally {
+        setSiteLoading(false);
+      }
+    };
+    loadSite();
+  }, [siteId]);
+
+  const router = useRouter();
+  const isSiteOwner = !!(auth.user && site && Number((site as Record<string, unknown>).owner_id) === Number(auth.user.id));
+  const canManage = auth.user?.role === 'admin' || (auth.user?.role === 'author' && isSiteOwner);
+  useEffect(() => {
+    if (auth.loading) return;
+    if (!siteId) return;
+    if (siteLoading) return;
+    if (site === null) { router.push('/dashboard/webs'); return; }
+    if (!canManage) router.push('/dashboard/webs');
+  }, [siteLoading, site, auth.user, auth.loading, router, siteId]);
 
   const handleCreate = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -107,6 +139,10 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
     try { await apiDelete(`/banners/${id}`); setSuccess("Banner eliminado"); await fetchBanners(); }
     catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar'; setError(msg); }
   };
+
+  if (auth.loading) return <Container id="banners-manager" sx={{ py: 4 }}>Cargando...</Container>;
+  if (siteLoading && siteId) return <Container id="banners-manager" sx={{ py: 4 }}>Cargando...</Container>;
+  if (!siteLoading && siteId && !canManage && !auth.loading) return null;
 
   return (
     <Container id="banners-manager" maxWidth="lg" sx={{ py: 4 }}>
