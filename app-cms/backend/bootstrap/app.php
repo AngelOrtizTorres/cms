@@ -19,6 +19,22 @@ return Application::configure(basePath: dirname(__DIR__))
             $middleware->statefulApi();
         }
 
+        // Excluir rutas de autenticación de verificación CSRF
+        $middleware->validateCsrfTokens(except: [
+            'session/login',
+            'session/logout',
+            'session/me',
+            'register-admin',
+            'api/session/login',
+            'api/session/logout',
+            'api/session/me',
+            'api/auth/login',
+            'api/auth/logout',
+            'api/auth/forgot-password',
+            'api/auth/reset-password',
+            'api/register-admin',
+        ]);
+
         $middleware->api(prepend: [
             Cors::class,
         ]);

@@ -49,6 +49,7 @@ export async function apiCall<T = unknown>(
 ): Promise<ApiResponse<T>> {
   const { method = "GET", headers = {}, body, token } = config;
 
+  // Always add /api prefix unless endpoint already starts with /api
   const normalizedEndpoint = endpoint.startsWith("/api")
     ? endpoint
     : `/api${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
