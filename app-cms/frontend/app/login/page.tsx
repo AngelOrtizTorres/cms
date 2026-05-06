@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { apiGet } from '@/lib/api';
+import { apiGet, normalizeApiError } from '@/lib/api';
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -120,7 +120,12 @@ export default function LoginPage() {
         setAdminExists(Boolean(res?.admin_exists));
       } catch (e) {
         // En caso de error, dejamos visible el botón para compatibilidad
-        console.error('No se pudo comprobar admin-exists', e);
+        try {
+          const ne = normalizeApiError(e);
+          console.error('No se pudo comprobar admin-exists:', ne.message, { status: ne.status, errors: ne.errors, raw: ne.raw });
+        } catch (logErr) {
+          console.error('No se pudo comprobar admin-exists', e);
+        }
         if (mounted) setAdminExists(false);
       }
     })();
