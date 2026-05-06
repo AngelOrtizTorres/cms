@@ -23,8 +23,8 @@ export default function SiteDashboardPage() {
   const router = useRouter();
   const auth = useAuth();
 
-  const [site, setSite] = useState<Site | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [site, setSite] = useState<Record<string, unknown> | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,26 +51,28 @@ export default function SiteDashboardPage() {
     load();
   }, [id, auth.isAuthenticated, auth.loading, router]);
 
-  if (loading) return <Container sx={{ py: 4 }}>Loading...</Container>;
-  if (error) return <Container sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
-  if (!site) return <Container sx={{ py: 4 }}>Site not found</Container>;
-
-  const canEnter = !!(auth.user && site && (site['owner_id'] as number) === auth.user?.id);
-  // Si no tiene permisos para entrar, redirigir silenciosamente a la lista de webs
+  // Redirigir silenciosamente si no tiene permisos para entrar
   React.useEffect(() => {
+    if (auth.loading) return;
     if (!site) return;
     const allowed = !!(auth.user && site && (site['owner_id'] as number) === auth.user?.id);
     if (!allowed) {
       router.push('/dashboard/webs');
     }
-  }, [site, auth.user, router]);
+  }, [site, auth.user, auth.loading, router]);
 
-  if (!site) return null;
+  if (loading) return <Container sx={{ py: 4 }}>Cargando...</Container>;
+  if (error) return <Container sx={{ py: 4 }}><Typography color="error">{error}</Typography></Container>;
+  if (!site) return <Container sx={{ py: 4 }}>Sitio no encontrado</Container>;
 
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom>Dashboard for {site.title || `#${site.id}`}</Typography>
-      <Typography variant="body2" color="text.secondary">Domain: {site.domain || "-"}</Typography>
+      <Typography variant="h4" gutterBottom>
+        Panel de {site.title ? String(site.title) : `#${String(site.id ?? '')}`}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Dominio: {site.domain ? String(site.domain) : "-"}
+      </Typography>
       <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
         <NextLink href={`/dashboard/sites/${id}/entries`}>
           <Button variant="contained">Entradas</Button>

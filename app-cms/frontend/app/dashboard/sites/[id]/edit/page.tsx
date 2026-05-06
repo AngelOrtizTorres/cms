@@ -20,7 +20,7 @@ export default function EditSitePage() {
   const router = useRouter();
 
   const [site, setSite] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
   const [domain, setDomain] = useState("");

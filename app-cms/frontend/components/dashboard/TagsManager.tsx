@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Box,
@@ -31,6 +32,9 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
   const auth = useAuth();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
+  // site: undefined = loading, null = not found, object = site
+  const [site, setSite] = useState<Record<string, unknown> | null | undefined>(undefined);
+  const [siteLoading, setSiteLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
   const [name, setName] = useState("");
@@ -66,6 +70,37 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
   useEffect(() => { const load = async () => { await fetchTags(); }; load(); }, [siteId]);
   useEffect(() => { if (nameRef.current) nameRef.current.focus(); }, [editingId]);
 
+  useEffect(() => {
+    if (!siteId) { setSite(null); setSiteLoading(false); return; }
+
+    const loadSite = async () => {
+      setSiteLoading(true);
+      try {
+        const s = await apiGet(`/sites/${siteId}`);
+        const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+        if (isRecord(s)) setSite(s as unknown as Record<string, unknown>);
+        else setSite(null);
+      } catch {
+        setSite(null);
+      } finally {
+        setSiteLoading(false);
+      }
+    };
+
+    loadSite();
+  }, [siteId]);
+
+  const router = useRouter();
+  const isSiteOwner = !!(auth.user && site && Number((site as Record<string, unknown>).owner_id) === Number(auth.user.id));
+  const canManage = auth.user?.role === 'admin' || (auth.user?.role === 'author' && isSiteOwner);
+  useEffect(() => {
+    if (auth.loading) return;
+    if (!siteId) return;
+    if (siteLoading) return;
+    if (site === null) { router.push('/dashboard/webs'); return; }
+    if (!canManage) router.push('/dashboard/webs');
+  }, [siteLoading, site, auth.user, auth.loading, router, siteId]);
+
   const resetForm = () => { setName(""); setSlug(""); setDescription(""); setEditingId(null); };
   const startEdit = (t: Tag) => { setEditingId(t.id); setName(t.name || ""); setSlug(t.slug || ""); setDescription(t.description || ""); };
 
@@ -98,6 +133,10 @@ export default function TagsManager({ siteId }: { siteId?: string }) {
   const filtered = tags.filter(t => {
     if (!filter) return true; const q = filter.toLowerCase(); return (t.name || "").toLowerCase().includes(q) || (t.slug || "").toLowerCase().includes(q);
   });
+
+  if (auth.loading) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (siteLoading && siteId) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (!siteLoading && siteId && !canManage && !auth.loading) return null;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

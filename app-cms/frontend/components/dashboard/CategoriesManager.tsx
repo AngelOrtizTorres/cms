@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Container,
@@ -60,7 +61,9 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [site, setSite] = useState<MinimalSite | null>(null);
+  // site: undefined = loading, null = not found, object = site
+  const [site, setSite] = useState<MinimalSite | null | undefined>(undefined);
+  const [siteLoading, setSiteLoading] = useState(true);
 
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [bulkAction, setBulkAction] = useState("");
@@ -97,8 +100,14 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
   }, []);
 
   useEffect(() => {
-    if (!siteId) return;
+    if (!siteId) {
+      setSite(null);
+      setSiteLoading(false);
+      return;
+    }
+
     const loadSite = async () => {
+      setSiteLoading(true);
       try {
         const s = await apiGet(`/sites/${siteId}`);
         const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
@@ -106,10 +115,27 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
         else setSite(null);
       } catch {
         setSite(null);
+      } finally {
+        setSiteLoading(false);
       }
     };
     loadSite();
   }, [siteId]);
+
+  const router = useRouter();
+  useEffect(() => {
+    if (auth.loading) return;
+    if (!siteId) return;
+    if (siteLoading) return;
+    // if site not found or user can't manage, redirect silently to webs list
+    if (site === null) {
+      router.push('/dashboard/webs');
+      return;
+    }
+    const isSiteOwner = !!(auth.user && site && Number((site as MinimalSite).owner_id) === Number(auth.user.id));
+    const allowed = auth.user?.role === "admin" || (auth.user?.role === "author" && isSiteOwner);
+    if (!allowed) router.push('/dashboard/webs');
+  }, [siteLoading, site, auth.user, auth.loading, router, siteId]);
 
   useEffect(() => {
     if (nameRef.current) nameRef.current.focus();
@@ -210,14 +236,17 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
 
   const isSiteOwner = !!(auth.user && site && Number(site.owner_id) === Number(auth.user.id));
   const canManage = auth.user?.role === "admin" || (auth.user?.role === "author" && isSiteOwner);
+  if (auth.loading) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (siteLoading && siteId) return <Container maxWidth="lg" sx={{ py: 4 }}>Cargando...</Container>;
+  if (!siteLoading && siteId && !canManage && !auth.loading) return null;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr' }, gap: 3 }}>
         <Paper sx={{ p: 3, position: { md: 'sticky' }, top: { md: 24 }, bgcolor: 'background.paper' }} elevation={2}>
           <Typography variant="h6" gutterBottom>Añadir categoría</Typography>
-          {!canManage ? (
-            <Box sx={{ p: 2, bgcolor: 'grey.900', color: 'grey.100', borderRadius: 1 }}>Necesitas ser administrador o propietario de la web para gestionar categorías.</Box>
+          {siteLoading ? (
+            <Box sx={{ p: 2 }}>Cargando...</Box>
           ) : (
             <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField inputRef={nameRef} value={name} onChange={(e) => setName(e.target.value)} label="Nombre" variant="filled" size="small" fullWidth />
@@ -233,7 +262,7 @@ export default function CategoriesManager({ siteId }: { siteId?: string }) {
               <FormControlLabel control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />} label="Activa" />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                 {editingId && <Button variant="outlined" onClick={resetForm}>Cancelar</Button>}
-                <Button variant="contained" type="submit" disabled={!canManage || saving}>{saving ? 'Guardando...' : (editingId ? 'Actualizar' : 'Añadir categoría')}</Button>
+                <Button variant="contained" type="submit" disabled={saving}>{saving ? 'Guardando...' : (editingId ? 'Actualizar' : 'Añadir categoría')}</Button>
               </Box>
             </Box>
           )}
