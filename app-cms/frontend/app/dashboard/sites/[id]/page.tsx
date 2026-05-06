@@ -49,19 +49,16 @@ export default function SiteDashboardPage() {
   if (!site) return <Container sx={{ py: 4 }}>Sitio no encontrado</Container>;
 
   const canEnter = !!(auth.user && site && (site['owner_id'] as number) === auth.user?.id);
+  // Si no tiene permisos para entrar, redirigir silenciosamente a la lista de webs
+  React.useEffect(() => {
+    if (!site) return;
+    const allowed = !!(auth.user && site && (site['owner_id'] as number) === auth.user?.id);
+    if (!allowed) {
+      router.push('/dashboard/webs');
+    }
+  }, [site, auth.user, router]);
 
-  if (!canEnter) {
-    return (
-      <Container sx={{ py: 4 }}>
-        <Typography>No tienes permisos para ver el panel de esta web.</Typography>
-        <Box sx={{ mt: 2 }}>
-          <NextLink href="/dashboard/webs">
-            <Button variant="outlined">Volver a Webs</Button>
-          </NextLink>
-        </Box>
-      </Container>
-    );
-  }
+  if (!site) return null;
 
   return (
     <Container sx={{ py: 4 }}>

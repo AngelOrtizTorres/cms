@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import LogoutButton from "@/components/LogoutButton";
+import BannerDisplay from "@/components/BannerDisplay";
 
 export default function Header({ drawerWidth = 0 }: { drawerWidth?: number }) {
   return (
@@ -36,6 +37,10 @@ export default function Header({ drawerWidth = 0 }: { drawerWidth?: number }) {
           >
             Mi Sitio
           </Typography>
+        </Box>
+
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <BannerDisplay position="header" />
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

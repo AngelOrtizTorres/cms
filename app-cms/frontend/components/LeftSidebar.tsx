@@ -26,6 +26,9 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { useThemeSettings } from "@/components/MuiProviders";
 import { useAuth } from "@/context/AuthContext";
+import dynamic from 'next/dynamic';
+
+const BannerDisplay = dynamic(() => import('@/components/BannerDisplay'), { ssr: false });
 
 interface Props {
   role?: string | null;
@@ -203,6 +206,10 @@ export default function LeftSidebar({
           );
         })}
       </List>
+
+      <Box sx={{ p: 2 }}>
+        {currentSiteId ? <BannerDisplay position="sidebar" siteId={currentSiteId} maxHeight={180} /> : <BannerDisplay position="sidebar" maxHeight={180} />}
+      </Box>
 
       <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <Typography variant="caption" color="rgba(255,255,255,0.6)">

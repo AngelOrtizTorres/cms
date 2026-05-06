@@ -160,9 +160,7 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr' }, gap: 3 }}>
         <Paper sx={{ p: 3 }} elevation={2}>
           <Typography variant="h6" gutterBottom>{editingId ? 'Editar sección' : 'Añadir sección'}</Typography>
-          {!canManage ? (
-            <Box sx={{ p: 2, bgcolor: 'grey.900', color: 'grey.100', borderRadius: 1 }}>No tienes permisos para gestionar secciones.</Box>
-          ) : (
+          {!canManage ? null : (
             <Box component="form" onSubmit={handleSave} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField inputRef={nameRef} label="Nombre" value={name} onChange={(e) => setName(e.target.value)} size="small" fullWidth />
               <TextField label="Slug (opcional)" value={slug} onChange={(e) => setSlug(e.target.value)} size="small" fullWidth />

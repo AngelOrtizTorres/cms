@@ -7,6 +7,8 @@ use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class BannerController extends Controller
 {
@@ -28,12 +30,16 @@ class BannerController extends Controller
 
     public function store(Request $request)
     {
+        // Validate both JSON and multipart/form-data inputs
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'type' => 'nullable|string',
+            'type' => 'nullable|in:image,code',
+            'image' => 'nullable|file|image|max:8192',
             'image_url' => 'nullable|string',
+            'link' => 'nullable|string',
             'link_url' => 'nullable|string',
-            'position' => 'nullable|string',
+            'code_content' => 'nullable|string',
+            'position' => 'nullable|in:header,sidebar,between_articles,footer',
             'display_order' => 'nullable|integer',
             'active' => 'nullable|boolean',
         ]);
@@ -51,7 +57,35 @@ class BannerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $banner = Banner::create($validated);
+        $data = [
+            'title' => $validated['title'],
+            'type' => $validated['type'] ?? 'image',
+            'position' => $validated['position'] ?? 'header',
+            'display_order' => $validated['display_order'] ?? 0,
+            'active' => $validated['active'] ?? true,
+            'code_content' => $validated['code_content'] ?? null,
+            'link_url' => $validated['link_url'] ?? ($validated['link'] ?? null),
+        ];
+
+        // Handle uploaded image if present
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            try {
+                $path = $file->store('banners', 'public');
+                $data['image_url'] = Storage::disk('public')->url($path);
+            } catch (\Exception $e) {
+                // ignore storage errors and fallback to provided image_url if any
+            }
+        } elseif (!empty($validated['image_url'])) {
+            $data['image_url'] = $validated['image_url'];
+        }
+
+        // If it's a code banner, ensure code_content exists
+        if (($data['type'] ?? 'image') === 'code' && empty($data['code_content'])) {
+            return response()->json(['message' => 'code_content is required for code banners'], 422);
+        }
+
+        $banner = Banner::create($data);
         return response()->json($banner, 201);
     }
 
@@ -72,16 +106,46 @@ class BannerController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'string|max:255',
-            'type' => 'nullable|string',
+            'title' => 'nullable|string|max:255',
+            'type' => 'nullable|in:image,code',
+            'image' => 'nullable|file|image|max:8192',
             'image_url' => 'nullable|string',
+            'link' => 'nullable|string',
             'link_url' => 'nullable|string',
-            'position' => 'nullable|string',
+            'code_content' => 'nullable|string',
+            'position' => 'nullable|in:header,sidebar,between_articles,footer',
             'display_order' => 'nullable|integer',
             'active' => 'nullable|boolean',
         ]);
 
-        $banner->update($validated);
+        $data = [];
+        if (isset($validated['title'])) $data['title'] = $validated['title'];
+        if (isset($validated['type'])) $data['type'] = $validated['type'];
+        if (isset($validated['position'])) $data['position'] = $validated['position'];
+        if (isset($validated['display_order'])) $data['display_order'] = $validated['display_order'];
+        if (isset($validated['active'])) $data['active'] = $validated['active'];
+        if (isset($validated['code_content'])) $data['code_content'] = $validated['code_content'];
+        if (isset($validated['link_url'])) $data['link_url'] = $validated['link_url'];
+        if (isset($validated['link'])) $data['link_url'] = $validated['link'];
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            try {
+                $path = $file->store('banners', 'public');
+                $data['image_url'] = Storage::disk('public')->url($path);
+            } catch (\Exception $e) {
+                // ignore storage errors
+            }
+        } elseif (!empty($validated['image_url'])) {
+            $data['image_url'] = $validated['image_url'];
+        }
+
+        // If it's a code banner and code_content is empty, reject
+        if ((isset($data['type']) ? $data['type'] : $banner->type) === 'code' && empty($data['code_content']) && empty($banner->code_content)) {
+            return response()->json(['message' => 'code_content is required for code banners'], 422);
+        }
+
+        $banner->update($data);
         return response()->json($banner);
     }
 

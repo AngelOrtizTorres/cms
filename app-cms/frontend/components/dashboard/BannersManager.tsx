@@ -6,6 +6,10 @@ import {
   Box,
   Typography,
   TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
   Button,
   Paper,
   Table,
@@ -15,6 +19,8 @@ import {
   TableCell,
   TableContainer,
   Alert,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPostFormData, apiDelete } from "@/lib/api";
@@ -23,8 +29,12 @@ type Banner = {
   id: number;
   title: string;
   link?: string;
+  link_url?: string;
   image_url?: string;
   active?: boolean;
+  type?: 'image' | 'code';
+  position?: 'header' | 'sidebar' | 'between_articles' | 'footer';
+  code_content?: string | null;
 };
 
 export default function BannersManager({ siteId }: { siteId?: string }) {
@@ -34,6 +44,10 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [bannerType, setBannerType] = useState<'image' | 'code'>('image');
+  const [position, setPosition] = useState<'header' | 'sidebar' | 'between_articles' | 'footer'>('header');
+  const [codeContent, setCodeContent] = useState<string>('');
+  const [active, setActive] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -66,12 +80,20 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
     try {
       const form = new FormData();
       form.append("title", title);
-      if (link) form.append("link", link);
-      if (file) form.append("image", file);
+      if (link) {
+        form.append("link", link);
+        form.append("link_url", link);
+      }
+      form.append('type', bannerType);
+      form.append('position', position);
+      form.append('active', active ? '1' : '0');
+      if (bannerType === 'image' && file) form.append("image", file);
+      if (bannerType === 'code') form.append('code_content', codeContent);
       const url = siteId ? `/sites/${siteId}/banners` : "/banners";
       await apiPostFormData(url, form);
       setSuccess("Banner creado");
       setTitle(""); setLink(""); setFile(null);
+      setBannerType('image'); setPosition('header'); setCodeContent(''); setActive(true);
       await fetchBanners();
     } catch (err: unknown) {
       console.error(err);
@@ -100,7 +122,52 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
           <Box component="form" onSubmit={handleCreate} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label="Título" value={title} onChange={(e) => setTitle(e.target.value)} size="small" fullWidth />
             <TextField label="Enlace (opcional)" value={link} onChange={(e) => setLink(e.target.value)} size="small" fullWidth />
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+
+            <FormControl size="small" fullWidth>
+              <InputLabel id="banner-type-label">Tipo</InputLabel>
+              <Select
+                labelId="banner-type-label"
+                value={bannerType}
+                label="Tipo"
+                onChange={(e) => setBannerType(e.target.value as 'image' | 'code')}
+              >
+                <MenuItem value={'image'}>Imagen</MenuItem>
+                <MenuItem value={'code'}>Código (HTML/JS)</MenuItem>
+              </Select>
+            </FormControl>
+
+            {bannerType === 'image' && (
+              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            )}
+
+            {bannerType === 'code' && (
+              <TextField
+                label="Código HTML/JS"
+                value={codeContent}
+                onChange={(e) => setCodeContent(e.target.value)}
+                size="small"
+                fullWidth
+                multiline
+                minRows={4}
+              />
+            )}
+
+            <FormControl size="small" fullWidth>
+              <InputLabel id="banner-position-label">Posición</InputLabel>
+              <Select
+                labelId="banner-position-label"
+                value={position}
+                label="Posición"
+                onChange={(e) => setPosition(e.target.value as any)}
+              >
+                <MenuItem value={'header'}>Cabecera</MenuItem>
+                <MenuItem value={'sidebar'}>Sidebar</MenuItem>
+                <MenuItem value={'between_articles'}>Entre noticias</MenuItem>
+                <MenuItem value={'footer'}>Footer</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControlLabel control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />} label="Activo" />
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button variant="contained" type="submit" disabled={saving}>{saving ? 'Creando...' : 'Crear'}</Button>
             </Box>
@@ -114,21 +181,26 @@ export default function BannersManager({ siteId }: { siteId?: string }) {
                 <TableHead>
                   <TableRow>
                     <TableCell>Título</TableCell>
-                    <TableCell>Imagen</TableCell>
+                    <TableCell>Imagen / Código</TableCell>
                     <TableCell>Enlace</TableCell>
+                    <TableCell>Posición</TableCell>
                     <TableCell align="right">Acciones</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5}>Cargando...</TableCell></TableRow>
                   ) : banners.length === 0 ? (
-                    <TableRow><TableCell colSpan={4}>No hay banners</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5}>No hay banners</TableCell></TableRow>
                   ) : banners.map(b => (
                     <TableRow key={b.id} hover>
                       <TableCell>{b.title}</TableCell>
-                      <TableCell>{b.image_url ? <img src={b.image_url} alt={b.title} style={{ height: 48 }} /> : '—'}</TableCell>
-                      <TableCell>{b.link || '—'}</TableCell>
+                      <TableCell>
+                        {b.type === 'code' ? <code style={{ display: 'block', maxWidth: 280, maxHeight: 64, overflow: 'auto' }}>{String(b.code_content ?? '').slice(0, 200)}</code>
+                          : (b.image_url ? <img src={b.image_url} alt={b.title} style={{ height: 48 }} /> : '—')}
+                      </TableCell>
+                      <TableCell>{b.link_url || b.link || '—'}</TableCell>
+                      <TableCell>{b.position || '—'}</TableCell>
                       <TableCell align="right">
                         <Button size="small" color="error" onClick={() => handleDelete(b.id)}>Eliminar</Button>
                       </TableCell>

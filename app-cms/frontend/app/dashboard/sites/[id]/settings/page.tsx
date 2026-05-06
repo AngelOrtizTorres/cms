@@ -41,15 +41,15 @@ export default function SiteSettingsPage() {
   if (!site) return <Container id="site-settings" sx={{ py: 4 }}>Sitio no encontrado</Container>;
 
   const canManage = auth.user?.role === 'admin' || Number(site.owner_id) === Number(auth.user?.id);
-  if (!canManage) return (
-    <Container sx={{ py: 4 }}>
-      <Typography variant="h5">Configuración</Typography>
-      <Typography>No tienes permisos para modificar la configuración de esta web.</Typography>
-      <Box sx={{ mt: 2 }}>
-        <Button onClick={() => router.push('/dashboard/webs')}>Volver</Button>
-      </Box>
-    </Container>
-  );
+
+  // Redirigir silenciosamente si no tiene permisos de gestión
+  React.useEffect(() => {
+    if (!site) return;
+    const allowed = auth.user?.role === 'admin' || Number(site.owner_id) === Number(auth.user?.id);
+    if (!allowed) router.push('/dashboard/webs');
+  }, [site, auth.user, router]);
+
+  if (!site) return null;
 
   return (
     <Container id="site-settings" sx={{ py: 4 }}>
