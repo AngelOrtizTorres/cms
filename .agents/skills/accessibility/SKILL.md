@@ -384,14 +384,7 @@ Use `aria-live` regions to announce dynamic content changes without moving focus
 ## Testing checklist
 
 ### Automated testing
-```bash
-# Lighthouse accessibility audit
-npx lighthouse https://example.com --only-categories=accessibility
-
-# axe-core
-npm install @axe-core/cli -g
-axe https://example.com
-```
+Use local audit tools (Lighthouse, axe) to run automated accessibility checks.
 
 ### Manual testing
 

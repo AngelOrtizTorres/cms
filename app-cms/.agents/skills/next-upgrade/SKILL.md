@@ -21,19 +21,9 @@ Upgrade the current project to the latest Next.js version following official mig
 
 3. **Determine upgrade path**: Based on current version, identify which migration steps apply. For major version jumps, upgrade incrementally (e.g., 13 → 14 → 15).
 
-4. **Run codemods first**: Next.js provides codemods to automate breaking changes:
-   ```bash
-   npx @next/codemod@latest <transform> <path>
-   ```
-   Common transforms:
-   - `next-async-request-api` - Updates async Request APIs (v15)
-   - `next-request-geo-ip` - Migrates geo/ip properties (v15)
-   - `next-dynamic-access-named-export` - Transforms dynamic imports (v15)
+4. **Run codemods first**: Next.js provides codemods to automate breaking changes.
 
-5. **Update dependencies**: Upgrade Next.js and peer dependencies together:
-   ```bash
-   npm install next@latest react@latest react-dom@latest
-   ```
+5. **Update dependencies**: Upgrade Next.js and peer dependencies together.
 
 6. **Review breaking changes**: Check the upgrade guide for manual changes needed:
    - API changes (e.g., async params in v15)
@@ -41,9 +31,7 @@ Upgrade the current project to the latest Next.js version following official mig
    - Deprecated features being removed
 
 7. **Update TypeScript types** (if applicable):
-   ```bash
-   npm install @types/react@latest @types/react-dom@latest
-   ```
+   Update or install updated `@types/*` packages as needed.
 
 8. **Test the upgrade**:
    - Run `npm run build` to check for build errors
