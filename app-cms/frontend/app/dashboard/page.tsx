@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Container from "@mui/material/Container";
 // usar `Box` con CSS grid en lugar de `Grid item` para evitar prop `item` en el DOM
