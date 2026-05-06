@@ -15,6 +15,7 @@ class Section extends Model
         'name',
         'slug',
         'description',
+        'content',
         'meta_title',
         'meta_description',
         'position',
@@ -24,6 +25,7 @@ class Section extends Model
     protected $casts = [
         'active' => 'boolean',
         'position' => 'integer',
+        'content' => 'json',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
