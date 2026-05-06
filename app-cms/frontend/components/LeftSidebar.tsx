@@ -10,23 +10,27 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Avatar from "@mui/material/Avatar";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PublicIcon from "@mui/icons-material/Public";
 import GroupIcon from "@mui/icons-material/Group";
 import ArticleIcon from "@mui/icons-material/Article";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import DescriptionIcon from "@mui/icons-material/Description";
-import CommentIcon from "@mui/icons-material/Comment";
 import CategoryIcon from "@mui/icons-material/Category";
 import LabelIcon from "@mui/icons-material/Label";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Collapse from "@mui/material/Collapse";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import MenuIcon from '@mui/icons-material/Menu';
 import { useThemeSettings } from "@/components/MuiProviders";
 import { useAuth } from "@/context/AuthContext";
 import dynamic from 'next/dynamic';
+import LogoutButton from "@/components/LogoutButton";
 
 const BannerDisplay = dynamic(() => import('@/components/BannerDisplay'), { ssr: false });
 
@@ -44,11 +48,13 @@ export default function LeftSidebar({
   currentSiteId,
   siteOwnerId,
 }: Props) {
-  const { compactSidebar } = useThemeSettings();
+  const { compactSidebar, setCompactSidebar } = useThemeSettings();
   const auth = useAuth();
   const effectiveRole = role || auth.user?.role || "user";
   const effectiveUserId = userId ?? auth.user?.id ?? null;
   const drawerWidth = compactSidebar ? 80 : 240;
+
+  const toggleCompact = () => setCompactSidebar(!compactSidebar);
 
   // keep a stable snapshot of the last-resolved site values
   const [stableSiteState, setStableSiteState] = useState<{
@@ -74,8 +80,7 @@ export default function LeftSidebar({
     Number(stableSiteOwnerId) === Number(effectiveUserId),
   );
 
-  let menuItems: Array<{ text: string; href: string; icon?: React.ReactNode }> =
-    [];
+  let menuItems: Array<{ text: string; href: string; icon?: React.ReactNode }> = [];
 
   // state for the Entradas submenu (hover/click expandable)
   const [entriesOpen, setEntriesOpen] = useState(false);
@@ -91,7 +96,7 @@ export default function LeftSidebar({
   } else if (effectiveRole === "author") {
     if (isViewingSite && isSiteOwner) {
       // site management menu for owner — new requested order
-        menuItems = [
+      menuItems = [
         { text: "Ver sitio", href: `/`, icon: <PublicIcon /> },
         { text: "Panel", href: `/dashboard/sites/${stableCurrentSiteId}`, icon: <DashboardIcon /> },
         { text: "Secciones", href: `/dashboard/sites/${stableCurrentSiteId}/sections`, icon: <CategoryIcon /> },
@@ -106,18 +111,12 @@ export default function LeftSidebar({
       menuItems = [
         { text: "Panel", href: "/dashboard", icon: <DashboardIcon /> },
         { text: "Webs", href: "/dashboard/webs", icon: <PublicIcon /> },
-        {
-          text: "Configuración",
-          href: "/dashboard/settings",
-          icon: <SettingsIcon />,
-        },
+        { text: "Configuración", href: "/dashboard/settings", icon: <SettingsIcon /> },
       ];
     }
   } else {
     // default minimal menu
-    menuItems = [
-      { text: "Panel", href: "/dashboard", icon: <DashboardIcon /> },
-    ];
+    menuItems = [{ text: "Panel", href: "/dashboard", icon: <DashboardIcon /> }];
   }
 
   return (
@@ -131,16 +130,32 @@ export default function LeftSidebar({
           boxSizing: "border-box",
           backgroundColor: "#23282d",
           color: "#fff",
+          borderRight: '1px solid rgba(255,255,255,0.04)',
+          boxShadow: '2px 0 8px rgba(0,0,0,0.32)',
+          transition: 'width 200ms ease',
         },
       }}
     >
-      <Box sx={{ p: 2, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <Typography variant="h6" sx={{ color: "#fff" }}>
-          Mi Blog
-        </Typography>
-        <Typography variant="caption" color="rgba(255,255,255,0.6)">
-          Panel de administración
-        </Typography>
+      <Box sx={{ p: 1, borderBottom: "1px solid rgba(255,255,255,0.06)", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Avatar sx={{ bgcolor: "white", color: "#23282d", fontWeight: "bold", width: 32, height: 32, fontSize: 16 }}>W</Avatar>
+          {!compactSidebar && (
+            <Box>
+              <Typography variant="h6" sx={{ color: "#fff", lineHeight: 1 }}>
+                Mi Blog
+              </Typography>
+              <Typography variant="caption" color="rgba(255,255,255,0.6)">
+                Panel de administración
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        <Tooltip title={compactSidebar ? 'Expandir menú' : 'Minimizar menú'}>
+          <IconButton onClick={toggleCompact} sx={{ color: '#fff' }} size="small" aria-label="toggle-sidebar">
+            {compactSidebar ? <MenuOpenIcon /> : <MenuIcon />}
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <List sx={{ flex: 1 }}>
@@ -150,12 +165,12 @@ export default function LeftSidebar({
               <Box key={item.text} onMouseEnter={handleEntriesOpen} onMouseLeave={handleEntriesClose}>
                 <ListItem disablePadding>
                   <ListItemButton
-                    sx={{ color: "#fff" }}
+                    sx={{ color: "#fff", borderRadius: 0, transition: 'background-color 160ms ease' , '&:hover': { backgroundColor: 'rgba(255,255,255,0.04)' } }}
                     onClick={() => setEntriesOpen((s) => !s)}
                     aria-expanded={entriesOpen}
                   >
-                    <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
+                    <ListItemIcon sx={{ color: "#fff", minWidth: compactSidebar ? 'auto' : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
+                    {!compactSidebar && <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
                     {entriesOpen ? (
                       <ExpandLess sx={{ color: '#fff' }} />
                     ) : (
@@ -170,39 +185,39 @@ export default function LeftSidebar({
                       <ListItemButton
                         component={NextLink}
                         href={`/dashboard/sites/${stableCurrentSiteId}/entries/articulos`}
-                        sx={{ pl: 4, color: '#fff' }}
+                        sx={{ pl: compactSidebar ? 1 : 4, color: '#fff', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}
                         onClick={handleEntriesClose}
                       >
-                        <ListItemIcon sx={{ minWidth: 28 }}>
+                        <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
                           <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        <ListItemText primary="Artículos" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
+                        {!compactSidebar && <ListItemText primary="Artículos" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
                       </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
                       <ListItemButton
                         component={NextLink}
                         href={`/dashboard/sites/${stableCurrentSiteId}/entries/seccion`}
-                        sx={{ pl: 4, color: '#fff' }}
+                        sx={{ pl: compactSidebar ? 1 : 4, color: '#fff', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}
                         onClick={handleEntriesClose}
                       >
-                        <ListItemIcon sx={{ minWidth: 28 }}>
+                        <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
                           <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        <ListItemText primary="Sección" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
+                        {!compactSidebar && <ListItemText primary="Sección" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
                       </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
                       <ListItemButton
                         component={NextLink}
                         href={`/dashboard/sites/${stableCurrentSiteId}/entries/noticias`}
-                        sx={{ pl: 4, color: '#fff' }}
+                        sx={{ pl: compactSidebar ? 1 : 4, color: '#fff', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}
                         onClick={handleEntriesClose}
                       >
-                        <ListItemIcon sx={{ minWidth: 28 }}>
+                        <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
                           <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        <ListItemText primary="Noticias" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
+                        {!compactSidebar && <ListItemText primary="Noticias" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
                       </ListItemButton>
                     </ListItem>
                   </List>
@@ -216,10 +231,10 @@ export default function LeftSidebar({
               <ListItemButton
                 component={NextLink}
                 href={item.href}
-                sx={{ color: "#fff" }}
+                sx={{ color: "#fff", justifyContent: compactSidebar ? 'center' : 'flex-start', px: compactSidebar ? 1 : 2, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.04)' } }}
               >
-                <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />
+                <ListItemIcon sx={{ color: "#fff", minWidth: compactSidebar ? 'auto' : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
+                {!compactSidebar && <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
               </ListItemButton>
             </ListItem>
           );
@@ -235,13 +250,24 @@ export default function LeftSidebar({
       </Box>
 
       <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <Typography variant="caption" color="rgba(255,255,255,0.6)">
-          {auth.user?.name
-            ? auth.user.name
-            : effectiveRole === "admin"
-              ? "Administrador"
-              : effectiveRole}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: compactSidebar ? 'center' : 'flex-start' }}>
+          <Avatar sx={{ bgcolor: "white", color: "#23282d", width: 32, height: 32, fontSize: 14 }}>
+            {auth.user?.name ? auth.user.name[0] : 'U'}
+          </Avatar>
+          {!compactSidebar && (
+            <Typography variant="caption" color="rgba(255,255,255,0.6)">
+              {auth.user?.name
+                ? auth.user.name
+                : effectiveRole === "admin"
+                  ? "Administrador"
+                  : effectiveRole}
+            </Typography>
+          )}
+
+          <Box sx={{ ml: 'auto' }}>
+            <LogoutButton compact={compactSidebar} />
+          </Box>
+        </Box>
       </Box>
     </Drawer>
   );

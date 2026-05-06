@@ -184,6 +184,7 @@ export default function MuiProviders({
               root: {
                 borderRadius: 0,
                 color: mode === "light" ? "#111111" : "#ffffff",
+                boxShadow: 'none',
                 "&.MuiButton-containedPrimary": {
                   backgroundColor: primaryColor,
                   color: "#fff",
@@ -199,6 +200,7 @@ export default function MuiProviders({
               root: {
                 borderRadius: 0,
                 boxShadow: "none",
+                backgroundColor: mode === 'light' ? '#23282d' : '#23282d',
               },
             },
           },

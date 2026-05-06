@@ -4,8 +4,11 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import LogoutIcon from "@mui/icons-material/Logout";
 
-export default function LogoutButton() {
+export default function LogoutButton({ compact = false }: { compact?: boolean }) {
   const { logout } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -19,6 +22,25 @@ export default function LogoutButton() {
       setLoading(false);
     }
   };
+
+  if (compact) {
+    return (
+      <Tooltip title={loading ? "Saliendo..." : "Cerrar sesión"}>
+        <span>
+          <IconButton
+            color="error"
+            onClick={handleLogout}
+            disabled={loading}
+            size="small"
+            sx={{ bgcolor: loading ? 'rgba(0,0,0,0.12)' : 'transparent' }}
+            aria-label="Cerrar sesión"
+          >
+            <LogoutIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+    );
+  }
 
   return (
     <Button
