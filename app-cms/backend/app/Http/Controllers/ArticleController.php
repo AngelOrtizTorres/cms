@@ -230,7 +230,7 @@ class ArticleController extends Controller
             'content' => 'required|string',
             'featured' => 'boolean',
             'status' => 'required|in:draft,scheduled,published,archived',
-            'primary_section_id' => 'required|exists:sections,id',
+            'primary_section_id' => 'nullable|exists:sections,id',
             'sections' => 'nullable|array',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:160',

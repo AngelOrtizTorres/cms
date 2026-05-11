@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/auth/forgot-password',
             'api/auth/reset-password',
             'api/register-admin',
+            'api/*', // Excluir todas las rutas API
         ]);
 
         $middleware->api(prepend: [

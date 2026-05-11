@@ -46,7 +46,10 @@ Route::prefix('articles')->group(function () {
 	Route::get('/search', [ArticleController::class, 'search']);
 	Route::get('/section/{sectionId}', [ArticleController::class, 'bySection']);
 	Route::get('/tag/{tagId}', [ArticleController::class, 'byTag']);
+	Route::post('/', [ArticleController::class, 'store']); // Create
 	Route::get('/{slug}', [ArticleController::class, 'bySlug']);
+	Route::put('/{id}', [ArticleController::class, 'update']); // Update by ID
+	Route::delete('/{id}', [ArticleController::class, 'destroy']); // Delete
 });
 
 // Sites (Webs) - lightweight JSON-backed implementation
@@ -118,5 +121,6 @@ Route::post('/sites/{siteId}/tags', [TagController::class, 'siteStore']);
 
 // Search (top-level alias)
 Route::get('/search', [ArticleController::class, 'search']);
+
 
 

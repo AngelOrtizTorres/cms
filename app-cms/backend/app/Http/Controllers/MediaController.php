@@ -12,30 +12,58 @@ class MediaController extends Controller
 {
     public function index(Request $request)
     {
-        // Authenticated listing
-        $token = $request->bearerToken();
-        if ($token && !Auth::check()) {
-            $tokenUser = User::where('api_token', $token)->first();
-            if ($tokenUser) Auth::login($tokenUser);
+        // Get filter parameters
+        $type = $request->query('type'); // 'images' or 'videos'
+        $limit = $request->query('limit', 100);
+
+        // Build query
+        $query = MediaFile::orderBy('created_at', 'desc');
+
+        // Filter by type if specified
+        if ($type === 'images') {
+            $query->whereIn('mime_type', ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']);
+        } elseif ($type === 'videos') {
+            $query->whereIn('mime_type', ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']);
         }
 
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        $files = $query->limit($limit)->get();
 
-        $files = MediaFile::orderBy('created_at', 'desc')->get();
-        return response()->json($files);
+        // Format response with URLs
+        $formatted = $files->map(function (MediaFile $file) {
+            $url = Storage::url($file->file_name);
+            return [
+                'id' => $file->id,
+                'title' => $file->title ?? $file->name,
+                'url' => $url,
+                'thumbnail_url' => $url, // For now, same as url. Could generate thumbnails later
+                'mime_type' => $file->mime_type,
+                'name' => $file->name,
+                'size' => $file->size,
+                'width' => $file->width,
+                'height' => $file->height,
+                'alt_text' => $file->alt_text,
+                'created_at' => $file->created_at,
+            ];
+        });
+
+        return response()->json($formatted);
     }
 
     public function store(Request $request)
     {
-        $token = $request->bearerToken();
-        if ($token && !Auth::check()) {
-            $tokenUser = User::where('api_token', $token)->first();
-            if ($tokenUser) Auth::login($tokenUser);
+        // Check authentication with fallbacks
+        $user = Auth::guard('web')->user();
+
+        if (!$user) {
+            // Try bearer token if session didn't work
+            $token = $request->bearerToken();
+            if ($token) {
+                $user = User::where('api_token', $token)->first();
+                if ($user) Auth::login($user);
+            }
         }
 
-        if (!Auth::check()) {
+        if (!$user && !Auth::check()) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -60,21 +88,29 @@ class MediaController extends Controller
             'folder' => 'media',
         ]);
 
-        // Attach a public URL if possible
-        $media->url = Storage::disk('public')->url($path);
+        // Return formatted response with URL
+        $url = Storage::url($path);
+        $media->url = $url;
+        $media->thumbnail_url = $url;
 
         return response()->json($media, 201);
     }
 
     public function destroy(Request $request, $id)
     {
-        $token = $request->bearerToken();
-        if ($token && !Auth::check()) {
-            $tokenUser = User::where('api_token', $token)->first();
-            if ($tokenUser) Auth::login($tokenUser);
+        // Check authentication with fallbacks
+        $user = Auth::guard('web')->user();
+
+        if (!$user) {
+            // Try bearer token if session didn't work
+            $token = $request->bearerToken();
+            if ($token) {
+                $user = User::where('api_token', $token)->first();
+                if ($user) Auth::login($user);
+            }
         }
 
-        if (!Auth::check()) {
+        if (!$user && !Auth::check()) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

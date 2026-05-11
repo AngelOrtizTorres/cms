@@ -124,6 +124,10 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
     setDescription(s.description || "");
   };
 
+  const goToEditContent = (sectionId: number) => {
+    router.push(`/dashboard/sites/${siteId}/sections/${sectionId}/edit`);
+  };
+
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name) return setError("Nombre requerido");
@@ -233,6 +237,7 @@ export default function SectionsManager({ siteId }: { siteId?: string }) {
                       <TableCell>{s.description || '—'}</TableCell>
                       <TableCell align="right">
                         <Button size="small" onClick={() => startEdit(s)} sx={{ mr: 1 }}>Editar</Button>
+                        <Button size="small" onClick={() => goToEditContent(s.id)} sx={{ mr: 1 }}>Contenido</Button>
                         <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
                       </TableCell>
                     </TableRow>

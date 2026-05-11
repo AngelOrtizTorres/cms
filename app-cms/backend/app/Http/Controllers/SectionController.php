@@ -66,6 +66,7 @@ class SectionController extends Controller
             'slug' => 'nullable|string|unique:sections,slug',
             'parent_id' => 'nullable|exists:sections,id',
             'description' => 'nullable|string',
+            'content' => 'nullable|json',
             'position' => 'nullable|integer',
             'active' => 'nullable|boolean',
         ]);
@@ -84,6 +85,7 @@ class SectionController extends Controller
             'slug' => ['nullable','string', Rule::unique('sections')->ignore($section->id)],
             'parent_id' => 'nullable|exists:sections,id',
             'description' => 'nullable|string',
+            'content' => 'nullable|json',
             'position' => 'nullable|integer',
             'active' => 'nullable|boolean',
         ]);
