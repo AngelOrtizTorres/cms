@@ -78,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiLogout();
       setUser(null);
       setError(null);
+      setSessionVerified(false);
+      try { localStorage.removeItem('cms_user'); } catch {}
     } catch (err: unknown) {
       const parsed = normalizeApiError(err);
       console.error('Error en logout:', parsed);

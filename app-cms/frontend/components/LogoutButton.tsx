@@ -17,7 +17,13 @@ export default function LogoutButton({ compact = false }: { compact?: boolean })
     setLoading(true);
     try {
       await logout();
-      router.push("/login");
+      // replace to avoid back-navigation to protected pages; fallback to full redirect
+      try {
+        router.replace('/login');
+      } catch (e) {
+        // router.replace may throw in some edge cases — fallback
+        try { window.location.href = '/login'; } catch (_) {}
+      }
     } finally {
       setLoading(false);
     }

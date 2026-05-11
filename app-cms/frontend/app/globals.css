@@ -65,10 +65,10 @@ textarea::placeholder {
   color: var(--primary);
 }
 
-/* AppBar/header links should be white for contrast */
+/* AppBar/header links: let theme control text color (avoid forcing white) */
 .MuiAppBar-root a,
 .MuiAppBar-root .MuiTypography-root {
-  color: #fff !important;
+  color: var(--appbar-text, inherit);
 }
 
 /* Scoped: force readable text inside the main content area only */
@@ -97,9 +97,11 @@ textarea::placeholder {
   color: #111111 !important;
 }
 
-/* Drawer/sidebar: force white text inside the sidebar to ensure contrast */
-.MuiDrawer-paper,
+/* Drawer/sidebar: prefer theme-controlled color, avoid forcing white */
+.MuiDrawer-paper {
+  color: var(--sidebar-text, #cfd8dc);
+}
 .MuiDrawer-paper * {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  color: inherit;
+  -webkit-text-fill-color: inherit;
 }

@@ -4,20 +4,17 @@ import React from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
-// Tooltip removed — header simplified
 import BannerDisplay from "@/components/BannerDisplay";
-// header simplified: no menu toggle here
 
-export default function Header({ drawerWidth = 0 }: { drawerWidth?: number }) {
+export default function AdminHeader({ drawerWidth = 0 }: { drawerWidth?: number }) {
   return (
     <AppBar
       position="fixed"
       sx={{
-        width: `calc(100% - ${drawerWidth}px)` ,
+        width: `calc(100% - ${drawerWidth}px)`,
         ml: `${drawerWidth}px`,
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: 'rgba(35,40,45,0.95)',
-        backdropFilter: 'blur(6px)',
+        backgroundColor: '#23282d',
         boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
         borderBottom: (theme) => theme.palette.mode === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.04)'
       }}

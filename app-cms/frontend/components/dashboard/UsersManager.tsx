@@ -28,7 +28,9 @@ import {
   Alert,
   Checkbox,
   FormControlLabel,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from '@mui/material/styles';
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAuth } from "@/context/AuthContext";
@@ -119,6 +121,16 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
   }, [auth.user?.role, auth.sessionVerified]);
 
   const router = useRouter();
+  const theme = useTheme();
+  const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
+  const roleColor = (r: string) => {
+    if (!r) return theme.palette.grey[400];
+    const rr = (r || '').toLowerCase();
+    if (rr === 'admin') return theme.palette.primary.main;
+    if (rr === 'author') return theme.palette.secondary?.main || '#9c27b0';
+    if (rr === 'editor') return theme.palette.warning?.main || '#ff9800';
+    return theme.palette.grey[400];
+  };
   useEffect(() => {
     if (auth.loading) return;
     if (auth.user?.role !== 'admin') {
@@ -246,41 +258,64 @@ export default function UsersManager({ siteId }: { siteId?: string }) {
         </Box>
       </Box>
 
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Rol</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow><TableCell colSpan={5}>Cargando...</TableCell></TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5}>No hay usuarios</TableCell></TableRow>
-              ) : (
-                filtered.map(u => (
-                  <TableRow key={u.id} hover>
-                    <TableCell>{u.id}</TableCell>
-                    <TableCell>{u.name}</TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell sx={{ textTransform: 'capitalize' }}>{u.role}</TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" color="primary" onClick={() => openEdit(u)}><EditIcon /></IconButton>
-                      <IconButton size="small" color="error" onClick={() => openDeleteConfirm(u.id)}><DeleteIcon /></IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      {isMdDown ? (
+        <Box sx={{ display: 'grid', gap: 2 }}>
+          {loading ? (
+            <Paper sx={{ p: 2 }}>Cargando...</Paper>
+          ) : filtered.length === 0 ? (
+            <Paper sx={{ p: 2 }}>No hay usuarios</Paper>
+          ) : (
+            filtered.map(u => (
+              <Paper key={u.id} sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: `4px solid ${roleColor(u.role)}` }} elevation={1}>
+                <Box>
+                  <Typography variant="subtitle1">{u.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{u.email}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button size="small" variant="outlined" onClick={() => openEdit(u)}>Editar</Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => openDeleteConfirm(u.id)}>Eliminar</Button>
+                </Box>
+              </Paper>
+            ))
+          )}
+        </Box>
+      ) : (
+        <Paper>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Rol</TableCell>
+                  <TableCell align="right">Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={5}>Cargando...</TableCell></TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow><TableCell colSpan={5}>No hay usuarios</TableCell></TableRow>
+                ) : (
+                  filtered.map(u => (
+                    <TableRow key={u.id} hover>
+                      <TableCell>{u.id}</TableCell>
+                      <TableCell>{u.name}</TableCell>
+                      <TableCell>{u.email}</TableCell>
+                      <TableCell sx={{ textTransform: 'capitalize' }}>{u.role}</TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" color="primary" onClick={() => openEdit(u)}><EditIcon /></IconButton>
+                        <IconButton size="small" color="error" onClick={() => openDeleteConfirm(u.id)}><DeleteIcon /></IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
 
       {/* Create dialog */}
       <Dialog open={showCreate} onClose={() => setShowCreate(false)} fullWidth maxWidth="sm" aria-labelledby="create-user-title">

@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { apiGet, normalizeApiError } from '@/lib/api';
+import { normalizeApiError } from '@/lib/api';
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -38,7 +38,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [adminExists, setAdminExists] = useState<boolean | null>(null);
+  
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -110,28 +110,7 @@ export default function LoginPage() {
     }
   };
 
-  // Comprobar si ya existe administrador para ocultar CTA de registro
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await apiGet('/admin-exists');
-        if (!mounted) return;
-        setAdminExists(Boolean(res?.admin_exists));
-      } catch (e) {
-        // En caso de error, dejamos visible el botón para compatibilidad
-        try {
-          const ne = normalizeApiError(e);
-          console.error('No se pudo comprobar admin-exists:', ne.message, { status: ne.status, errors: ne.errors, raw: ne.raw });
-        } catch (logErr) {
-          console.error('No se pudo comprobar admin-exists', e);
-        }
-        if (mounted) setAdminExists(false);
-      }
-    })();
-
-    return () => { mounted = false; };
-  }, []);
+  // Mostrar siempre el CTA de registro — comprobación de admin-exists eliminada
 
   return (
     <Box
@@ -258,24 +237,18 @@ export default function LoginPage() {
               {loading ? "Accediendo..." : "Acceder"}
             </Button>
 
-              {adminExists === false && (
                 <Button
                   component={NextLink}
                   href="/register"
                   fullWidth
-                  variant="outlined"
+                  variant="contained"
+                  color="primary"
                   startIcon={<PersonAddIcon />}
-                  sx={{ mt: 1, textTransform: 'none' }}
+                  sx={{ mt: 1, textTransform: 'none', minWidth: 110, py: 1.25 }}
                   aria-label="Crear cuenta de administrador"
                 >
                   Crear cuenta de administrador
                 </Button>
-              )}
-              {adminExists === true && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
-                  
-                </Typography>
-              )}
 
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Link
@@ -292,11 +265,7 @@ export default function LoginPage() {
             </Box>
           </Box>
 
-      <Box sx={{ mt: 2, textAlign: "center" }}>
-        <Typography variant="caption" color="text.secondary">
-          © 2026 - Panel estilo WordPress
-        </Typography>
-      </Box>
+      {/* Footer removed per request */}
         </Box>
       </Paper>
     </Box>

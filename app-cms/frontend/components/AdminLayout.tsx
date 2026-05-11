@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
-import Header from "@/components/Header";
-import Typography from "@mui/material/Typography";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import AdminHeader from "@/components/AdminHeader";
 import { useThemeSettings } from "@/components/MuiProviders";
 import LeftSidebar from "@/components/LeftSidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -62,23 +62,53 @@ export default function AdminLayout({
 
   const currentSiteNum = currentSiteId != null ? Number(currentSiteId) : null;
 
+  const adminTheme = useMemo(() => createTheme({
+    palette: {
+      // usar fondo claro en el contenido para evitar texto blanco ilegible
+      mode: 'light',
+      primary: { main: '#0073aa' },
+      background: { default: '#f6f7f8', paper: '#ffffff' },
+      text: { primary: '#111111' },
+    },
+    shape: { borderRadius: 0 },
+    components: {
+      MuiAppBar: {
+        styleOverrides: {
+          root: { backgroundColor: '#23282d', color: '#cfd8dc' }
+        }
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: { backgroundColor: '#23282d', color: '#cfd8dc' }
+        }
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: { backgroundColor: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 0 rgba(0,0,0,0.04)' }
+        }
+      }
+    }
+  }), []);
+
   return (
     <RequireAuth>
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
-        <Header drawerWidth={drawerWidth} />
+      <ThemeProvider theme={adminTheme}>
+        <Box sx={{ display: "flex", minHeight: "100vh" }}>
+          <AdminHeader drawerWidth={drawerWidth} />
 
-        <LeftSidebar
-          role={auth.user?.role}
-          userId={auth.user?.id}
-          currentSiteId={currentSiteNum}
-          siteOwnerId={siteOwnerId}
-        />
+          <LeftSidebar
+            role={auth.user?.role}
+            userId={auth.user?.id}
+            currentSiteId={currentSiteNum}
+            siteOwnerId={siteOwnerId}
+          />
 
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          <Toolbar />
-          <Box>{children}</Box>
+          <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: (theme) => theme.palette.background.default, minHeight: '100vh', color: (theme) => theme.palette.text.primary }}>
+            <Toolbar />
+            <Box sx={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>{children}</Box>
+          </Box>
         </Box>
-      </Box>
+      </ThemeProvider>
     </RequireAuth>
   );
 }
