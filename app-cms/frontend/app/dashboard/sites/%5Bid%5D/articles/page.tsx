@@ -153,7 +153,7 @@ export default function ArticlesPage() {
                       {new Date(article.created_at).toLocaleDateString('es-ES')}
                     </TableCell>
                     <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                      <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
                         <IconButton
                           size="small"
                           href={`/articles/${article.slug}`}

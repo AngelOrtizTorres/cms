@@ -148,7 +148,7 @@ export default function SectionsPage() {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                      <Stack direction="row" spacing={0.5} sx={{ justifyContent: "flex-end" }}>
                         <IconButton
                           size="small"
                           onClick={() => router.push(`/dashboard/sites/${siteId}/sections/${section.id}/edit`)}

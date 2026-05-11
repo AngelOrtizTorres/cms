@@ -65,6 +65,10 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks, className }) => {
               lineHeight: 1.7,
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
+              textAlign: block.align || 'left',
+              fontWeight: block.bold ? 700 : 400,
+              fontStyle: block.italic ? 'italic' : 'normal',
+              textDecoration: block.underline ? 'underline' : 'none',
             }}
           >
             {block.content}
@@ -161,6 +165,69 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({ blocks, className }) => {
               my: 3,
             }}
           />
+        );
+
+      case 'video':
+        return (
+          <Box
+            key={key}
+            sx={{
+              my: 3,
+              position: 'relative',
+              paddingBottom: '56.25%',
+              height: 0,
+              overflow: 'hidden',
+              borderRadius: 1,
+              bgcolor: '#000',
+            }}
+          >
+            {block.videoUrl && (
+              <video
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                }}
+                controls
+                src={block.videoUrl}
+              />
+            )}
+          </Box>
+        );
+
+      case 'button':
+        return (
+          <Box
+            key={key}
+            sx={{
+              my: 2,
+              textAlign: block.align || 'left',
+            }}
+          >
+            <Box
+              component="a"
+              href={block.buttonUrl || '#'}
+              sx={{
+                display: 'inline-block',
+                px: 3,
+                py: 1.5,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                textDecoration: 'none',
+                borderRadius: 1,
+                fontWeight: 600,
+                transition: 'all 0.3s',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  boxShadow: 2,
+                },
+              }}
+            >
+              {block.buttonText || 'Botón'}
+            </Box>
+          </Box>
         );
 
       default:
