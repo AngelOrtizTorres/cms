@@ -112,50 +112,33 @@ export default function MuiProviders({
         components: {
           MuiCssBaseline: {
             styleOverrides: {
-              body: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
-              '*, *::before, *::after': {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
+              body: {},
             },
           },
           MuiTypography: {
             styleOverrides: {
-              root: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
+              root: {},
             },
           },
           MuiTableCell: {
             styleOverrides: {
-              root: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
+              root: {},
             },
           },
           MuiInputBase: {
             styleOverrides: {
-              root: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
-              input: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
+              root: {},
+              input: {},
             },
           },
           MuiOutlinedInput: {
             styleOverrides: {
-              input: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
+              input: {},
             },
           },
           MuiInputLabel: {
             styleOverrides: {
-              root: {
-                color: mode === "light" ? "#111111" : "#ffffff",
-              },
+              root: {},
             },
           },
           MuiFormHelperText: {
@@ -169,6 +152,7 @@ export default function MuiProviders({
             styleOverrides: {
               root: {
                 borderRadius: 0,
+                backgroundColor: mode === 'light' ? '#ffffff' : 'rgba(10,12,15,0.96)'
               },
             },
           },

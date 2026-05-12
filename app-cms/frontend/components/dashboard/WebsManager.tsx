@@ -23,7 +23,9 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from '@mui/material/styles';
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPostFormData, apiDelete } from "@/lib/api";
@@ -92,6 +94,9 @@ export default function WebsManager() {
     const load = async () => { await fetchSites(); };
     load();
   }, [auth.user?.id, auth.sessionVerified]);
+
+  const theme = useTheme();
+  const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     if (showCreate) setTimeout(() => createTitleRef.current?.focus(), 30);
@@ -210,44 +215,73 @@ export default function WebsManager() {
         </Box>
       </Box>
 
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Título</TableCell>
-                <TableCell>Owner</TableCell>
-                <TableCell>Dominio</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={4}>No hay webs</TableCell></TableRow>
-              ) : filtered.map((s) => (
-                <TableRow key={s.id} hover>
-                  <TableCell>
-                    <Typography>{s.title}</Typography>
+      {isMdDown ? (
+        <Box sx={{ display: 'grid', gap: 2 }}>
+          {loading ? (
+            <Paper sx={{ p: 2 }}>Cargando...</Paper>
+          ) : filtered.length === 0 ? (
+            <Paper sx={{ p: 2 }}>No hay webs</Paper>
+          ) : (
+            filtered.map((s) => (
+              <Paper key={s.id} sx={{ p: 2, borderLeft: `4px solid ${theme.palette.info?.main || '#0288d1'}` }} elevation={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+                  <Box>
+                    <Typography variant="subtitle1">{s.title}</Typography>
                     <Typography variant="caption" color="text.secondary">{s.description}</Typography>
-                  </TableCell>
-                  <TableCell>{s.creator_email || s.owner_id}</TableCell>
-                  <TableCell>{s.domain || '-'}</TableCell>
-                  <TableCell align="right">
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     {s.domain ? (
                       <Button size="small" component={NextLink} href={`https://${s.domain}`} sx={{ mr: 1 }}>Ver</Button>
                     ) : null}
                     <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}`} sx={{ mr: 1 }}>Entrar</Button>
                     <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}/edit`} sx={{ mr: 1 }}>Editar</Button>
                     <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
-                  </TableCell>
+                  </Box>
+                </Box>
+              </Paper>
+            ))
+          )}
+        </Box>
+      ) : (
+        <Paper>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Título</TableCell>
+                  <TableCell>Owner</TableCell>
+                  <TableCell>Dominio</TableCell>
+                  <TableCell align="right">Acciones</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow><TableCell colSpan={4}>No hay webs</TableCell></TableRow>
+                ) : filtered.map((s) => (
+                  <TableRow key={s.id} hover>
+                    <TableCell>
+                      <Typography>{s.title}</Typography>
+                      <Typography variant="caption" color="text.secondary">{s.description}</Typography>
+                    </TableCell>
+                    <TableCell>{s.creator_email || s.owner_id}</TableCell>
+                    <TableCell>{s.domain || '-'}</TableCell>
+                    <TableCell align="right">
+                      {s.domain ? (
+                        <Button size="small" component={NextLink} href={`https://${s.domain}`} sx={{ mr: 1 }}>Ver</Button>
+                      ) : null}
+                      <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}`} sx={{ mr: 1 }}>Entrar</Button>
+                      <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}/edit`} sx={{ mr: 1 }}>Editar</Button>
+                      <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
 
       <Dialog open={showCreate} onClose={() => setShowCreate(false)} fullWidth maxWidth="sm" aria-labelledby="create-site-title">
         <DialogTitle id="create-site-title">Crear web</DialogTitle>
@@ -257,7 +291,9 @@ export default function WebsManager() {
             <TextField label="Dominio (opcional)" value={domain} onChange={(e) => setDomain(e.target.value)} fullWidth />
             <TextField label="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline rows={3} />
             <TextField label="Correo de contacto" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} fullWidth />
-            <input type="file" accept="image/*" onChange={(e) => setIconFile(e.target.files?.[0] ?? null)} />
+            <Button variant="outlined" component="label">Subir icono
+              <input hidden accept="image/*" type="file" onChange={(e) => setIconFile(e.target.files?.[0] ?? null)} />
+            </Button>
           </Box>
         </DialogContent>
         <DialogActions>

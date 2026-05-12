@@ -15,6 +15,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Avatar from "@mui/material/Avatar";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PublicIcon from "@mui/icons-material/Public";
+import HomeIcon from '@mui/icons-material/Home';
 import GroupIcon from "@mui/icons-material/Group";
 import ArticleIcon from "@mui/icons-material/Article";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
@@ -126,33 +127,29 @@ export default function LeftSidebar({
         width: drawerWidth,
         flexShrink: 0,
         [`& .MuiDrawer-paper`]: {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          backgroundColor: "#23282d",
-          color: "#fff",
-          borderRight: '1px solid rgba(255,255,255,0.04)',
-          boxShadow: '2px 0 8px rgba(0,0,0,0.32)',
-          transition: 'width 200ms ease',
-        },
+            width: drawerWidth,
+            boxSizing: "border-box",
+            backgroundColor: "#23282d",
+            color: "#cfd8dc",
+            borderRight: (theme) => theme.palette.mode === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.04)',
+            boxShadow: '2px 0 8px rgba(0,0,0,0.32)',
+            transition: 'width 200ms ease',
+          },
       }}
     >
-      <Box sx={{ p: 1, borderBottom: "1px solid rgba(255,255,255,0.06)", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar sx={{ bgcolor: "white", color: "#23282d", fontWeight: "bold", width: 32, height: 32, fontSize: 16 }}>W</Avatar>
-          {!compactSidebar && (
-            <Box>
-              <Typography variant="h6" sx={{ color: "#fff", lineHeight: 1 }}>
-                Mi Blog
-              </Typography>
-              <Typography variant="caption" color="rgba(255,255,255,0.6)">
-                Panel de administración
-              </Typography>
-            </Box>
-          )}
-        </Box>
+      <Box sx={{ p: 1, borderBottom: (theme) => theme.palette.mode === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <NextLink href="/" legacyBehavior>
+          <Box component="a" sx={{ display: 'flex', alignItems: 'center', gap: 1, textDecoration: 'none', color: 'inherit', width: compactSidebar ? 40 : 'auto', justifyContent: compactSidebar ? 'center' : 'flex-start' }}>
+            {compactSidebar ? (
+              <HomeIcon sx={{ color: 'inherit' }} />
+            ) : (
+              <Typography variant="subtitle1" sx={{ color: 'inherit', fontWeight: 600, textAlign: 'center', width: '100%' }}>Mi sitio</Typography>
+            )}
+          </Box>
+        </NextLink>
 
         <Tooltip title={compactSidebar ? 'Expandir menú' : 'Minimizar menú'}>
-          <IconButton onClick={toggleCompact} sx={{ color: '#fff' }} size="small" aria-label="toggle-sidebar">
+          <IconButton onClick={toggleCompact} sx={{ color: 'inherit' }} size="small" aria-label="toggle-sidebar">
             {compactSidebar ? <MenuOpenIcon /> : <MenuIcon />}
           </IconButton>
         </Tooltip>
@@ -165,17 +162,17 @@ export default function LeftSidebar({
               <Box key={item.text} onMouseEnter={handleEntriesOpen} onMouseLeave={handleEntriesClose}>
                 <ListItem disablePadding>
                   <ListItemButton
-                    sx={{ color: "#fff", borderRadius: 0, transition: 'background-color 160ms ease' , '&:hover': { backgroundColor: 'rgba(255,255,255,0.04)' } }}
+                      sx={{ color: 'inherit', borderRadius: 0, transition: 'background-color 160ms ease' , '&:hover': { backgroundColor: (theme) => theme.palette.action.hover } }}
                     onClick={() => setEntriesOpen((s) => !s)}
                     aria-expanded={entriesOpen}
                   >
-                    <ListItemIcon sx={{ color: "#fff", minWidth: compactSidebar ? 'auto' : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
-                    {!compactSidebar && <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
-                    {entriesOpen ? (
-                      <ExpandLess sx={{ color: '#fff' }} />
-                    ) : (
-                      <ExpandMore sx={{ color: '#fff' }} />
-                    )}
+                      <ListItemIcon sx={{ color: 'inherit', minWidth: compactSidebar ? 'auto' : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
+                      {!compactSidebar && <ListItemText primary={item.text} />}
+                      {entriesOpen ? (
+                        <ExpandLess sx={{ color: 'inherit' }} />
+                      ) : (
+                        <ExpandMore sx={{ color: 'inherit' }} />
+                      )}
                   </ListItemButton>
                 </ListItem>
 
@@ -185,39 +182,39 @@ export default function LeftSidebar({
                       <ListItemButton
                         component={NextLink}
                         href={`/dashboard/sites/${stableCurrentSiteId}/entries/articulos`}
-                        sx={{ pl: compactSidebar ? 1 : 4, color: '#fff', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}
+                        sx={{ pl: compactSidebar ? 1 : 4, color: 'inherit', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: (theme) => theme.palette.action.hover } }}
                         onClick={handleEntriesClose}
                       >
                         <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
-                          <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
+                          <Box sx={{ width: 8, height: 8, bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(0,0,0,0.54)' : 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        {!compactSidebar && <ListItemText primary="Artículos" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
+                        {!compactSidebar && <ListItemText primary="Artículos" />}
                       </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
                       <ListItemButton
-                        component={NextLink}
-                        href={`/dashboard/sites/${stableCurrentSiteId}/entries/seccion`}
-                        sx={{ pl: compactSidebar ? 1 : 4, color: '#fff', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}
-                        onClick={handleEntriesClose}
-                      >
-                        <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
-                          <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
-                        </ListItemIcon>
-                        {!compactSidebar && <ListItemText primary="Sección" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
-                      </ListItemButton>
+                          component={NextLink}
+                          href={`/dashboard/sites/${stableCurrentSiteId}/entries/seccion`}
+                          sx={{ pl: compactSidebar ? 1 : 4, color: 'inherit', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: (theme) => theme.palette.action.hover } }}
+                          onClick={handleEntriesClose}
+                        >
+                          <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
+                            <Box sx={{ width: 8, height: 8, bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(0,0,0,0.54)' : 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
+                          </ListItemIcon>
+                          {!compactSidebar && <ListItemText primary="Sección" />}
+                        </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
                       <ListItemButton
                         component={NextLink}
                         href={`/dashboard/sites/${stableCurrentSiteId}/entries/noticias`}
-                        sx={{ pl: compactSidebar ? 1 : 4, color: '#fff', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}
+                        sx={{ pl: compactSidebar ? 1 : 4, color: 'inherit', justifyContent: compactSidebar ? 'center' : undefined, borderRadius: 0, '&:hover': { backgroundColor: (theme) => theme.palette.action.hover } }}
                         onClick={handleEntriesClose}
                       >
                         <ListItemIcon sx={{ minWidth: compactSidebar ? 'auto' : 28, justifyContent: 'center' }}>
-                          <Box sx={{ width: 8, height: 8, bgcolor: 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
+                          <Box sx={{ width: 8, height: 8, bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(0,0,0,0.54)' : 'rgba(255,255,255,0.75)', borderRadius: '50%' }} />
                         </ListItemIcon>
-                        {!compactSidebar && <ListItemText primary="Noticias" sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
+                        {!compactSidebar && <ListItemText primary="Noticias" />}
                       </ListItemButton>
                     </ListItem>
                   </List>
@@ -228,20 +225,20 @@ export default function LeftSidebar({
 
           return (
             <ListItem key={item.text} disablePadding>
-              <ListItemButton
+                <ListItemButton
                 component={NextLink}
                 href={item.href}
-                sx={{ color: "#fff", justifyContent: compactSidebar ? 'center' : 'flex-start', px: compactSidebar ? 1 : 2, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.04)' } }}
+                sx={{ color: 'inherit', justifyContent: compactSidebar ? 'center' : 'flex-start', px: compactSidebar ? 1 : 2, borderRadius: 0, '&:hover': { backgroundColor: (theme) => theme.palette.action.hover } }}
               >
-                <ListItemIcon sx={{ color: "#fff", minWidth: compactSidebar ? 'auto' : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
-                {!compactSidebar && <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { color: '#fff' } }} />}
+                <ListItemIcon sx={{ color: 'inherit', minWidth: compactSidebar ? 'auto' : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
+                {!compactSidebar && <ListItemText primary={item.text} />}
               </ListItemButton>
             </ListItem>
           );
         })}
       </List>
 
-      <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2 }}>
         {stableCurrentSiteId && stableSiteOwnerId !== undefined ? (
           <BannerDisplay position="sidebar" siteId={stableCurrentSiteId} maxHeight={180} />
         ) : (
@@ -249,13 +246,13 @@ export default function LeftSidebar({
         )}
       </Box>
 
-      <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <Box sx={{ p: 2, borderTop: (theme) => theme.palette.mode === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: compactSidebar ? 'center' : 'flex-start' }}>
-          <Avatar sx={{ bgcolor: "white", color: "#23282d", width: 32, height: 32, fontSize: 14 }}>
+          <Avatar sx={{ bgcolor: (theme) => theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.primary.main, color: (theme) => theme.palette.mode === 'light' ? '#23282d' : theme.palette.getContrastText(theme.palette.primary.main), width: 32, height: 32, fontSize: 14 }}>
             {auth.user?.name ? auth.user.name[0] : 'U'}
           </Avatar>
           {!compactSidebar && (
-            <Typography variant="caption" color="rgba(255,255,255,0.6)">
+            <Typography variant="caption" sx={{ color: 'inherit' }}>
               {auth.user?.name
                 ? auth.user.name
                 : effectiveRole === "admin"
