@@ -33,7 +33,7 @@ interface Article {
 export default function ArticlePage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = params?.slug as string | undefined;
 
   const [article, setArticle] = useState<Article | null>(null);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);

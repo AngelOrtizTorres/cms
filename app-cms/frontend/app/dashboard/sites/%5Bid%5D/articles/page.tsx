@@ -43,7 +43,7 @@ interface Article {
 export default function ArticlesPage() {
   const params = useParams();
   const router = useRouter();
-  const siteId = params.id as string;
+  const siteId = params?.id as string | undefined;
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);

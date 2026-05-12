@@ -31,8 +31,8 @@ interface Section {
 export default function EditSectionPage() {
   const params = useParams();
   const router = useRouter();
-  const sectionId = params['section-id'] as string;
-  const siteId = params.id as string;
+  const sectionId = params?.['section-id'] as string | undefined;
+  const siteId = params?.id as string | undefined;
 
   const [section, setSection] = useState<Section | null>(null);
   const [formData, setFormData] = useState({

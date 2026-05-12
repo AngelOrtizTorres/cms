@@ -42,7 +42,7 @@ interface Section {
 export default function SectionsPage() {
   const params = useParams();
   const router = useRouter();
-  const siteId = params.id as string;
+  const siteId = params?.id as string | undefined;
 
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);

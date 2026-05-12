@@ -738,9 +738,9 @@ const BlockEditor: React.FC<BlockEditorProps> = ({ blocks, onChange, siteId }) =
           )}
 
           {!mediaLoading && mediaItems.length > 0 && (
-            <Grid container spacing={2}>
+            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' } }}>
               {mediaItems.map((media) => (
-                <Grid item xs={6} sm={4} key={media.id}>
+                <Box key={media.id}>
                   <Card
                     sx={{
                       cursor: 'pointer',
@@ -782,7 +782,7 @@ const BlockEditor: React.FC<BlockEditorProps> = ({ blocks, onChange, siteId }) =
                                 p: 1,
                               }}
                             >
-                              <VideoIcon sx={{ color: 'white', fontSize: 30 }} />
+                              <VideoIcon sx={{ color: (theme) => theme.palette.common.white, fontSize: 30 }} />
                             </Box>
                           </Box>
                         ) : (
@@ -799,16 +799,16 @@ const BlockEditor: React.FC<BlockEditorProps> = ({ blocks, onChange, siteId }) =
                       ) : (
                         <Typography color="textSecondary">—</Typography>
                       )}
-                    </Box>
-                    <Box sx={{ p: 1 }}>
-                      <Typography variant="caption" noWrap>
-                        {media.title ?? `#${media.id}`}
-                      </Typography>
-                    </Box>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                      </Box>
+                      <Box sx={{ p: 1 }}>
+                        <Typography variant="caption" noWrap>
+                          {media.title ?? `#${media.id}`}
+                        </Typography>
+                      </Box>
+                    </Card>
+                  </Box>
+                ))}
+            </Box>
           )}
         </DialogContent>
         <DialogActions>

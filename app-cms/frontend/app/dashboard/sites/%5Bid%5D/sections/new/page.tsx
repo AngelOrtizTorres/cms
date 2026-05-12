@@ -30,7 +30,7 @@ interface SectionFormData {
 export default function CreateSectionPage() {
   const router = useRouter();
   const params = useParams();
-  const siteId = params.id as string;
+  const siteId = params?.id as string | undefined;
 
   const [formData, setFormData] = useState<SectionFormData>({
     name: '',

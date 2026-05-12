@@ -235,11 +235,11 @@ export default function MediaPage() {
       ) : media.length === 0 ? (
         <Alert severity="info">No hay medios. ¡Sube algunos!</Alert>
       ) : (
-        <Grid container spacing={2}>
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' } }}>
           {media.map((mediaItem) => {
             const type = getMediaType(mediaItem.mime_type);
             return (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={mediaItem.id}>
+              <Box key={mediaItem.id}>
                 <Card
                   sx={{
                     height: '100%',
@@ -288,7 +288,7 @@ export default function MediaPage() {
                           backgroundColor: '#000',
                         }}
                       >
-                        <VideoIcon sx={{ fontSize: 48, color: '#fff' }} />
+                        <VideoIcon sx={{ fontSize: 48, color: (theme) => theme.palette.common.white }} />
                       </Box>
                     )}
                     <Box
@@ -308,7 +308,7 @@ export default function MediaPage() {
                           download
                           sx={{
                             backgroundColor: 'rgba(0,0,0,0.5)',
-                            color: 'white',
+                            color: (theme) => theme.palette.common.white,
                             '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
                           }}
                         >
@@ -321,7 +321,7 @@ export default function MediaPage() {
                           onClick={() => handleDelete(mediaItem.id)}
                           sx={{
                             backgroundColor: 'rgba(0,0,0,0.5)',
-                            color: 'white',
+                            color: (theme) => theme.palette.common.white,
                             '&:hover': { backgroundColor: 'rgba(244,67,54,0.9)' },
                           }}
                         >
@@ -353,10 +353,10 @@ export default function MediaPage() {
                     </Stack>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
             );
           })}
-        </Grid>
+        </Box>
       )}
 
       {/* Edit Dialog */}

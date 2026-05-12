@@ -134,31 +134,31 @@ export default function LoginPage() {
           maxWidth: 480,
           boxShadow: '0 10px 30px rgba(2,6,23,0.6)',
           bgcolor: 'rgba(10,12,15,0.92)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          color: '#ffffff',
+          border: (theme) => theme.palette.mode === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+          color: (theme) => theme.palette.text.primary,
           // force readable colors for form controls inside the login panel
-          '& .MuiTypography-root': { color: '#ffffff' },
-          '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.8)' },
-          '& .MuiInputBase-input': { color: '#ffffff' },
-          '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.72)' },
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' },
-          '& .MuiLink-root': { color: 'rgba(255,255,255,0.9)' },
-          '& .MuiFormControlLabel-label': { color: 'rgba(255,255,255,0.9)' },
-          '& input::placeholder, textarea::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 },
-          '& .MuiCheckbox-root': { color: 'rgba(255,255,255,0.9)' },
+          '& .MuiTypography-root': { color: (theme) => theme.palette.text.primary },
+          '& .MuiFormHelperText-root': { color: (theme) => theme.palette.text.secondary },
+          '& .MuiInputBase-input': { color: (theme) => theme.palette.text.primary },
+          '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: (theme) => theme.palette.divider },
+          '& .MuiLink-root': { color: (theme) => theme.palette.primary.main },
+          '& .MuiFormControlLabel-label': { color: (theme) => theme.palette.text.primary },
+          '& input::placeholder, textarea::placeholder': { color: (theme) => theme.palette.text.secondary, opacity: 1 },
+          '& .MuiCheckbox-root': { color: (theme) => theme.palette.text.primary },
           '& .MuiCheckbox-root.Mui-checked': { color: 'primary.main' },
-          '& .MuiCheckbox-root svg': { color: 'rgba(255,255,255,0.9)', fill: 'currentColor' },
-          '& .MuiCheckbox-root.Mui-checked svg': { color: '#fff', fill: '#fff' },
+          '& .MuiCheckbox-root svg': { color: (theme) => theme.palette.text.primary, fill: 'currentColor' },
+          '& .MuiCheckbox-root.Mui-checked svg': { color: (theme) => theme.palette.primary.main, fill: (theme) => theme.palette.primary.main },
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Avatar sx={{ m: 1, bgcolor: "primary.main", width: 64, height: 64 }}>
-            <LockOutlinedIcon sx={{ color: '#fff' }} />
+            <LockOutlinedIcon sx={{ color: 'inherit' }} />
           </Avatar>
-          <Typography component="h1" variant="h5" sx={{ color: '#fff' }}>
+          <Typography component="h1" variant="h5" sx={{ color: (theme) => theme.palette.text.primary }}>
             Acceder
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.78)', mb: 2 }}>
+          <Typography variant="body2" sx={{ color: (theme) => theme.palette.text.secondary, mb: 2 }}>
             Introduce tus credenciales
           </Typography>
 
@@ -184,10 +184,10 @@ export default function LoginPage() {
               error={Boolean(emailError)}
               helperText={emailError ?? ''}
               sx={{
-                '& .MuiInputBase-input': { color: '#ffffff' },
-                '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.72)' },
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' }
-              }}
+                  '& .MuiInputBase-input': { color: (theme) => theme.palette.text.primary },
+                  '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: (theme) => theme.palette.divider }
+                }}
             />
             <FormControl margin="normal" required fullWidth variant="outlined" error={Boolean(passwordError)}>
               <InputLabel htmlFor="password">Contraseña</InputLabel>
@@ -213,15 +213,15 @@ export default function LoginPage() {
                 }
                 label="Contraseña"
                 inputProps={{ name: 'password', 'aria-describedby': passwordError ? 'password-helper-text' : undefined }}
-                sx={{ '& input': { color: '#ffffff' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' } }}
+                sx={{ '& input': { color: (theme) => theme.palette.text.primary }, '& .MuiOutlinedInput-notchedOutline': { borderColor: (theme) => theme.palette.divider } }}
               />
-              {passwordError && <FormHelperText id="password-helper-text" sx={{ color: 'rgba(255,255,255,0.8)' }}>{passwordError}</FormHelperText>}
+              {passwordError && <FormHelperText id="password-helper-text" sx={{ color: (theme) => theme.palette.text.secondary }}>{passwordError}</FormHelperText>}
             </FormControl>
 
             <FormControlLabel
               control={<Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} color="primary" />}
               label="Recordarme"
-              sx={{ '& .MuiFormControlLabel-label': { color: 'rgba(255,255,255,0.9)' } }}
+              sx={{ '& .MuiFormControlLabel-label': { color: (theme) => theme.palette.text.primary } }}
             />
 
             <Button
@@ -255,7 +255,7 @@ export default function LoginPage() {
                 component={NextLink}
                 href="/forgot-password"
                   variant="body2"
-                  sx={{ color: 'rgba(255,255,255,0.9)' }}
+                  sx={{ color: (theme) => theme.palette.text.primary }}
               >
                 ¿Olvidaste la contraseña?
               </Link>

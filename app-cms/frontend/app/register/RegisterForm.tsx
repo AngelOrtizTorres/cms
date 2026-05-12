@@ -66,30 +66,30 @@ export default function RegisterForm() {
           maxWidth: 480,
           boxShadow: '0 10px 30px rgba(2,6,23,0.6)',
           bgcolor: 'rgba(10,12,15,0.92)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          color: '#ffffff',
-          '& .MuiTypography-root': { color: '#ffffff' },
-          '& .MuiFormHelperText-root': { color: 'rgba(255,255,255,0.8)' },
-          '& .MuiInputBase-input': { color: '#ffffff' },
-          '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.72)' },
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' },
-          '& .MuiLink-root': { color: 'rgba(255,255,255,0.9)' },
-          '& .MuiFormControlLabel-label': { color: 'rgba(255,255,255,0.9)' },
-          '& input::placeholder, textarea::placeholder': { color: 'rgba(255,255,255,0.6)', opacity: 1 },
-          '& .MuiCheckbox-root': { color: 'rgba(255,255,255,0.9)' },
+          border: (theme) => theme.palette.mode === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+          color: (theme) => theme.palette.text.primary,
+          '& .MuiTypography-root': { color: (theme) => theme.palette.text.primary },
+          '& .MuiFormHelperText-root': { color: (theme) => theme.palette.text.secondary },
+          '& .MuiInputBase-input': { color: (theme) => theme.palette.text.primary },
+          '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary },
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: (theme) => theme.palette.divider },
+          '& .MuiLink-root': { color: (theme) => theme.palette.primary.main },
+          '& .MuiFormControlLabel-label': { color: (theme) => theme.palette.text.primary },
+          '& input::placeholder, textarea::placeholder': { color: (theme) => theme.palette.text.secondary, opacity: 1 },
+          '& .MuiCheckbox-root': { color: (theme) => theme.palette.text.primary },
           '& .MuiCheckbox-root.Mui-checked': { color: 'primary.main' },
-          '& .MuiCheckbox-root svg': { color: 'rgba(255,255,255,0.9)', fill: 'currentColor' },
-          '& .MuiCheckbox-root.Mui-checked svg': { color: '#fff', fill: '#fff' },
+          '& .MuiCheckbox-root svg': { color: (theme) => theme.palette.text.primary, fill: 'currentColor' },
+          '& .MuiCheckbox-root.Mui-checked svg': { color: (theme) => theme.palette.primary.main, fill: (theme) => theme.palette.primary.main },
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 64, height: 64 }}>
-            <LockOutlinedIcon sx={{ color: '#fff' }} />
+            <LockOutlinedIcon sx={{ color: 'inherit' }} />
           </Avatar>
-          <Typography component="h1" variant="h5" sx={{ color: '#fff' }}>
+          <Typography component="h1" variant="h5" sx={{ color: (theme) => theme.palette.text.primary }}>
             Hola
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.78)', mb: 2 }}>
+          <Typography variant="body2" sx={{ color: (theme) => theme.palette.text.secondary, mb: 2 }}>
             Completa la información para crear la cuenta de administrador del sitio.
           </Typography>
 
@@ -99,9 +99,9 @@ export default function RegisterForm() {
             </Alert>
           )}
 
-          <TextField label="Título del sitio" fullWidth value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} sx={{ mb: 2, '& .MuiInputBase-input': { color: '#ffffff' }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.72)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' } }} />
+          <TextField label="Título del sitio" fullWidth value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} sx={{ mb: 2, '& .MuiInputBase-input': { color: (theme) => theme.palette.text.primary }, '& .MuiInputLabel-root': { color: (theme) => theme.palette.text.secondary }, '& .MuiOutlinedInput-notchedOutline': { borderColor: (theme) => theme.palette.divider } }} />
 
-          <TextField label="Nombre de usuario" fullWidth required value={name} onChange={(e) => setName(e.target.value)} sx={{ mb: 2, '& .MuiInputBase-input': { color: '#ffffff' } }} />
+          <TextField label="Nombre de usuario" fullWidth required value={name} onChange={(e) => setName(e.target.value)} sx={{ mb: 2, '& .MuiInputBase-input': { color: (theme) => theme.palette.text.primary } }} />
 
           <TextField
             type="password"
@@ -111,7 +111,7 @@ export default function RegisterForm() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            sx={{ mb: 1, '& input': { color: '#ffffff' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.06)' } }}
+            sx={{ mb: 1, '& input': { color: (theme) => theme.palette.text.primary }, '& .MuiOutlinedInput-notchedOutline': { borderColor: (theme) => theme.palette.divider } }}
           />
 
           <TextField
@@ -122,10 +122,10 @@ export default function RegisterForm() {
             autoComplete="new-password"
             value={passwordConfirmation}
             onChange={(e) => setPasswordConfirmation(e.target.value)}
-            sx={{ mb: 2, '& input': { color: '#ffffff' } }}
+            sx={{ mb: 2, '& input': { color: (theme) => theme.palette.text.primary } }}
           />
 
-          <TextField type="email" label="Tu correo electrónico" fullWidth required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2, '& input': { color: '#ffffff' } }} />
+          <TextField type="email" label="Tu correo electrónico" fullWidth required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2, '& input': { color: (theme) => theme.palette.text.primary } }} />
 
           <FormControlLabel control={<Checkbox checked={noIndex} onChange={(e) => setNoIndex(e.target.checked)} color="primary" />} label="Pedir a los motores de búsqueda que no indexen este sitio" sx={{ mb: 2 }} />
 
@@ -146,7 +146,7 @@ export default function RegisterForm() {
             href="/login"
             fullWidth
             variant="text"
-            sx={{ mt: 1, color: 'rgba(255,255,255,0.9)', textTransform: 'none' }}
+            sx={{ mt: 1, color: (theme) => theme.palette.text.secondary, textTransform: 'none' }}
             aria-label="Iniciar sesión"
           >
             Iniciar sesión

@@ -87,111 +87,114 @@ export default function MuiProviders({
 
   const toggleMode = () => setMode((m) => (m === "light" ? "dark" : "light"));
 
-  const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode,
-          primary: {
-            main: primaryColor,
-          },
-          text: {
-            primary: mode === 'light' ? '#111111' : '#ffffff',
-          },
-          background: {
-            default: mode === "light" ? "#f5f5f5" : "#121212",
+  const theme = useMemo(() => {
+    const base = createTheme({
+      palette: {
+        mode,
+        primary: {
+          main: primaryColor,
+          contrastText: '#ffffff',
+        },
+        text: {
+          primary: mode === 'light' ? '#111111' : '#ffffff',
+        },
+        background: {
+          default: mode === 'light' ? '#f5f5f5' : '#121212',
+        },
+      },
+      typography: {
+        fontFamily:
+          '"Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        button: { textTransform: 'none' },
+      },
+      shape: { borderRadius: 0 },
+    });
+
+    return createTheme(base, {
+      components: {
+        MuiCssBaseline: {
+          styleOverrides: {
+            body: {},
           },
         },
-        typography: {
-          // WordPress admin uses a humanist sans; use Open Sans stack
-          fontFamily:
-            '"Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          button: { textTransform: "none" },
+        MuiTypography: {
+          styleOverrides: {
+            root: {},
+          },
         },
-        shape: { borderRadius: 0 },
-        components: {
-          MuiCssBaseline: {
-            styleOverrides: {
-              body: {},
+        MuiTableCell: {
+          styleOverrides: {
+            root: {},
+          },
+        },
+        MuiInputBase: {
+          styleOverrides: {
+            root: {},
+            input: {},
+          },
+        },
+        MuiOutlinedInput: {
+          styleOverrides: {
+            input: {},
+          },
+        },
+        MuiInputLabel: {
+          styleOverrides: {
+            root: {},
+          },
+        },
+        MuiFormHelperText: {
+          styleOverrides: {
+            root: {
+              color: mode === 'light' ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.72)',
             },
           },
-          MuiTypography: {
-            styleOverrides: {
-              root: {},
+        },
+        MuiPaper: {
+          styleOverrides: {
+            root: {
+              borderRadius: 0,
+              backgroundColor: base.palette.mode === 'light' ? '#ffffff' : 'rgba(10,12,15,0.96)',
+              color: base.palette.text.primary,
             },
           },
-          MuiTableCell: {
-            styleOverrides: {
-              root: {},
+        },
+        MuiCard: {
+          styleOverrides: {
+            root: {
+              borderRadius: 0,
+              color: base.palette.text.primary,
             },
           },
-          MuiInputBase: {
-            styleOverrides: {
-              root: {},
-              input: {},
-            },
-          },
-          MuiOutlinedInput: {
-            styleOverrides: {
-              input: {},
-            },
-          },
-          MuiInputLabel: {
-            styleOverrides: {
-              root: {},
-            },
-          },
-          MuiFormHelperText: {
-            styleOverrides: {
-              root: {
-                color: mode === "light" ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.72)",
-              },
-            },
-          },
-          MuiPaper: {
-            styleOverrides: {
-              root: {
-                borderRadius: 0,
-                backgroundColor: mode === 'light' ? '#ffffff' : 'rgba(10,12,15,0.96)'
-              },
-            },
-          },
-          MuiCard: {
-            styleOverrides: {
-              root: {
-                borderRadius: 0,
-              },
-            },
-          },
-          MuiButton: {
-            styleOverrides: {
-              root: {
-                borderRadius: 0,
-                color: mode === "light" ? "#111111" : "#ffffff",
-                boxShadow: 'none',
-                "&.MuiButton-containedPrimary": {
-                  backgroundColor: primaryColor,
-                  color: "#fff",
-                  "&:hover": {
-                    backgroundColor: "#006799",
-                  },
+        },
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              borderRadius: 0,
+              boxShadow: 'none',
+              color: base.palette.mode === 'light' ? '#111111' : '#ffffff',
+              '&.MuiButton-containedPrimary': {
+                backgroundColor: primaryColor,
+                color: base.palette.primary.contrastText,
+                '&:hover': {
+                  backgroundColor: '#006799',
                 },
               },
             },
           },
-          MuiAppBar: {
-            styleOverrides: {
-              root: {
-                borderRadius: 0,
-                boxShadow: "none",
-                backgroundColor: mode === 'light' ? '#23282d' : '#23282d',
-              },
+        },
+        MuiAppBar: {
+          styleOverrides: {
+            root: {
+              borderRadius: 0,
+              boxShadow: 'none',
+              backgroundColor: '#23282d',
             },
           },
         },
-      }),
-    [mode, primaryColor],
-  );
+      },
+    });
+  }, [mode, primaryColor]);
 
   const value: ThemeSettings = {
     mode,

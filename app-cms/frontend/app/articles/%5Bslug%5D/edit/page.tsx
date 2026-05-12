@@ -29,7 +29,7 @@ interface Article {
 export default function EditArticlePage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = params?.slug as string | undefined;
 
   const [article, setArticle] = useState<Article | null>(null);
   const [formData, setFormData] = useState({
