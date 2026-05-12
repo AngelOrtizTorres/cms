@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\MediaFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 
 class MediaController extends Controller
@@ -51,19 +52,30 @@ class MediaController extends Controller
 
     public function store(Request $request)
     {
-        // Check authentication with fallbacks
+        // Check authentication - allow any authenticated request for now
+        // In production, should verify user ownership of site
         $user = Auth::guard('web')->user();
 
+        Log::debug('MediaController::store - Auth attempt', [
+            'user_id' => $user ? $user->id : null,
+            'auth_check' => Auth::check(),
+            'session_id' => $request->session()->getId(),
+        ]);
+
+        // For now, allow uploads if bearer token exists or session has user
         if (!$user) {
-            // Try bearer token if session didn't work
             $token = $request->bearerToken();
             if ($token) {
                 $user = User::where('api_token', $token)->first();
-                if ($user) Auth::login($user);
+                if ($user) {
+                    Auth::login($user);
+                }
             }
         }
 
-        if (!$user && !Auth::check()) {
+        // Require authentication - if still no user, reject
+        if (!$user) {
+            Log::warning('MediaController::store - No authentication found');
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -75,7 +87,7 @@ class MediaController extends Controller
         $path = $file->store('media', 'public');
 
         $media = MediaFile::create([
-            'user_id' => Auth::id(),
+            'user_id' => $user->id,
             'name' => $file->getClientOriginalName(),
             'file_name' => $path,
             'disk' => 'public',
@@ -106,11 +118,13 @@ class MediaController extends Controller
             $token = $request->bearerToken();
             if ($token) {
                 $user = User::where('api_token', $token)->first();
-                if ($user) Auth::login($user);
+                if ($user) {
+                    Auth::login($user);
+                }
             }
         }
 
-        if (!$user && !Auth::check()) {
+        if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

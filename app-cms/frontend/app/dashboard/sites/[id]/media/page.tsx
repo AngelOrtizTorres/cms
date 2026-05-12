@@ -95,7 +95,7 @@ export default function MediaLibraryPage() {
       q.set('page', String(p));
       if (search) q.set('search', search);
       if (filterType !== 'all') q.set('type', filterType);
-      const url = `/sites/${siteId}/media?${q.toString()}`;
+      const url = `/media?${q.toString()}`;
       const res = await apiGet(url);
       const list = parseList(res);
       if (append) setItems(prev => [...prev, ...list]); else setItems(list);
@@ -150,7 +150,7 @@ export default function MediaLibraryPage() {
         const form = new FormData();
         form.append('file', f);
         form.append('title', f.name);
-        const url = siteId ? `/sites/${siteId}/media` : '/media';
+        const url = '/media';
         await apiPostFormData(url, form);
       }
       if (invalid.length) setError(invalid.join('\n'));
@@ -171,7 +171,7 @@ export default function MediaLibraryPage() {
     if (!confirm(`Eliminar ${ids.length} archivos?`)) return;
     try {
       for (const id of ids) {
-        const url = siteId ? `/sites/${siteId}/media/${id}` : `/media/${id}`;
+        const url = `/media/${id}`;
         await apiDelete(url);
       }
       setSelected({});
@@ -187,7 +187,7 @@ export default function MediaLibraryPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Eliminar este archivo?')) return;
     try {
-      await apiDelete(`/sites/${siteId}/media/${id}`);
+      await apiDelete(`/media/${id}`);
       setItems(prev => prev.filter(p => p.id !== id));
     } catch (err) { console.error(err); setError('No se pudo eliminar'); }
   };
