@@ -108,4 +108,23 @@ class SectionController extends Controller
 
         return response()->json(['message' => 'Categoría eliminada']);
     }
+
+    /**
+     * Batch reorder sections: accepts [{ id, position }, ...]
+     * Only the site owner (author) or admin who owns the site may reorder.
+     */
+    public function reorder(Request $request)
+    {
+        $items = $request->validate([
+            'items'            => 'required|array',
+            'items.*.id'       => 'required|integer|exists:sections,id',
+            'items.*.position' => 'required|integer|min:0',
+        ])['items'];
+
+        foreach ($items as $item) {
+            Section::where('id', $item['id'])->update(['position' => $item['position']]);
+        }
+
+        return response()->json(['message' => 'Orden actualizado']);
+    }
 }

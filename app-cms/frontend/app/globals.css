@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --muted: rgba(0,0,0,0.72);
+  --muted: rgba(0, 0, 0, 0.72);
   --primary: #0073aa;
 }
 
@@ -11,7 +11,7 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-    --muted: rgba(255,255,255,0.72);
+    --muted: rgba(255, 255, 255, 0.72);
     --primary: #039be5;
   }
 }
@@ -19,7 +19,8 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    "Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Minor utility overrides */
@@ -71,31 +72,7 @@ textarea::placeholder {
   color: var(--appbar-text, inherit);
 }
 
-/* Scoped: force readable text inside the main content area only */
-#__next main, #__next main * {
-  color: #111111 !important;
-  -webkit-text-fill-color: #111111 !important;
-  opacity: 1 !important;
-  filter: none !important;
-  mix-blend-mode: normal !important;
-  text-shadow: none !important;
-}
-
-/* Placeholders inside main should also be dark */
-#__next main input::placeholder,
-#__next main textarea::placeholder,
-#__next main .MuiInputBase-input::placeholder,
-#__next main .MuiOutlinedInput-input::placeholder {
-  color: #111111 !important;
-  opacity: 1 !important;
-}
-
-/* Table headers and alert messages inside main */
-#__next main .MuiTableCell-root,
-#__next main .MuiTableCell-head,
-#__next main .MuiAlert-message {
-  color: #111111 !important;
-}
+/* Note: #__next does not exist in Next.js App Router — selectors removed */
 
 /* Drawer/sidebar: prefer theme-controlled color, avoid forcing white */
 .MuiDrawer-paper {

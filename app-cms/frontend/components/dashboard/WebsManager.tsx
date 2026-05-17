@@ -25,7 +25,7 @@ import {
   Alert,
   useMediaQuery,
 } from "@mui/material";
-import { useTheme } from '@mui/material/styles';
+import { useTheme } from "@mui/material/styles";
 import NextLink from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPostFormData, apiDelete } from "@/lib/api";
@@ -66,21 +66,35 @@ export default function WebsManager() {
       let url = "/sites";
       if (auth.user?.role === "author") url += `?owner=${auth.user.id}`;
       const res = await apiGet<Site[]>(url);
-      const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const isRecord = (v: unknown): v is Record<string, unknown> =>
+        typeof v === "object" && v !== null;
       const list: Site[] = Array.isArray(res)
         ? (res as unknown as Site[])
-        : (isRecord(res) && Array.isArray((res as Record<string, unknown>)['data']) ? ((res as Record<string, unknown>)['data'] as unknown as Site[]) : []);
+        : isRecord(res) &&
+            Array.isArray((res as Record<string, unknown>)["data"])
+          ? ((res as Record<string, unknown>)["data"] as unknown as Site[])
+          : [];
       setSites(list as Site[]);
     } catch (err: unknown) {
       // Evitar log ruidoso en consola para 401 Unauthenticated
       const eAny = err as any;
-      const unauth = (eAny && typeof eAny === 'object' && 'status' in eAny && eAny['status'] === 401) || String((eAny?.message || eAny?.data?.message || '')).toLowerCase().includes('unauthenticated');
+      const unauth =
+        (eAny &&
+          typeof eAny === "object" &&
+          "status" in eAny &&
+          eAny["status"] === 401) ||
+        String(eAny?.message || eAny?.data?.message || "")
+          .toLowerCase()
+          .includes("unauthenticated");
       if (unauth) {
-        setError('No autenticado');
+        setError("No autenticado");
         setSites([]);
       } else {
         console.error("Error fetching sites", eAny?.message ?? err);
-        const msg = (typeof eAny === 'object' && eAny !== null && 'message' in eAny) ? String(eAny.message) : 'Error fetching sites';
+        const msg =
+          typeof eAny === "object" && eAny !== null && "message" in eAny
+            ? String(eAny.message)
+            : "Error fetching sites";
         setError(msg);
       }
     } finally {
@@ -91,25 +105,36 @@ export default function WebsManager() {
   useEffect(() => {
     // No llamar a la API hasta que sepamos si la sesión está verificada o exista un usuario en localStorage
     if (!auth.sessionVerified && !auth.user) return;
-    const load = async () => { await fetchSites(); };
+    const load = async () => {
+      await fetchSites();
+    };
     load();
   }, [auth.user?.id, auth.sessionVerified]);
 
   const theme = useTheme();
-  const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
+  const isMdDown = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     if (showCreate) setTimeout(() => createTitleRef.current?.focus(), 30);
   }, [showCreate]);
 
   const filtered = sites.filter((s) => {
-    const titleMatch = !filterTitle || (s.title || "").toLowerCase().includes(filterTitle.toLowerCase());
-    const domainMatch = !filterDomain || ((s.domain || "") as string).toLowerCase().includes(filterDomain.toLowerCase());
+    const titleMatch =
+      !filterTitle ||
+      (s.title || "").toLowerCase().includes(filterTitle.toLowerCase());
+    const domainMatch =
+      !filterDomain ||
+      ((s.domain || "") as string)
+        .toLowerCase()
+        .includes(filterDomain.toLowerCase());
     const emailField = (s.creator_email || "").toString();
-    const emailMatch = !filterEmail || emailField.toLowerCase().includes(filterEmail.toLowerCase());
+    const emailMatch =
+      !filterEmail ||
+      emailField.toLowerCase().includes(filterEmail.toLowerCase());
 
     const baseMatches = titleMatch && domainMatch && emailMatch;
-    if (auth.user?.role === "author") return baseMatches && Number(s.owner_id) === Number(auth.user.id);
+    if (auth.user?.role === "author")
+      return baseMatches && Number(s.owner_id) === Number(auth.user.id);
     return baseMatches;
   });
 
@@ -117,13 +142,34 @@ export default function WebsManager() {
     const role = auth.user?.role;
     if (!auth.user) return false;
     if (role === "admin") return true;
-    if (role === "author") return Number(site.owner_id) === Number(auth.user?.id);
+    if (role === "author")
+      return Number(site.owner_id) === Number(auth.user?.id);
     return false;
   };
 
+  const canDelete = (site: Site) => {
+    const role = auth.user?.role;
+    if (!auth.user) return false;
+    if (role === "admin") return true;
+    if (role === "author")
+      return Number(site.owner_id) === Number(auth.user?.id);
+    return false;
+  };
+
+  // "Entrar" al panel de gestión solo si el usuario es dueño del sitio
+  // (admin y author: solo sus propios sitios; editor: solo con permisos, pendiente API)
+  const canEnter = (site: Site) => {
+    if (!auth.user) return false;
+    return Number(site.owner_id) === Number(auth.user.id);
+  };
+
+  const canCreateSite =
+    auth.user?.role === "admin" || auth.user?.role === "author";
+
   const handleCreate = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!title || !description || !contactEmail) return setError("Rellena título, descripción y email");
+    if (!title || !description || !contactEmail)
+      return setError("Rellena título, descripción y email");
     setCreating(true);
     setError(null);
     try {
@@ -145,7 +191,10 @@ export default function WebsManager() {
       await fetchSites();
     } catch (err: unknown) {
       console.error(err);
-      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error creando la web';
+      const msg =
+        typeof err === "object" && err !== null && "message" in err
+          ? String((err as Record<string, unknown>)["message"])
+          : "Error creando la web";
       setError(msg);
     } finally {
       setCreating(false);
@@ -160,21 +209,49 @@ export default function WebsManager() {
       await fetchSites();
     } catch (err: unknown) {
       console.error(err);
-      const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error eliminando la web';
+      const msg =
+        typeof err === "object" && err !== null && "message" in err
+          ? String((err as Record<string, unknown>)["message"])
+          : "Error eliminando la web";
       setError(msg);
     }
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom>Webs</Typography>
+      <Typography variant="h4" gutterBottom>
+        Webs
+      </Typography>
 
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2, mb: 2 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" },
+          gap: 2,
+          mb: 2,
+        }}
+      >
         <style>{`#webs-filters .MuiInputBase-input::placeholder { color: rgba(0,0,0,0.45) !important; opacity: 1 !important; }`}</style>
-        <Box id="webs-filters" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box
+          id="webs-filters"
+          sx={{
+            display: "flex",
+            gap: 1,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           <TextField
             size="small"
             placeholder="Título"
@@ -182,8 +259,12 @@ export default function WebsManager() {
             onChange={(e) => setFilterTitle(e.target.value)}
             sx={{
               minWidth: 200,
-              '& .MuiInputBase-input::placeholder': { color: 'rgba(0,0,0,0.45)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.12)' },
+              "& .MuiInputBase-input::placeholder": {
+                color: "rgba(0,0,0,0.45)",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(0,0,0,0.12)",
+              },
             }}
           />
           <TextField
@@ -193,8 +274,12 @@ export default function WebsManager() {
             onChange={(e) => setFilterDomain(e.target.value)}
             sx={{
               minWidth: 160,
-              '& .MuiInputBase-input::placeholder': { color: 'rgba(0,0,0,0.45)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.12)' },
+              "& .MuiInputBase-input::placeholder": {
+                color: "rgba(0,0,0,0.45)",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(0,0,0,0.12)",
+              },
             }}
           />
           <TextField
@@ -204,38 +289,114 @@ export default function WebsManager() {
             onChange={(e) => setFilterEmail(e.target.value)}
             sx={{
               minWidth: 200,
-              '& .MuiInputBase-input::placeholder': { color: 'rgba(0,0,0,0.45)' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.12)' },
+              "& .MuiInputBase-input::placeholder": {
+                color: "rgba(0,0,0,0.45)",
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "rgba(0,0,0,0.12)",
+              },
             }}
           />
-          <Button variant="outlined" onClick={() => { setFilterTitle(''); setFilterDomain(''); setFilterEmail(''); }}>Limpiar</Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setFilterTitle("");
+              setFilterDomain("");
+              setFilterEmail("");
+            }}
+          >
+            Limpiar
+          </Button>
         </Box>
-        <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-          <Button variant="contained" onClick={() => { setTitle(''); setDomain(''); setDescription(''); setContactEmail(''); setIconFile(null); setShowCreate(true); }}>Crear web</Button>
+        <Box sx={{ textAlign: { xs: "left", md: "right" } }}>
+          {canCreateSite && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                setTitle("");
+                setDomain("");
+                setDescription("");
+                setContactEmail("");
+                setIconFile(null);
+                setShowCreate(true);
+              }}
+            >
+              Crear web
+            </Button>
+          )}
         </Box>
       </Box>
 
       {isMdDown ? (
-        <Box sx={{ display: 'grid', gap: 2 }}>
+        <Box sx={{ display: "grid", gap: 2 }}>
           {loading ? (
             <Paper sx={{ p: 2 }}>Cargando...</Paper>
           ) : filtered.length === 0 ? (
             <Paper sx={{ p: 2 }}>No hay webs</Paper>
           ) : (
             filtered.map((s) => (
-              <Paper key={s.id} sx={{ p: 2, borderLeft: `4px solid ${theme.palette.info?.main || '#0288d1'}` }} elevation={1}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+              <Paper
+                key={s.id}
+                sx={{
+                  p: 2,
+                  borderLeft: `4px solid ${theme.palette.info?.main || "#0288d1"}`,
+                }}
+                elevation={1}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 2,
+                  }}
+                >
                   <Box>
                     <Typography variant="subtitle1">{s.title}</Typography>
-                    <Typography variant="caption" color="text.secondary">{s.description}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {s.description}
+                    </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                     {s.domain ? (
-                      <Button size="small" component={NextLink} href={`https://${s.domain}`} sx={{ mr: 1 }}>Ver</Button>
+                      <Button
+                        size="small"
+                        component={NextLink}
+                        href={`https://${s.domain}`}
+                        sx={{ mr: 1 }}
+                      >
+                        Ver
+                      </Button>
                     ) : null}
-                    <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}`} sx={{ mr: 1 }}>Entrar</Button>
-                    <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}/edit`} sx={{ mr: 1 }}>Editar</Button>
-                    <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
+                    {canEnter(s) && (
+                      <Button
+                        size="small"
+                        component={NextLink}
+                        href={`/dashboard/sites/${s.slug ?? s.id}`}
+                        sx={{ mr: 1 }}
+                      >
+                        Entrar
+                      </Button>
+                    )}
+                    {canEdit(s) && (
+                      <Button
+                        size="small"
+                        component={NextLink}
+                        href={`/dashboard/sites/${s.slug ?? s.id}/edit`}
+                        sx={{ mr: 1 }}
+                      >
+                        Editar
+                      </Button>
+                    )}
+                    {canDelete(s) && (
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => handleDelete(s.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    )}
                   </Box>
                 </Box>
               </Paper>
@@ -256,49 +417,136 @@ export default function WebsManager() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={4}>No hay webs</TableCell></TableRow>
-                ) : filtered.map((s) => (
-                  <TableRow key={s.id} hover>
-                    <TableCell>
-                      <Typography>{s.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">{s.description}</Typography>
-                    </TableCell>
-                    <TableCell>{s.creator_email || s.owner_id}</TableCell>
-                    <TableCell>{s.domain || '-'}</TableCell>
-                    <TableCell align="right">
-                      {s.domain ? (
-                        <Button size="small" component={NextLink} href={`https://${s.domain}`} sx={{ mr: 1 }}>Ver</Button>
-                      ) : null}
-                      <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}`} sx={{ mr: 1 }}>Entrar</Button>
-                      <Button size="small" component={NextLink} href={`/dashboard/sites/${s.slug ?? s.id}/edit`} sx={{ mr: 1 }}>Editar</Button>
-                      <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Eliminar</Button>
-                    </TableCell>
+                  <TableRow>
+                    <TableCell colSpan={4}>Cargando...</TableCell>
                   </TableRow>
-                ))}
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4}>No hay webs</TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((s) => (
+                    <TableRow key={s.id} hover>
+                      <TableCell>
+                        <Typography>{s.title}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {s.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{s.creator_email || s.owner_id}</TableCell>
+                      <TableCell>{s.domain || "-"}</TableCell>
+                      <TableCell align="right">
+                        {s.domain ? (
+                          <Button
+                            size="small"
+                            component={NextLink}
+                            href={`https://${s.domain}`}
+                            sx={{ mr: 1 }}
+                          >
+                            Ver
+                          </Button>
+                        ) : null}
+                        {canEnter(s) && (
+                          <Button
+                            size="small"
+                            component={NextLink}
+                            href={`/dashboard/sites/${s.slug ?? s.id}`}
+                            sx={{ mr: 1 }}
+                          >
+                            Entrar
+                          </Button>
+                        )}
+                        {canEdit(s) && (
+                          <Button
+                            size="small"
+                            component={NextLink}
+                            href={`/dashboard/sites/${s.slug ?? s.id}/edit`}
+                            sx={{ mr: 1 }}
+                          >
+                            Editar
+                          </Button>
+                        )}
+                        {canDelete(s) && (
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() => handleDelete(s.id)}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
         </Paper>
       )}
 
-      <Dialog open={showCreate} onClose={() => setShowCreate(false)} fullWidth maxWidth="sm" aria-labelledby="create-site-title">
+      <Dialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="create-site-title"
+      >
         <DialogTitle id="create-site-title">Crear web</DialogTitle>
         <DialogContent>
-          <Box component="form" onSubmit={handleCreate} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField inputRef={createTitleRef} label="Título" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth autoFocus />
-            <TextField label="Dominio (opcional)" value={domain} onChange={(e) => setDomain(e.target.value)} fullWidth />
-            <TextField label="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline rows={3} />
-            <TextField label="Correo de contacto" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} fullWidth />
-            <Button variant="outlined" component="label">Subir icono
-              <input hidden accept="image/*" type="file" onChange={(e) => setIconFile(e.target.files?.[0] ?? null)} />
+          <Box
+            component="form"
+            onSubmit={handleCreate}
+            sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+          >
+            <TextField
+              inputRef={createTitleRef}
+              label="Título"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              fullWidth
+              autoFocus
+            />
+            <TextField
+              label="Dominio (opcional)"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Descripción"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              fullWidth
+              multiline
+              rows={3}
+            />
+            <TextField
+              label="Correo de contacto"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              fullWidth
+            />
+            <Button variant="outlined" component="label">
+              Subir icono
+              <input
+                hidden
+                accept="image/*"
+                type="file"
+                onChange={(e) => setIconFile(e.target.files?.[0] ?? null)}
+              />
             </Button>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowCreate(false)}>Cancelar</Button>
-          <Button onClick={handleCreate} variant="contained" disabled={creating || !auth.user || !auth.sessionVerified}>{creating ? 'Creando...' : 'Crear'}</Button>
+          <Button
+            onClick={handleCreate}
+            variant="contained"
+            disabled={creating || !auth.user || !auth.sessionVerified}
+          >
+            {creating ? "Creando..." : "Crear"}
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

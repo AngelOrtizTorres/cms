@@ -93,19 +93,19 @@ export default function MuiProviders({
         mode,
         primary: {
           main: primaryColor,
-          contrastText: '#ffffff',
+          contrastText: "#ffffff",
         },
         text: {
-          primary: mode === 'light' ? '#111111' : '#ffffff',
+          primary: mode === "light" ? "#111111" : "#ffffff",
         },
         background: {
-          default: mode === 'light' ? '#f5f5f5' : '#121212',
+          default: mode === "light" ? "#f5f5f5" : "#121212",
         },
       },
       typography: {
         fontFamily:
-          '"Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        button: { textTransform: 'none' },
+          'var(--font-inter, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)',
+        button: { textTransform: "none" },
       },
       shape: { borderRadius: 0 },
     });
@@ -146,7 +146,8 @@ export default function MuiProviders({
         MuiFormHelperText: {
           styleOverrides: {
             root: {
-              color: mode === 'light' ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.72)',
+              color:
+                mode === "light" ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.72)",
             },
           },
         },
@@ -154,7 +155,10 @@ export default function MuiProviders({
           styleOverrides: {
             root: {
               borderRadius: 0,
-              backgroundColor: base.palette.mode === 'light' ? '#ffffff' : 'rgba(10,12,15,0.96)',
+              backgroundColor:
+                base.palette.mode === "light"
+                  ? "#ffffff"
+                  : "rgba(10,12,15,0.96)",
               color: base.palette.text.primary,
             },
           },
@@ -171,13 +175,12 @@ export default function MuiProviders({
           styleOverrides: {
             root: {
               borderRadius: 0,
-              boxShadow: 'none',
-              color: base.palette.mode === 'light' ? '#111111' : '#ffffff',
-              '&.MuiButton-containedPrimary': {
+              boxShadow: "none",
+              "&.MuiButton-containedPrimary": {
                 backgroundColor: primaryColor,
                 color: base.palette.primary.contrastText,
-                '&:hover': {
-                  backgroundColor: '#006799',
+                "&:hover": {
+                  backgroundColor: "#006799",
                 },
               },
             },
@@ -187,8 +190,8 @@ export default function MuiProviders({
           styleOverrides: {
             root: {
               borderRadius: 0,
-              boxShadow: 'none',
-              backgroundColor: '#23282d',
+              boxShadow: "none",
+              backgroundColor: "#23282d",
             },
           },
         },

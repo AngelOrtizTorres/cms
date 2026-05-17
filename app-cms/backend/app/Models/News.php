@@ -14,6 +14,7 @@ class News extends Model
 
     protected $fillable = [
         'site_id',
+        'primary_section_id',
         'title',
         'slug',
         'status',
@@ -27,5 +28,17 @@ class News extends Model
     public function site()
     {
         return $this->belongsTo(Site::class);
+    }
+
+    public function primarySection()
+    {
+        return $this->belongsTo(Section::class, 'primary_section_id');
+    }
+
+    public function sections()
+    {
+        return $this->belongsToMany(Section::class, 'news_section')
+            ->withPivot('position')
+            ->orderByPivot('position');
     }
 }

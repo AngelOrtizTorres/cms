@@ -64,6 +64,7 @@ Route::get('/sites/{id}/capabilities', [SiteController::class, 'capabilities']);
 Route::get('/sections', [SectionController::class, 'index']);
 Route::get('/sections/{id}', [SectionController::class, 'show']);
 Route::post('/sections', [SectionController::class, 'store']);
+Route::put('/sections/reorder', [SectionController::class, 'reorder']);
 Route::put('/sections/{id}', [SectionController::class, 'update']);
 Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
 
@@ -95,6 +96,7 @@ Route::post('/sites/{siteId}/banners', [BannerController::class, 'siteStore']);
 // Sections por sitio (acepta id numérico o slug)
 Route::get('/sites/{siteId}/sections', [SectionController::class, 'index']);
 Route::post('/sites/{siteId}/sections', [SectionController::class, 'store']);
+Route::put('/sites/{siteId}/sections/reorder', [SectionController::class, 'reorder']);
 
 // Media
 Route::get('/media', [MediaController::class, 'index']);

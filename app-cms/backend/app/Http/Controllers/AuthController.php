@@ -225,11 +225,25 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales inválidas'], 401);
         }
 
-        $request->session()->regenerate();
+        try {
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
+        } catch (\Throwable $e) {
+            // session not available in API context
+        }
+
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $role = $this->resolveUserRole($user) ?? 'user';
 
+        // Also generate an api_token so the SPA can use bearer auth as fallback
+        $token = bin2hex(random_bytes(40));
+        $user->api_token = $token;
+        $user->save();
+
         return response()->json([
+            'token' => $token,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -244,9 +258,35 @@ class AuthController extends Controller
      */
     public function logoutSession(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        try {
+            Auth::logout();
+        } catch (\Throwable $e) {
+            // ignore if no auth guard is active
+        }
+
+        // Session may not be available when running under API middleware
+        try {
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        } catch (\Throwable $e) {
+            // ignore session errors in API context
+        }
+
+        // Also invalidate token if sent
+        try {
+            $token = $request->bearerToken();
+            if ($token) {
+                $user = User::where('api_token', $token)->first();
+                if ($user) {
+                    $user->api_token = null;
+                    $user->save();
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
 
         return response()->json(['message' => 'Logged out']);
     }

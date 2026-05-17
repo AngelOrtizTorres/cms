@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('sections')) return;
         Schema::table('sections', function (Blueprint $table) {
             // Agregar columna content para bloques JSON si no existe
             if (!Schema::hasColumn('sections', 'content')) {
@@ -18,6 +19,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (!Schema::hasTable('sections')) return;
         Schema::table('sections', function (Blueprint $table) {
             if (Schema::hasColumn('sections', 'content')) {
                 $table->dropColumn('content');
