@@ -269,8 +269,6 @@ class ArticleController extends Controller
         $article->sections()->sync($sections);
 
         return response()->json($article->load(['primarySection', 'sections', 'user', 'tags']), 201);
-
-        return response()->json($article->load(['section', 'user', 'tags']), 201);
     }
 
     /**
@@ -308,6 +306,11 @@ class ArticleController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        $role = $user->role ?? 'user';
+        if ($role !== 'admin' && (int) $article->user_id !== (int) $user->id) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
         $article->update($validated);
 
         if ($request->has('tags')) {
@@ -343,6 +346,11 @@ class ArticleController extends Controller
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $role = $user->role ?? 'user';
+        if ($role !== 'admin' && (int) $article->user_id !== (int) $user->id) {
+            return response()->json(['error' => 'Forbidden'], 403);
         }
 
         $article->delete();

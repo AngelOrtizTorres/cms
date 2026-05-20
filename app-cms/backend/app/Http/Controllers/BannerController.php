@@ -72,7 +72,7 @@ class BannerController extends Controller
             $file = $request->file('image');
             try {
                 $path = $file->store('banners', 'public');
-                $data['image_url'] = Storage::disk('public')->url($path);
+                $data['image_url'] = Storage::url($path);
             } catch (\Exception $e) {
                 // ignore storage errors and fallback to provided image_url if any
             }
@@ -132,7 +132,7 @@ class BannerController extends Controller
             $file = $request->file('image');
             try {
                 $path = $file->store('banners', 'public');
-                $data['image_url'] = Storage::disk('public')->url($path);
+                $data['image_url'] = Storage::url($path);
             } catch (\Exception $e) {
                 // ignore storage errors
             }

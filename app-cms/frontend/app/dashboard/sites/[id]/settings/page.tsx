@@ -17,35 +17,71 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormLabel from "@mui/material/FormLabel";
 import Radio from "@mui/material/Radio";
-import Alert from "@mui/material/Alert";
 import FormHelperText from "@mui/material/FormHelperText";
 import Divider from "@mui/material/Divider";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
 import Snackbar from "@mui/material/Snackbar";
 import Tooltip from "@mui/material/Tooltip";
+import Alert from "@mui/material/Alert";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { apiGet, apiPut, apiPostFormData, normalizeApiError } from "@/lib/api";
+import { apiDelete, apiGet, apiPost, apiPut, apiPostFormData, normalizeApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
-type Site = {
-  id: number;
+type SiteData = {
+  id?: number;
   title?: string | null;
   owner_id?: number | null;
+  short_description?: string | null;
+  description?: string | null;
+  icon_url?: string | null;
+  iconUrl?: string | null;
+  site_url?: string | null;
+  url?: string | null;
+  home_url?: string | null;
+  homeUrl?: string | null;
+  admin_email?: string | null;
+  adminEmail?: string | null;
+  allow_registration?: boolean | null;
+  membership?: boolean | null;
+  default_role?: string | null;
+  language?: string | null;
+  locale?: string | null;
+  timezone?: string | null;
+  date_format?: string | null;
+  time_format?: string | null;
+  week_start?: string | number | null;
+  [key: string]: unknown;
+};
+
+type SiteEditor = {
+  id: number;
+  name: string;
+  email: string;
+  role?: string | null;
+};
+
+type UserOption = {
+  id: number;
+  name: string;
+  email: string;
+  role?: string | null;
 };
 
 export default function SiteSettingsPage() {
-  const params = useParams() as { id: string };
-  const id = params?.id;
+  const params = useParams<{ id?: string | string[] }>();
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const router = useRouter();
   const auth = useAuth();
-  const [site, setSite] = useState<Record<string, any> | null>(null);
+  const [site, setSite] = useState<SiteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,15 +104,44 @@ export default function SiteSettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
   const [snackOpen, setSnackOpen] = useState(false);
+  const [editors, setEditors] = useState<SiteEditor[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [editorsLoading, setEditorsLoading] = useState(false);
+  const [editorsError, setEditorsError] = useState<string | null>(null);
+  const [editorUserId, setEditorUserId] = useState("");
+  const [editorRole, setEditorRole] = useState("editor");
+  const [editorSaving, setEditorSaving] = useState(false);
 
   const loadSite = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     try {
       const s = await apiGet(`/sites/${id}`);
       const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
-      const resolved = isRecord(s) && 'data' in s ? (s as any).data as Record<string, any> : s as Record<string, any>;
-      setSite(resolved);
+      const resolvedSource = isRecord(s) && 'data' in s ? (s as Record<string, unknown>).data : s;
+      if (isRecord(resolvedSource)) {
+        const resolved = resolvedSource as SiteData;
+        setSite(resolved);
+        setTitle(String(resolved.title ?? ""));
+        setShortDescription(String(resolved.short_description ?? resolved.description ?? ""));
+        setIconPreview((resolved.icon_url ?? resolved.iconUrl) as string ?? null);
+        setSiteUrl(String(resolved.site_url ?? resolved.url ?? ""));
+        setHomeUrl(String(resolved.home_url ?? resolved.homeUrl ?? ""));
+        setAdminEmail(String(resolved.admin_email ?? resolved.adminEmail ?? ""));
+        setAllowRegistration(Boolean(resolved.allow_registration ?? resolved.membership ?? false));
+        setDefaultRole(String(resolved.default_role ?? "subscriber"));
+        setLanguage(String(resolved.language ?? resolved.locale ?? "es"));
+        setTimezone(String(resolved.timezone ?? "Europe/Madrid"));
+        setDateFormat(String(resolved.date_format ?? "d F Y"));
+        setTimeFormat(String(resolved.time_format ?? "H:i"));
+        setWeekStart(String(resolved.week_start ?? "1"));
+        setFieldErrors({});
+        setSuccess(null);
+      } else {
+        setSite(null);
+      }
     } catch (e) {
       setError(normalizeApiError(e).message);
     } finally {
@@ -85,28 +150,10 @@ export default function SiteSettingsPage() {
   }, [id]);
 
   useEffect(() => {
-    loadSite();
+    setTimeout(() => {
+      void loadSite();
+    }, 0);
   }, [loadSite]);
-
-  useEffect(() => {
-    if (site) {
-      setTitle(String(site.title ?? ""));
-      setShortDescription(String(site.short_description ?? site.description ?? ""));
-      setIconPreview((site.icon_url ?? site.iconUrl) as string ?? null);
-      setSiteUrl(String(site.site_url ?? site.url ?? ""));
-      setHomeUrl(String(site.home_url ?? site.homeUrl ?? ""));
-      setAdminEmail(String(site.admin_email ?? site.adminEmail ?? ""));
-      setAllowRegistration(Boolean(site.allow_registration ?? site.membership ?? false));
-      setDefaultRole(String(site.default_role ?? "subscriber"));
-      setLanguage(String(site.language ?? site.locale ?? "es"));
-      setTimezone(String(site.timezone ?? "Europe/Madrid"));
-      setDateFormat(String(site.date_format ?? "d F Y"));
-      setTimeFormat(String(site.time_format ?? "H:i"));
-      setWeekStart(String(site.week_start ?? "1"));
-      setFieldErrors({});
-      setSuccess(null);
-    }
-  }, [site]);
 
   // Redirigir silenciosamente si no tiene permisos de gestión
   // Declarado incondicionalmente para mantener el orden de hooks
@@ -116,6 +163,104 @@ export default function SiteSettingsPage() {
     const allowed = auth.user?.role === 'admin' || Number(site.owner_id) === Number(auth.user?.id);
     if (!allowed) router.push('/dashboard/webs');
   }, [site, auth.user, router, loading]);
+
+  const canManageEditors = !!site && (
+    auth.user?.role === 'admin' || Number(site.owner_id) === Number(auth.user?.id)
+  );
+
+  const loadEditors = useCallback(async () => {
+    if (!id || !canManageEditors) return;
+    try {
+      const rawEditors = await apiGet(`/sites/${id}/editors`);
+      const asRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+      const unwrapArray = (payload: unknown): unknown[] => {
+        if (Array.isArray(payload)) return payload;
+        if (asRecord(payload) && Array.isArray(payload.data)) return payload.data;
+        return [];
+      };
+
+      const mappedEditors = unwrapArray(rawEditors)
+        .map((item) => {
+          if (!asRecord(item)) return null;
+          return {
+            id: Number(item.id ?? 0),
+            name: String(item.name ?? ''),
+            email: String(item.email ?? ''),
+            role: item.role ? String(item.role) : null,
+          } as SiteEditor;
+        })
+        .filter((item): item is SiteEditor => !!item && item.id > 0);
+
+      setEditors(mappedEditors);
+
+      if (auth.user?.role === 'admin') {
+        const rawUsers = await apiGet('/users');
+        const mappedUsers = unwrapArray(rawUsers)
+          .map((item) => {
+            if (!asRecord(item)) return null;
+            return {
+              id: Number(item.id ?? 0),
+              name: String(item.name ?? ''),
+              email: String(item.email ?? ''),
+              role: item.role ? String(item.role) : null,
+            } as UserOption;
+          })
+          .filter((item): item is UserOption => !!item && item.id > 0);
+
+        setUsers(mappedUsers);
+      } else {
+        setUsers([]);
+      }
+    } catch (e) {
+      setEditorsError(normalizeApiError(e).message);
+    } finally {
+      setEditorsLoading(false);
+    }
+  }, [id, canManageEditors, auth.user]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      void loadEditors();
+    }, 0);
+  }, [loadEditors]);
+
+  const handleAssignEditor = async () => {
+    if (!id || !canManageEditors) return;
+    const userId = Number(editorUserId);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      setEditorsError('Selecciona o introduce un usuario válido');
+      return;
+    }
+
+    setEditorSaving(true);
+    setEditorsError(null);
+    try {
+      setEditorsLoading(true);
+      await apiPost(`/sites/${id}/editors`, { user_id: userId, role: editorRole || 'editor' });
+      setEditorUserId("");
+      await loadEditors();
+      setSuccess('Editor asignado correctamente');
+      setSnackOpen(true);
+    } catch (e) {
+      setEditorsError(normalizeApiError(e).message);
+    } finally {
+      setEditorSaving(false);
+    }
+  };
+
+  const handleRemoveEditor = async (userId: number) => {
+    if (!id || !canManageEditors) return;
+    setEditorsError(null);
+    try {
+      setEditorsLoading(true);
+      await apiDelete(`/sites/${id}/editors/${userId}`);
+      await loadEditors();
+      setSuccess('Editor eliminado correctamente');
+      setSnackOpen(true);
+    } catch (e) {
+      setEditorsError(normalizeApiError(e).message);
+    }
+  };
 
   const validate = (): boolean => {
     const errors: Record<string, string | null> = {};
@@ -196,8 +341,9 @@ export default function SiteSettingsPage() {
       setError(normalized.message);
       if (normalized.errors && typeof normalized.errors === 'object') {
         const map: Record<string, string> = {};
-        for (const k of Object.keys(normalized.errors as Record<string, any>)) {
-          const v = (normalized.errors as Record<string, any>)[k];
+        const normalizedErrors = normalized.errors as Record<string, unknown>;
+        for (const k of Object.keys(normalizedErrors)) {
+          const v = normalizedErrors[k];
           map[k] = Array.isArray(v) ? String(v[0]) : String(v);
         }
         setFieldErrors(prev => ({ ...prev, ...map }));
@@ -392,6 +538,97 @@ export default function SiteSettingsPage() {
                     </Box>
                   </CardContent>
                 </Card>
+
+                {canManageEditors && (
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="subtitle1">Gestión de editores</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Asigna usuarios como editores de este sitio y revoca su acceso cuando sea necesario.
+                      </Typography>
+
+                      {editorsError && <Alert severity="error" sx={{ mt: 1.5 }}>{editorsError}</Alert>}
+
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1, mt: 1.5 }}>
+                        {auth.user?.role === 'admin' && users.length > 0 ? (
+                          <FormControl fullWidth size="small">
+                            <InputLabel id="editor-user-label">Usuario</InputLabel>
+                            <Select
+                              labelId="editor-user-label"
+                              value={editorUserId}
+                              label="Usuario"
+                              onChange={(e) => setEditorUserId(String(e.target.value))}
+                            >
+                              {users
+                                .filter((u) => !editors.some((ed) => ed.id === u.id))
+                                .map((u) => (
+                                  <MenuItem key={u.id} value={String(u.id)}>{u.name} ({u.email})</MenuItem>
+                                ))}
+                            </Select>
+                          </FormControl>
+                        ) : (
+                          <TextField
+                            size="small"
+                            label="ID de usuario"
+                            value={editorUserId}
+                            onChange={(e) => setEditorUserId(e.target.value)}
+                            helperText="Introduce el ID del usuario a asignar como editor"
+                          />
+                        )}
+
+                        <FormControl fullWidth size="small">
+                          <InputLabel id="editor-role-label">Rol</InputLabel>
+                          <Select
+                            labelId="editor-role-label"
+                            value={editorRole}
+                            label="Rol"
+                            onChange={(e) => setEditorRole(String(e.target.value))}
+                          >
+                            <MenuItem value="editor">Editor</MenuItem>
+                            <MenuItem value="author">Autor</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        <Button
+                          variant="outlined"
+                          onClick={handleAssignEditor}
+                          disabled={editorSaving || editorsLoading}
+                        >
+                          {editorSaving ? 'Asignando...' : 'Asignar editor'}
+                        </Button>
+                      </Box>
+
+                      <Divider sx={{ my: 1.5 }} />
+                      {editorsLoading ? (
+                        <Typography variant="body2" color="text.secondary">Cargando editores...</Typography>
+                      ) : (
+                        <List dense disablePadding>
+                          {editors.length === 0 && (
+                            <ListItem disableGutters>
+                              <ListItemText primary="No hay editores asignados" />
+                            </ListItem>
+                          )}
+                          {editors.map((ed) => (
+                            <ListItem
+                              key={ed.id}
+                              disableGutters
+                              secondaryAction={
+                                <Button color="error" size="small" onClick={() => handleRemoveEditor(ed.id)}>
+                                  Quitar
+                                </Button>
+                              }
+                            >
+                              <ListItemText
+                                primary={`${ed.name} (${ed.email})`}
+                                secondary={`Rol: ${ed.role ?? 'editor'}`}
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </Box>
             </Box>
           </Box>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,81 @@ use Illuminate\Support\Facades\DB;
 
 class NewsController extends Controller
 {
+    protected function resolveSiteId($siteId): ?int
+    {
+        if (is_numeric($siteId)) {
+            return (int) $siteId;
+        }
+
+        try {
+            $row = DB::table('sites')->where('slug', $siteId)->first();
+            if ($row && isset($row->id)) {
+                return (int) $row->id;
+            }
+        } catch (\Exception $e) {
+        }
+
+        $path = storage_path('app/sites.json');
+        if (file_exists($path)) {
+            $json = @file_get_contents($path);
+            $arr = json_decode($json, true) ?? [];
+            foreach ($arr as $s) {
+                if (isset($s['slug']) && $s['slug'] === $siteId && isset($s['id'])) {
+                    return (int) $s['id'];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function siteOwnerId(int $siteId): ?int
+    {
+        try {
+            $site = Site::find($siteId);
+            if ($site && isset($site->owner_id)) {
+                return (int) $site->owner_id;
+            }
+        } catch (\Exception $e) {
+        }
+
+        $path = storage_path('app/sites.json');
+        if (file_exists($path)) {
+            $json = @file_get_contents($path);
+            $arr = json_decode($json, true) ?? [];
+            foreach ($arr as $s) {
+                if (isset($s['id']) && (int) $s['id'] === $siteId && isset($s['owner_id'])) {
+                    return (int) $s['owner_id'];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function canManageSiteNews(User $user, int $siteId): bool
+    {
+        if (($user->role ?? null) === 'admin') {
+            return true;
+        }
+
+        $ownerId = $this->siteOwnerId($siteId);
+        if ($ownerId && (int) $user->id === $ownerId) {
+            return true;
+        }
+
+        return DB::table('site_user')
+            ->where('site_id', $siteId)
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
+    protected function canReorderSiteNews(User $user, int $siteId): bool
+    {
+        $ownerId = $this->siteOwnerId($siteId);
+        return ($user->role ?? null) === 'author' && $ownerId !== null && (int) $user->id === $ownerId;
+    }
+
     public function index(Request $request)
     {
         $query = News::with(['primarySection', 'sections']);
@@ -24,25 +100,10 @@ class NewsController extends Controller
 
     public function siteIndex($siteId, Request $request)
     {
-        $resolved = $siteId;
-        if (!is_numeric($siteId)) {
-            try {
-                $row = DB::table('sites')->where('slug', $siteId)->first();
-                if ($row && isset($row->id)) $resolved = $row->id;
-            } catch (\Exception $e) { $resolved = null; }
-            if (!$resolved) {
-                $path = storage_path('app/sites.json');
-                if (file_exists($path)) {
-                    $json = @file_get_contents($path);
-                    $arr = json_decode($json, true) ?? [];
-                    foreach ($arr as $s) {
-                        if (isset($s['slug']) && $s['slug'] === $siteId) { $resolved = $s['id']; break; }
-                    }
-                }
-            }
-        }
-
-        $query = is_numeric($resolved) ? News::with(['primarySection', 'sections'])->where('site_id', $resolved) : News::with(['primarySection', 'sections'])->query();
+        $resolved = $this->resolveSiteId($siteId);
+        $query = $resolved
+            ? News::with(['primarySection', 'sections'])->where('site_id', $resolved)
+            : News::with(['primarySection', 'sections'])->query();
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
@@ -84,6 +145,10 @@ class NewsController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        if (!empty($validated['site_id']) && !$this->canManageSiteNews($user, (int) $validated['site_id'])) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
         $sectionIds = $validated['section_ids'] ?? [];
         unset($validated['section_ids']);
 
@@ -104,25 +169,10 @@ class NewsController extends Controller
 
     public function siteStore($siteId, Request $request)
     {
-        $resolved = $siteId;
-        if (!is_numeric($siteId)) {
-            try {
-                $row = DB::table('sites')->where('slug', $siteId)->first();
-                if ($row && isset($row->id)) $resolved = $row->id;
-            } catch (\Exception $e) { $resolved = null; }
-            if (!$resolved) {
-                $path = storage_path('app/sites.json');
-                if (file_exists($path)) {
-                    $json = @file_get_contents($path);
-                    $arr = json_decode($json, true) ?? [];
-                    foreach ($arr as $s) {
-                        if (isset($s['slug']) && $s['slug'] === $siteId) { $resolved = $s['id']; break; }
-                    }
-                }
-            }
+        $resolved = $this->resolveSiteId($siteId);
+        if ($resolved) {
+            $request->merge(['site_id' => $resolved]);
         }
-
-        if ($resolved) $request->merge(['site_id' => $resolved]);
         return $this->store($request);
     }
 
@@ -132,6 +182,10 @@ class NewsController extends Controller
         $user = Auth::user();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        if (!empty($news->site_id) && !$this->canManageSiteNews($user, (int) $news->site_id)) {
+            return response()->json(['error' => 'Forbidden'], 403);
         }
 
         $validated = $request->validate([
@@ -172,7 +226,63 @@ class NewsController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        if (!empty($news->site_id) && !$this->canManageSiteNews($user, (int) $news->site_id)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
         $news->delete();
         return response()->json(null, 204);
+    }
+
+    public function reorder($siteId, Request $request)
+    {
+        $this->tryTokenAuth($request);
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $resolved = $this->resolveSiteId($siteId);
+        if (!$resolved) {
+            return response()->json(['message' => 'Site not found'], 404);
+        }
+
+        if (!$this->canReorderSiteNews($user, $resolved)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $items = $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer|exists:news,id',
+            'items.*.position' => 'required|integer|min:0',
+            'items.*.section_id' => 'nullable|integer|exists:sections,id',
+        ])['items'];
+
+        foreach ($items as $item) {
+            $news = News::where('id', $item['id'])->where('site_id', $resolved)->first();
+            if (!$news) {
+                continue;
+            }
+
+            $sectionId = isset($item['section_id']) ? (int) $item['section_id'] : (int) ($news->primary_section_id ?? 0);
+            if ($sectionId <= 0) {
+                continue;
+            }
+
+            $updated = DB::table('news_section')
+                ->where('news_id', $news->id)
+                ->where('section_id', $sectionId)
+                ->update(['position' => $item['position']]);
+
+            if (!$updated) {
+                DB::table('news_section')->insert([
+                    'news_id' => $news->id,
+                    'section_id' => $sectionId,
+                    'position' => $item['position'],
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Orden de noticias actualizado']);
     }
 }

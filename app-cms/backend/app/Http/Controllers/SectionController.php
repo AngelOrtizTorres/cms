@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Section;
 use App\Models\Article;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class SectionController extends Controller
@@ -115,11 +117,61 @@ class SectionController extends Controller
      */
     public function reorder(Request $request)
     {
+        $token = $request->bearerToken();
+        if ($token && !Auth::check()) {
+            $tokenUser = User::where('api_token', $token)->first();
+            if ($tokenUser) {
+                Auth::login($tokenUser);
+            }
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Spec: only the author who owns the site can reorder; admin cannot reorder.
+        if (($user->role ?? null) !== 'author') {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
         $items = $request->validate([
             'items'            => 'required|array',
             'items.*.id'       => 'required|integer|exists:sections,id',
             'items.*.position' => 'required|integer|min:0',
+            'site_id'          => 'nullable|integer',
         ])['items'];
+
+        $siteId = (int) $request->input('site_id', 0);
+        if ($siteId > 0) {
+            $ownerId = null;
+            try {
+                $row = DB::table('sites')->where('id', $siteId)->first();
+                if ($row && isset($row->owner_id)) {
+                    $ownerId = (int) $row->owner_id;
+                }
+            } catch (\Exception $e) {
+                $ownerId = null;
+            }
+
+            if ($ownerId === null) {
+                $path = storage_path('app/sites.json');
+                if (file_exists($path)) {
+                    $json = @file_get_contents($path);
+                    $arr = json_decode($json, true) ?? [];
+                    foreach ($arr as $s) {
+                        if (isset($s['id']) && (int) $s['id'] === $siteId && isset($s['owner_id'])) {
+                            $ownerId = (int) $s['owner_id'];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($ownerId === null || $ownerId !== (int) $user->id) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
+        }
 
         foreach ($items as $item) {
             Section::where('id', $item['id'])->update(['position' => $item['position']]);

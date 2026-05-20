@@ -18,7 +18,27 @@ import {
   Select,
   MenuItem,
   Alert,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 
@@ -28,7 +48,51 @@ type News = {
   slug?: string;
   status?: string;
   published_at?: string | null;
+  primary_section_id?: number | null;
 };
+
+function SortableNewsRow({
+  item,
+  canReorder,
+  onDelete,
+  siteId,
+}: {
+  item: News;
+  canReorder: boolean;
+  onDelete: (id: number) => void;
+  siteId?: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: item.id,
+    disabled: !canReorder,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} hover>
+      <TableCell sx={{ width: 40 }}>
+        {canReorder && (
+          <Tooltip title="Arrastrar para ordenar">
+            <IconButton size="small" {...attributes} {...listeners}>
+              <DragIndicatorIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </TableCell>
+      <TableCell>{item.title}</TableCell>
+      <TableCell sx={{ textTransform: 'capitalize' }}>{item.status}</TableCell>
+      <TableCell>{item.published_at ? new Date(item.published_at).toLocaleString() : '-'}</TableCell>
+      <TableCell align="right">
+        <Button size="small" sx={{ mr: 1 }} href={`/dashboard/sites/${siteId}/news/${item.id}`}>Editar</Button>
+        <Button size="small" color="error" onClick={() => onDelete(item.id)}>Eliminar</Button>
+      </TableCell>
+    </TableRow>
+  );
+}
 
 export default function NewsManager({ siteId }: { siteId?: string }) {
   const auth = useAuth();
@@ -88,6 +152,14 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
   const router = useRouter();
   const isSiteOwner = !!(auth.user && site && Number((site as Record<string, unknown>).owner_id) === Number(auth.user.id));
   const canManage = auth.user?.role === 'admin' || (auth.user?.role === 'author' && isSiteOwner);
+  const canReorder = auth.user?.role === 'author' && isSiteOwner;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
   useEffect(() => {
     if (auth.loading) return;
     if (!siteId) return;
@@ -111,6 +183,30 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
   };
 
   const handleDelete = async (id: number) => { if (!confirm('¿Eliminar noticia?')) return; try { await apiDelete(`/news/${id}`); setSuccess('Noticia eliminada'); await fetchNews(); } catch (err: unknown) { console.error(err); const msg = (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>)['message']) : 'Error al eliminar'; setError(msg); } };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    if (!canReorder || !siteId) return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((n) => n.id === Number(active.id));
+    const newIndex = items.findIndex((n) => n.id === Number(over.id));
+    const reordered = arrayMove(items, oldIndex, newIndex);
+    setItems(reordered);
+
+    try {
+      await apiPut(`/sites/${siteId}/news/reorder`, {
+        items: reordered.map((n, idx) => ({
+          id: n.id,
+          position: idx,
+          section_id: n.primary_section_id ?? undefined,
+        })),
+      });
+    } catch (err) {
+      console.error('Error reordering news', err);
+      await fetchNews();
+    }
+  };
 
   const filtered = items.filter(i => { if (!filter) return true; const q = filter.toLowerCase(); return (i.title || '').toLowerCase().includes(q) || (i.slug || '').toLowerCase().includes(q); });
 
@@ -156,6 +252,7 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ width: 40 }}></TableCell>
                     <TableCell>Título</TableCell>
                     <TableCell>Estado</TableCell>
                     <TableCell>Publicado</TableCell>
@@ -164,20 +261,24 @@ export default function NewsManager({ siteId }: { siteId?: string }) {
                 </TableHead>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={4}>Cargando...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5}>Cargando...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={4}>No hay noticias</TableCell></TableRow>
-                  ) : filtered.map(i => (
-                    <TableRow key={i.id} hover>
-                      <TableCell>{i.title}</TableCell>
-                      <TableCell sx={{ textTransform: 'capitalize' }}>{i.status}</TableCell>
-                      <TableCell>{i.published_at ? new Date(i.published_at).toLocaleString() : '-'}</TableCell>
-                      <TableCell align="right">
-                        <Button size="small" sx={{ mr: 1 }} href={`/dashboard/sites/${siteId}/news/${i.id}`}>Editar</Button>
-                        <Button size="small" color="error" onClick={() => handleDelete(i.id)}>Eliminar</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                    <TableRow><TableCell colSpan={5}>No hay noticias</TableCell></TableRow>
+                  ) : (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={filtered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                        {filtered.map((i) => (
+                          <SortableNewsRow
+                            key={i.id}
+                            item={i}
+                            canReorder={canReorder && !filter}
+                            onDelete={handleDelete}
+                            siteId={siteId}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>

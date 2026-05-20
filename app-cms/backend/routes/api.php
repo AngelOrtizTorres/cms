@@ -59,6 +59,9 @@ Route::post('/sites', [SiteController::class, 'store']);
 Route::put('/sites/{id}', [SiteController::class, 'update']);
 Route::delete('/sites/{id}', [SiteController::class, 'destroy']);
 Route::get('/sites/{id}/capabilities', [SiteController::class, 'capabilities']);
+Route::get('/sites/{id}/editors', [SiteController::class, 'editors']);
+Route::post('/sites/{id}/editors', [SiteController::class, 'assignEditor']);
+Route::delete('/sites/{id}/editors/{userId}', [SiteController::class, 'removeEditor']);
 
 // Sections (categorías) - CRUD básico para el panel
 Route::get('/sections', [SectionController::class, 'index']);
@@ -83,6 +86,7 @@ Route::delete('/news/{id}', [NewsController::class, 'destroy']);
 
 Route::get('/sites/{siteId}/news', [NewsController::class, 'siteIndex']);
 Route::post('/sites/{siteId}/news', [NewsController::class, 'siteStore']);
+Route::put('/sites/{siteId}/news/reorder', [NewsController::class, 'reorder']);
 
 // Banners
 Route::get('/banners', [BannerController::class, 'index']);

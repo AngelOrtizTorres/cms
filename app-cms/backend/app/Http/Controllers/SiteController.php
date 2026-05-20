@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SiteController extends Controller
 {
@@ -58,6 +59,71 @@ class SiteController extends Controller
         @file_put_contents($this->filePath, json_encode($sites, JSON_PRETTY_PRINT));
     }
 
+    protected function resolveAuthUser(Request $request): ?User
+    {
+        $token = $request->bearerToken();
+        if ($token) {
+            $tokenUser = User::where('api_token', $token)->first();
+            if ($tokenUser) {
+                return $tokenUser;
+            }
+        }
+
+        return $request->user() ?? Auth::user();
+    }
+
+    protected function findSiteRecord($id): ?array
+    {
+        $sites = $this->readSites();
+        foreach ($sites as $s) {
+            if ((is_numeric($id) && $s['id'] == (int) $id) || (!is_numeric($id) && isset($s['slug']) && $s['slug'] === $id)) {
+                return $s;
+            }
+        }
+        return null;
+    }
+
+    protected function canManageEditors(User $user, array $site): bool
+    {
+        $role = $user->getRoleNames()->first() ?? ($user->role ?? 'user');
+        return $role === 'admin' || ((int) ($site['owner_id'] ?? 0) === (int) $user->id);
+    }
+
+    protected function ensureSiteDatabaseRecord(array $site): int
+    {
+        $siteId = (int) ($site['id'] ?? 0);
+        if ($siteId <= 0) {
+            $siteId = ((int) DB::table('sites')->max('id')) + 1;
+        }
+
+        $title = (string) ($site['title'] ?? ('Site ' . $siteId));
+        $slug = (string) ($site['slug'] ?? Str::slug($title));
+        $status = (string) ($site['status'] ?? 'active');
+        if (!in_array($status, ['active', 'inactive', 'archived'], true)) {
+            $status = 'active';
+        }
+
+        $exists = DB::table('sites')->where('id', $siteId)->exists();
+        if (!$exists) {
+            $now = now()->toDateTimeString();
+            DB::table('sites')->insert([
+                'id' => $siteId,
+                'title' => $title,
+                'slug' => $slug,
+                'owner_id' => isset($site['owner_id']) ? (int) $site['owner_id'] : null,
+                'domain' => $site['domain'] ?? null,
+                'description' => $site['description'] ?? null,
+                'contact_email' => $site['contact_email'] ?? null,
+                'icon' => $site['icon'] ?? null,
+                'status' => $status,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        return $siteId;
+    }
+
     public function index(Request $request)
     {
         $sites = $this->readSites();
@@ -65,9 +131,17 @@ class SiteController extends Controller
         if ($owner) {
             $sites = array_values(array_filter($sites, fn($s) => $s['owner_id'] == (int) $owner));
         }
+
+        $ownerIds = array_values(array_unique(array_filter(array_map(
+            fn($s) => isset($s['owner_id']) ? (int) $s['owner_id'] : null,
+            $sites
+        ))));
+        $usersById = User::whereIn('id', $ownerIds)->get(['id', 'email'])->keyBy('id');
+
         // Add creator email for convenience in frontend
-        $sites = array_map(function ($s) {
-            $creator = User::find($s['owner_id']);
+        $sites = array_map(function ($s) use ($usersById) {
+            $ownerId = isset($s['owner_id']) ? (int) $s['owner_id'] : 0;
+            $creator = $usersById->get($ownerId);
             $s['creator_email'] = $creator?->email ?? null;
             return $s;
         }, $sites);
@@ -226,6 +300,91 @@ class SiteController extends Controller
         }
 
         return response()->json(['message' => 'Not found'], 404);
+    }
+
+    public function editors(Request $request, $id)
+    {
+        $user = $this->resolveAuthUser($request);
+        if (!$user) {
+            return response()->json(['message' => 'No autenticado'], 401);
+        }
+
+        $site = $this->findSiteRecord($id);
+        if (!$site) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if (!$this->canManageEditors($user, $site)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $dbSiteId = $this->ensureSiteDatabaseRecord($site);
+
+        $rows = DB::table('site_user')
+            ->join('users', 'users.id', '=', 'site_user.user_id')
+            ->where('site_user.site_id', $dbSiteId)
+            ->select('users.id', 'users.name', 'users.email', 'site_user.role')
+            ->orderBy('users.name')
+            ->get();
+
+        return response()->json($rows);
+    }
+
+    public function assignEditor(Request $request, $id)
+    {
+        $user = $this->resolveAuthUser($request);
+        if (!$user) {
+            return response()->json(['message' => 'No autenticado'], 401);
+        }
+
+        $site = $this->findSiteRecord($id);
+        if (!$site) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if (!$this->canManageEditors($user, $site)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $dbSiteId = $this->ensureSiteDatabaseRecord($site);
+
+        $data = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'role' => 'nullable|string|max:50',
+        ]);
+
+        DB::table('site_user')->updateOrInsert(
+            ['site_id' => $dbSiteId, 'user_id' => (int) $data['user_id']],
+            ['role' => $data['role'] ?? 'editor']
+        );
+
+        return response()->json(['message' => 'Editor asignado']);
+    }
+
+    public function removeEditor(Request $request, $id, $userId)
+    {
+        $user = $this->resolveAuthUser($request);
+        if (!$user) {
+            return response()->json(['message' => 'No autenticado'], 401);
+        }
+
+        $site = $this->findSiteRecord($id);
+        if (!$site) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if (!$this->canManageEditors($user, $site)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $dbSiteId = $this->ensureSiteDatabaseRecord($site);
+
+        DB::table('site_user')
+            ->where('site_id', $dbSiteId)
+            ->where('user_id', (int) $userId)
+            ->delete();
+
+        return response()->json(['message' => 'Editor eliminado']);
     }
 
     public function capabilities(Request $request, $id)
